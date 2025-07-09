@@ -1,0 +1,146 @@
+/* General */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #0d0d0d;
+    color: white;
+    display: flex;
+    height: 100vh;
+}
+
+/* Dashboard Container */
+.dashboard-container {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background: #111;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sidebar h2 {
+    color: red;
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+/* Botones del menú */
+.sidebar .nav-links {
+    list-style: none;
+    padding: 0;
+    width: 100%;
+}
+
+.sidebar .nav-links li {
+    width: 100%;
+    margin-bottom: 12px; /* Separación entre botones */
+}
+
+.sidebar .nav-links li a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: white;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    transition: 0.3s;
+    border: 2px solid red; /* Borde rojo */
+}
+
+.sidebar .nav-links li a i {
+    margin-right: 10px;
+    color: red;
+}
+
+.sidebar .nav-links li a:hover,
+.sidebar .nav-links li a.active {
+    background: red;
+    color: white;
+    border: 2px solid white; /* Borde blanco cuando está activo */
+}
+
+/* Main Content */
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    background: #111; /* Fondo sin afectar el contenido */
+    padding: 20px;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #1a1a1a;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Search Bar */
+.search-bar {
+    display: flex;
+    align-items: center;
+}
+
+.search-bar input {
+    background: #222;
+    border: none;
+    padding: 8px;
+    border-radius: 5px;
+    color: white;
+    outline: none;
+}
+
+.search-bar button {
+    background: red;
+    border: none;
+    padding: 8px 12px;
+    margin-left: 5px;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Botones del navbar */
+.nav-icons {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-profile, .btn-logout {
+    background: red;
+    border: none;
+    padding: 8px 15px;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-profile:hover, .btn-logout:hover {
+    opacity: 0.8;
+}
+
+/* Área de contenido sin afectar su contenido */
+.content-box {
+    flex-grow: 1;
+    background: transparent; /* Se mantiene sin afectar lo que pongas dentro */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100%;
+}

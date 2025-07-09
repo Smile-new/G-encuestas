@@ -1,0 +1,40 @@
+# ----------------------------------------------------------------------
+# SECURITY: Deshabilitar navegación de directorios
+# ----------------------------------------------------------------------
+Options -Indexes
+
+# ----------------------------------------------------------------------
+# URL Rewrite Settings
+# ----------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    Options +FollowSymLinks
+    RewriteEngine On
+
+    # Asegúrate de usar la ruta base correcta.
+    # Usa "/" si estás en el root del dominio (no en subcarpeta).
+    RewriteBase /
+
+    # REDIRECCIÓN: Forzar HTTPS y eliminar "www"
+    RewriteCond %{HTTPS} !=on [OR]
+    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+
+    # ELIMINAR index.php de URLs
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php?/$1 [L,QSA]
+
+    # PASAR encabezado de autorización (para APIs)
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>
+
+# Si mod_rewrite no está disponible, muestra error 404
+<IfModule !mod_rewrite.c>
+    ErrorDocument 404 index.php
+</IfModule>
+
+# ----------------------------------------------------------------------
+# Desactivar firma del servidor por seguridad
+# ----------------------------------------------------------------------
+ServerSignature Off

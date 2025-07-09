@@ -1,0 +1,129 @@
+<?php
+
+namespace Config;
+
+// Create a new instance of our RouteCollection class.
+$routes = Services::routes();
+
+// Load the system's routing file first, so that the app and ENVIRONMENT
+// can override as needed.
+if (file_exists(SYSTEMPATH . 'Config/Routes.php')) {
+    require SYSTEMPATH . 'Config/Routes.php';
+}
+
+/*
+ * --------------------------------------------------------------------
+ * Router Setup
+ * --------------------------------------------------------------------
+ */
+$routes->setDefaultNamespace('App\Controllers');
+$routes->setDefaultController('Home');
+$routes->setDefaultMethod('index');
+$routes->setTranslateURIDashes(false);
+$routes->set404Override();
+$routes->setAutoRoute(true);
+
+/*
+ * --------------------------------------------------------------------
+ * Route Definitions
+ * --------------------------------------------------------------------
+ */
+
+// We get a performance increase by specifying the default
+// route since we don't have to scan directories.
+$routes->get('/', 'Home::index');
+
+
+$routes->get('/administrador', 'Administrador::index');
+
+//Users
+    $routes->get('usuarios', 'Usuarios::index');
+    $routes->get('usuarios/create', 'Usuarios::create');
+    $routes->post('usuarios/store', 'Usuarios::store');
+    $routes->get('usuarios/edit/(:num)', 'Usuarios::edit/$1');
+    $routes->post('usuarios/update/(:num)', 'Usuarios::update/$1');
+    $routes->post('usuarios/delete/(:num)', 'Usuarios::delete/$1');
+
+
+
+    //Encuestas
+   // Routes for Encuestas (Surveys)
+$routes->get('encuestas', 'EncuestaController::index');
+$routes->get('encuestas/create', 'EncuestaController::create');
+$routes->post('encuestas/store', 'EncuestaController::store');
+$routes->get('encuestas/edit/(:num)', 'EncuestaController::edit/$1');
+$routes->post('encuestas/update/(:num)', 'EncuestaController::update/$1');
+$routes->post('encuestas/delete/(:num)', 'EncuestaController::delete/$1');
+$routes->get('encuestas/estatus/(:num)', 'EncuestaController::estatus/$1');
+
+
+
+//Preguntas
+$routes->get('preguntas/getPreguntasConOpcionesPorEncuesta/(:num)', 'Preguntas::getPreguntasConOpcionesPorEncuesta/$1');
+$routes->get('preguntas', 'Preguntas::index');
+
+//Encuestador
+    $routes->get('home', 'Encuestador::index'); // Ruta base para el encuestador, carga home.php
+    $routes->get('cam', 'Encuestador::cam'); // Ruta para cam.php
+    $routes->get('formularios', 'Encuestador::formularios'); // Ruta para formularios.php
+    $routes->get('encuestas/ver/(:num)', 'Encuestador::verEncuesta/$1');
+
+
+
+//Rutas publicas  // Página de inicio
+
+
+$routes->get('/nosotrosp', 'PublicController::nosotros');
+$routes->get('/encuestasp', 'PublicController::encuestas');
+$routes->get('/encuestas-contestadasp', 'PublicController::encuestasContestadas');
+
+$routes->get('/login', 'LoginController::index');
+$routes->post('/login/procesar', 'LoginController::procesar');
+$routes->get('/logout', 'LoginController::logout');
+
+
+
+$routes->get('estadisticas/obtenerPreguntas/(:num)', 'Encuestas::obtenerPreguntas/$1');
+$routes->get('estadisticas/obtenerResultados/(:num)', 'Encuestas::obtenerResultados/$1');
+
+
+
+
+//Administrador
+    $routes->get('dashboard', 'Administrador::index'); // Alias para /administrador/dashboard   
+    $routes->get('estadistica', 'Administrador::estadisticas');
+    
+    
+
+
+//Operador
+    $routes->get('dash', 'Operador::dashboard'); 
+    $routes->get('estat', 'Operador::estadisticas');
+    $routes->get('tab', 'Operador::tablas');
+
+
+
+    //pagina
+    $routes->get('/acerca', 'Home::acerca');
+
+// Acceso a tudominio.com/contacto
+$routes->get('/contacto', 'Home::contacto');
+
+// Acceso a tudominio.com/servicios
+$routes->get('/servicios', 'Home::servicios');
+/*
+ * --------------------------------------------------------------------
+ * Additional Routing
+ * --------------------------------------------------------------------
+ *
+ * There will often be times that you need additional routing and you
+ * need it to be able to override any defaults in this file. Environment
+ * based routes is one such time. require() additional route files here
+ * to make that happen.
+ *
+ * You will have access to the $routes object within that file without
+ * needing to reload it.
+ */
+if (file_exists(APPPATH . 'Config/' . ENVIRONMENT . '/Routes.php')) {
+    require APPPATH . 'Config/' . ENVIRONMENT . '/Routes.php';
+}
