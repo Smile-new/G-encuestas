@@ -6,15 +6,29 @@ use CodeIgniter\Model;
 
 class MunicipioModel extends Model
 {
-    // Define el nombre de la tabla de la base de datos
-    protected $table      = 'municipios';
-    // Define la clave primaria de la tabla
+    protected $table = 'municipio';
     protected $primaryKey = 'id_municipio';
+    protected $allowedFields = ['nombre_municipio', 'id_distrito_local'];
 
-    // Define el tipo de retorno para los métodos de este modelo
-    protected $returnType     = 'array'; // Puede ser 'array' o 'object'
-    protected $useTimestamps  = false; // No se usan timestamps para esta tabla
-    
-    protected $allowedFields = ['id_estado', 'nombre'];
+    protected $returnType = 'array';
+    protected $useSoftDeletes = false;
+    protected $useTimestamps = false;
 
+    /**
+     * Obtiene todos los Municipios con la información de su Distrito Local asociado.
+     *
+     * @return array Un array de Municipios, cada uno con un índice 'distrito_local'
+     * que contiene los datos del distrito local padre.
+     */
+    public function getMunicipiosConDistritoLocal()
+    {
+        $municipios = $this->findAll();
+        $distritoLocalModel = new DistritoLocalModel(); // Instancia el modelo padre
+
+        foreach ($municipios as $key => $m) {
+            $municipios[$key]['distrito_local'] = $distritoLocalModel->find($m['id_distrito_local']);
+        }
+
+        return $municipios;
+    }
 }

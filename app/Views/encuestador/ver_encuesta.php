@@ -131,17 +131,91 @@
             margin-top: 30px; /* Más espacio superior */
             font-size: 1.05em; /* Ligeramente más grande */
         }
-
         
-
         .btn-back:hover {
             background-color:rgba(197, 5, 107, 0.78) !important; /* Fondo morado al pasar el ratón */
             transform: translateY(-3px); /* Efecto de elevación al pasar el ratón */
             box-shadow: 0 8px 16px rgba(128, 0, 128, 0.4); /* Sombra más grande y morada al pasar el ratón */
         }
 
+       /* CONTENEDOR GENERAL */
+.location-select-container {
+    margin-bottom: 25px;
+    padding: 20px;
+    background-color: var(--bg-card);
+    border-radius: 10px;
+    box-shadow: 0 3px 6px var(--shadow-subtle);
+}
+
+.location-select-container h3 {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: var(--primary-red);
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border-subtle);
+    padding-bottom: 10px;
+}
+
+/* GRUPO DEL FORMULARIO */
+.form-group.form-float {
+    margin-bottom: 25px;
+}
+
+/* LÍNEA FLOTANTE */
+.form-line {
+    position: relative;
+    padding-top: 20px; /* Espacio para el label */
+    padding-bottom: 5px;
+}
+
+/* SELECT */
+.form-line select {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #ddd;
+    padding: 8px 0;
+    background-color: transparent;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s ease-in-out;
+}
+
+/* ESTADO ACTIVO DEL SELECT */
+.form-line select:focus {
+    border-bottom-color: var(--primary-red);
+}
+
+/* LABEL FLOTANTE */
+.form-line label {
+    position: absolute;
+    left: 0;
+    top: 24px;
+    font-size: 16px;
+    color: #aaa;
+    pointer-events: none;
+    transition: 0.2s ease all;
+}
+
+/* CUANDO HAY FOCO O VALOR SELECCIONADO */
+.form-line select:focus ~ label,
+.form-line select:not(:placeholder-shown) ~ label,
+.form-line select:valid ~ label {
+    top: 0;
+    font-size: 12px;
+    color: var(--primary-red);
+}
+
+/* FEEDBACK INVÁLIDO */
+.form-line .invalid-feedback {
+    color: red;
+    font-size: 0.85em;
+    margin-top: 5px;
+}
+
+
         /* Responsive adjustments */
-        @media screen and (max-width: 768px) {|
+        @media screen and (max-width: 768px) {
             .survey-detail-card .header {
                 padding: 15px 20px;
             }
@@ -168,12 +242,22 @@
                 margin-top: 20px;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra más sutil en móviles */
             }
+            .location-select-container {
+                padding: 15px;
+            }
+            .location-select-container h3 {
+                font-size: 1.2em;
+                margin-bottom: 15px;
+                padding-bottom: 8px;
+            }
+            .form-group.form-float {
+                margin-bottom: 15px;
+            }
         }
     </style>
 
 </head>
 <body class="theme-red">
-    <!-- Page Loader -->
     <div class="page-loader-wrapper">
         <div class="loader">
             <div class="preloader">
@@ -189,56 +273,39 @@
             <p>Please wait...</p>
         </div>
     </div>
-    <!-- #END# Page Loader -->
-    <!-- Overlay For Sidebars -->
     <div class="overlay"></div>
-    <!-- #END# Overlay For Sidebars -->
-    <!-- Search Bar -->
-    <!-- #END# Search Bar -->
-    <!-- Top Bar -->
     <nav class="navbar">
         <div class="container-fluid">
             <div class="navbar-header">
                 <a href="javascript:void(0);" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false"></a>
                 <a href="javascript:void(0);" class="bars"></a>
-                <a class="navbar-brand" href="<?= base_url('home') ?>">VOTA Y OPINA</a> <!-- Título dinámico -->
-            </div>
+                <a class="navbar-brand" href="<?= base_url('home') ?>">VOTA Y OPINA</a> </div>
             <div class="collapse navbar-collapse" id="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
-                    <!-- Puedes añadir elementos de navegación aquí si es necesario -->
                     <li class="pull-right"><a href="javascript:void(0);" class="js-right-sidebar" data-close="true"><i class="material-icons">more_vert</i></a></li>
                 </ul>
             </div>
         </div>
     </nav>
-    <!-- #Top Bar -->
     <section>
-        <!-- Left Sidebar -->
         <aside id="leftsidebar" class="sidebar">
-            <!-- User Info -->
             <div class="user-info">
                 <div class="image">
-                    <!-- Foto de perfil dinámica -->
                     <img src="<?= $rutaFotoPerfil ?>" width="48" height="48" alt="User" />
                 </div>
                 <div class="info-container">
-                    <!-- Nombre completo dinámico -->
                     <div class="name" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><?= $nombreCompleto ?></div>
-                    <!-- Nombre de usuario dinámico -->
-                    <div class="email"><?= $nombreUsuario ?></div> <!-- CAMBIADO: Muestra el nombre de usuario -->
+                    <div class="email"><?= $nombreUsuario ?></div>
                     <div class="btn-group user-helper-dropdown">
                         <i class="material-icons" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">keyboard_arrow_down</i>
                         <ul class="dropdown-menu pull-right">
                             <li><a href="javascript:void(0);"><i class="material-icons">person</i>Perfil</a></li>
                             <li role="seperator" class="divider"></li>
-                            <!-- Enlace de cerrar sesión dinámico -->
                             <li><a href="<?= base_url('logout') ?>"><i class="material-icons">input</i>Cerrar Sesión</a></li>
                         </ul>
                     </div>
                 </div>
             </div>
-            <!-- #User Info -->
-            <!-- Menu -->
             <div class="menu">
                 <ul class="list">
                     <li class="header">NAVEGACIÓN PRINCIPAL</li>
@@ -256,15 +323,11 @@
                     </li>
                     <li>
                         <a href="<?= base_url('cam') ?>">
-                            <i class="material-icons">camera_alt</i> <!-- Icono sugerido para 'cam' -->
-                            <span>Cámara</span>
+                            <i class="material-icons">camera_alt</i> <span>Cámara</span>
                         </a>
                     </li>
-                    <!-- Puedes añadir más elementos de navegación aquí si es necesario -->
-                </ul>
+                    </ul>
             </div>
-            <!-- #Menu -->
-            <!-- Footer -->
             <div class="legal">
                 <div class="copyright">
                     &copy; <?= date('Y') ?> <a href="javascript:void(0);">Vota y Opina</a>.
@@ -273,8 +336,7 @@
                     <b>Version: </b> 1.0.0
                 </div>
             </div>
-            <!-- #Footer -->
-        </aside>
+            </aside>
         
     </section>
 
@@ -293,6 +355,80 @@
                                 <p class="survey-description-header"><?= esc($encuesta['descripcion']) ?></p>
                             </div>
                             <div class="body">
+                                <div class="location-select-container">
+                                    <h3>Datos Geográficos de la Encuesta</h3>
+                                    <div class="row">
+                                        <div class="col-sm-6">
+                                            <div class="form-group form-float">
+                                                <div class="form-line">
+                                                    <select class="form-control show-tick" id="selectEstado" name="id_estado" required>
+                                                        <option value="">-- Seleccione un Estado --</option>
+                                                        <?php foreach ($estados as $estado): ?>
+                                                            <option value="<?= esc($estado['id_estado']) ?>"><?= esc($estado['nombre_estado']) ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                    <label class="form-label">Estado</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="form-group form-float">
+                                                <div class="form-line">
+                                                    <select class="form-control show-tick" id="selectDistritoFederal" name="id_distrito_federal" required disabled>
+                                                        <option value="">-- Seleccione un Distrito Federal --</option>
+                                                        </select>
+                                                    <label class="form-label">Distrito Federal</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-sm-6">
+                                            <div class="form-group form-float">
+                                                <div class="form-line">
+                                                    <select class="form-control show-tick" id="selectDistritoLocal" name="id_distrito_local" required disabled>
+                                                        <option value="">-- Seleccione un Distrito Local --</option>
+                                                        </select>
+                                                    <label class="form-label">Distrito Local</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="form-group form-float">
+                                                <div class="form-line">
+                                                    <select class="form-control show-tick" id="selectMunicipio" name="id_municipio" required disabled>
+                                                        <option value="">-- Seleccione un Municipio --</option>
+                                                        </select>
+                                                    <label class="form-label">Municipio</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-sm-6">
+                                            <div class="form-group form-float">
+                                                <div class="form-line">
+                                                    <select class="form-control show-tick" id="selectSeccion" name="id_seccion" required disabled>
+                                                        <option value="">-- Seleccione una Sección --</option>
+                                                        </select>
+                                                    <label class="form-label">Sección</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="form-group form-float">
+                                                <div class="form-line">
+                                                    <select class="form-control show-tick" id="selectComunidad" name="id_comunidad" required disabled>
+                                                        <option value="">-- Seleccione una Comunidad --</option>
+                                                        </select>
+                                                    <label class="form-label">Comunidad</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <?php if (isset($preguntas) && !empty($preguntas)): ?>
                                     <?php foreach ($preguntas as $pregunta): ?>
                                         <div class="question-block">
@@ -328,10 +464,140 @@
         </div>
     </section>
 
-    <!-- Scripts -->
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/jquery/jquery.min.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/bootstrap/js/bootstrap.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/node-waves/waves.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_JS . '/admin.js') ?>"></script>
+
+    <script>
+    $(function () {
+        // Datos de los modelos pasados desde el controlador
+        const distritosFederalesData = <?= json_encode($distritosFederales) ?>;
+        const distritosLocalesData = <?= json_encode($distritosLocales) ?>;
+        const municipiosData = <?= json_encode($municipios) ?>;
+        const seccionesData = <?= json_encode($secciones) ?>;
+        const comunidadesData = <?= json_encode($comunidades) ?>;
+
+        // Selectores
+        const $selectEstado = $('#selectEstado');
+        const $selectDistritoFederal = $('#selectDistritoFederal');
+        const $selectDistritoLocal = $('#selectDistritoLocal');
+        const $selectMunicipio = $('#selectMunicipio');
+        const $selectSeccion = $('#selectSeccion');
+        const $selectComunidad = $('#selectComunidad');
+
+        // --- Funciones auxiliares ---
+        function resetAndDisable($select) {
+            $select.html('<option value="">-- Seleccione --</option>').prop('disabled', true);
+            $select.closest('.form-line').find('label').removeClass('active').css({ top: '8px', fontSize: '16px' });
+            if ($.fn.selectpicker) $select.selectpicker('refresh');
+            if (typeof Waves !== 'undefined' && Waves.inputFloat) {
+                Waves.inputFloat.checkAndInvalidateInput($select.get(0));
+            }
+        }
+
+        function enableAndFloatLabel($select) {
+            $select.prop('disabled', false);
+            $select.closest('.form-line').find('label').addClass('active').css({ top: '-12px', fontSize: '12px' });
+            if ($.fn.selectpicker) $select.selectpicker('refresh');
+            if (typeof Waves !== 'undefined' && Waves.inputFloat) {
+                Waves.inputFloat.checkAndInvalidateInput($select.get(0));
+            }
+        }
+
+        function populateSelect($select, items, valueKey, textKey) {
+            $select.html('<option value="">-- Seleccione --</option>');
+            items.forEach(item => {
+                $select.append(`<option value="${item[valueKey]}">${item[textKey]}</option>`);
+            });
+            enableAndFloatLabel($select);
+        }
+
+        // Inicializar: deshabilitar todo menos Estado
+        resetAndDisable($selectDistritoFederal);
+        resetAndDisable($selectDistritoLocal);
+        resetAndDisable($selectMunicipio);
+        resetAndDisable($selectSeccion);
+        resetAndDisable($selectComunidad);
+
+        $selectEstado.prop('disabled', false);
+        if ($selectEstado.val() !== '') {
+            $selectEstado.closest('.form-line').find('label').addClass('active').css({ top: '-12px', fontSize: '12px' });
+        }
+
+        // --- Eventos encadenados ---
+        $selectEstado.on('change', function () {
+            const estadoId = $(this).val();
+            resetAndDisable($selectDistritoFederal);
+            resetAndDisable($selectDistritoLocal);
+            resetAndDisable($selectMunicipio);
+            resetAndDisable($selectSeccion);
+            resetAndDisable($selectComunidad);
+
+            if (estadoId) {
+                const filtrados = distritosFederalesData.filter(df => parseInt(df.id_estado) === parseInt(estadoId));
+                populateSelect($selectDistritoFederal, filtrados, 'id_distrito_federal', 'nombre_distrito_federal');
+            }
+        });
+
+        $selectDistritoFederal.on('change', function () {
+            const dfId = $(this).val();
+            resetAndDisable($selectDistritoLocal);
+            resetAndDisable($selectMunicipio);
+            resetAndDisable($selectSeccion);
+            resetAndDisable($selectComunidad);
+
+            if (dfId) {
+                const filtrados = distritosLocalesData.filter(dl => parseInt(dl.id_distrito_federal) === parseInt(dfId));
+                populateSelect($selectDistritoLocal, filtrados, 'id_distrito_local', 'nombre_distrito_local');
+            }
+        });
+
+        $selectDistritoLocal.on('change', function () {
+            const dlId = $(this).val();
+            resetAndDisable($selectMunicipio);
+            resetAndDisable($selectSeccion);
+            resetAndDisable($selectComunidad);
+
+            if (dlId) {
+                const filtrados = municipiosData.filter(m => parseInt(m.id_distrito_local) === parseInt(dlId));
+                populateSelect($selectMunicipio, filtrados, 'id_municipio', 'nombre_municipio');
+            }
+        });
+
+        $selectMunicipio.on('change', function () {
+            const municipioId = $(this).val();
+            resetAndDisable($selectSeccion);
+            resetAndDisable($selectComunidad);
+
+            if (municipioId) {
+                const filtrados = seccionesData.filter(s => parseInt(s.id_municipio) === parseInt(municipioId));
+                populateSelect($selectSeccion, filtrados, 'id_seccion', 'nombre_seccion');
+            }
+        });
+
+        $selectSeccion.on('change', function () {
+            const seccionId = $(this).val();
+            resetAndDisable($selectComunidad);
+
+            if (seccionId) {
+                const filtrados = comunidadesData.filter(c => parseInt(c.id_seccion) === parseInt(seccionId));
+                populateSelect($selectComunidad, filtrados, 'id_comunidad', 'nombre_comunidad');
+            }
+        });
+
+        // Refrescar selects con estilos al cargar
+        $('.form-line select').each(function () {
+            $(this).focus().blur();
+        });
+
+        setTimeout(function () {
+            if ($.fn.selectpicker) {
+                $('.form-control.show-tick').selectpicker();
+            }
+        }, 100);
+    });
+</script>
+
 </body>
 </html>
