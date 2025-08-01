@@ -15,20 +15,17 @@ class ComunidadModel extends Model
     protected $useTimestamps = false;
 
     /**
-     * Obtiene todas las Comunidades con la información de su Sección asociada.
-     *
-     * @return array Un array de Comunidades, cada una con un índice 'seccion'
-     * que contiene los datos de la sección padre.
+     * Obtiene una Comunidad y su Sección padre.
+     * @param int $id_comunidad
+     * @return array|null
      */
-    public function getComunidadesConSeccion()
+    public function getComunidadConSeccion(int $id_comunidad)
     {
-        $comunidades = $this->findAll();
-        $seccionModel = new SeccionModel(); // Instancia el modelo padre
-
-        foreach ($comunidades as $key => $c) {
-            $comunidades[$key]['seccion'] = $seccionModel->find($c['id_seccion']);
+        $comunidad = $this->find($id_comunidad);
+        if ($comunidad) {
+            $seccionModel = new SeccionModel();
+            $comunidad['seccion'] = $seccionModel->find($comunidad['id_seccion']);
         }
-
-        return $comunidades;
+        return $comunidad;
     }
 }

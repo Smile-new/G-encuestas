@@ -15,13 +15,22 @@ class EstadoModel extends Model
     protected $useTimestamps = false;
 
     /**
-     * Obtiene todos los estados.
-     * No tiene asociaciones padre ya que es la entidad superior.
-     *
+     * Obtiene todos los Estados. Es la entidad superior.
      * @return array
      */
     public function getAllEstados()
     {
         return $this->findAll();
+    }
+
+    /**
+     * Obtiene todos los Distritos Federales que pertenecen a un Estado.
+     * @param int $id_estado
+     * @return array
+     */
+    public function getDistritosFederalesByEstado(int $id_estado)
+    {
+        $distritoFederalModel = new DistritoFederalModel();
+        return $distritoFederalModel->where('id_estado', $id_estado)->findAll();
     }
 }

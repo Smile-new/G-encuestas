@@ -6,8 +6,7 @@ use CodeIgniter\Controller;
 use App\Models\EncuestaModel;
 use App\Models\PreguntaModel;
 use App\Models\OpcionModel;
-
-// Importa los modelos geográficos que acabamos de definir
+use App\Models\RespuestaModel;
 use App\Models\EstadoModel;
 use App\Models\DistritoFederalModel;
 use App\Models\DistritoLocalModel;
@@ -20,8 +19,8 @@ class Encuestador extends Controller
     protected $encuestaModel;
     protected $preguntaModel;
     protected $opcionModel;
+    protected $respuestaModel;
 
-    // Propiedades para los modelos geográficos
     protected $estadoModel;
     protected $distritoFederalModel;
     protected $distritoLocalModel;
@@ -34,21 +33,17 @@ class Encuestador extends Controller
         $this->encuestaModel = new EncuestaModel();
         $this->preguntaModel = new PreguntaModel();
         $this->opcionModel = new OpcionModel();
+        $this->respuestaModel = new RespuestaModel();
 
-        // Instancia los modelos geográficos
         $this->estadoModel = new EstadoModel();
         $this->distritoFederalModel = new DistritoFederalModel();
         $this->distritoLocalModel = new DistritoLocalModel();
         $this->municipioModel = new MunicipioModel();
         $this->seccionModel = new SeccionModel();
         $this->comunidadModel = new ComunidadModel();
-
-        // helper('url'); // Si no usas BaseController y necesitas el helper aquí, descoméntalo.
     }
 
-    /**
-     * Carga la vista principal del encuestador (home.php).
-     */
+    // Método que coincide con la ruta 'home'
     public function index()
     {
         $session = session();
@@ -59,9 +54,7 @@ class Encuestador extends Controller
         return view('encuestador/home', $data);
     }
 
-    /**
-     * Carga la vista 'cam.php'.
-     */
+    // Método que coincide con la ruta 'cam'
     public function cam()
     {
         $session = session();
@@ -72,20 +65,16 @@ class Encuestador extends Controller
         return view('encuestador/cam', $data);
     }
 
-    /**
-     * Carga la vista 'formularios.php' y pasa las encuestas activas.
-     */
+    // Método que coincide con la ruta 'formularios'
     public function formularios()
     {
         $session = session();
         $encuestasActivas = $this->encuestaModel->where('activa', 1)->findAll();
 
-        // Preparar los datos del usuario para la vista de formularios
         $userData = $session->get('usuario');
         $nombreCompleto = "Invitado";
         $nombreUsuario = "invitado";
-        // Asegúrate de que RECURSOS_ENCUESTADOR_IMAGES esté definido en Constants.php
-        $rutaFotoPerfil = base_url(RECURSOS_ENCUESTADOR_IMAGES . '/user.png'); // Default image
+        $rutaFotoPerfil = base_url(RECURSOS_ENCUESTADOR_IMAGES . '/user.png');
 
         if ($session->get('isLoggedIn') && is_array($userData)) {
             $nombreCompleto = esc($userData['nombre'] ?? '') . ' ' .
@@ -110,42 +99,32 @@ class Encuestador extends Controller
 
     /**
      * Muestra una encuesta específica con sus preguntas y opciones,
-     * e incluye todos los datos geográficos con sus asociaciones.
+     * e incluye un array plano de comunidades con toda su jerarquía de padres.
      * @param int $idEncuesta El ID de la encuesta a mostrar.
      */
+    // Método que coincide con la ruta 'encuestas/ver/(:num)'
     public function verEncuesta($idEncuesta)
     {
         $session = session();
-
-        // Obtener los detalles de la encuesta
         $encuesta = $this->encuestaModel->find($idEncuesta);
 
-        // Si la encuesta no existe o no está activa, redirigir o mostrar un error
         if (!$encuesta || $encuesta['activa'] != 1) {
             return redirect()->to(base_url('formularios'))->with('error', 'La encuesta solicitada no existe o no está activa.');
         }
 
-        // Obtener las preguntas de la encuesta con sus opciones
         $preguntas = $this->preguntaModel->getPreguntasConOpciones($idEncuesta);
+        $comunidadesConJerarquia = $this->getComunidadesConJerarquiaCompleta();
 
-        // --- Cargar TODOS los datos geográficos con sus asociaciones ---
-        // Usamos los métodos que te proporcioné en la última iteración.
-        // Carga los datos de cada nivel.
-        // Los métodos get...ConAsociacion() ya incluyen los datos del padre.
-        $estados = $this->estadoModel->getAllEstados(); // Estado no tiene padre
-        $distritosFederales = $this->distritoFederalModel->getDistritosFederalesConEstado();
-        $distritosLocales = $this->distritoLocalModel->getDistritosLocalesConDistritoFederal();
-        $municipios = $this->municipioModel->getMunicipiosConDistritoLocal();
-        $secciones = $this->seccionModel->getSeccionesConMunicipio();
-        $comunidades = $this->comunidadModel->getComunidadesConSeccion();
-        // --- FIN de carga de datos geográficos ---
-
-
-        // Preparar los datos del usuario para la vista (sidebar, navbar)
         $userData = $session->get('usuario');
+        $id_encuestador = $userData['id_usuario'] ?? null;
+        
+        if (!$id_encuestador) {
+            return redirect()->to(base_url('login'))->with('error', 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+        }
+        
         $nombreCompleto = "Invitado";
         $nombreUsuario = "invitado";
-        $rutaFotoPerfil = base_url(RECURSOS_ENCUESTADOR_IMAGES . '/user.png'); // Default image
+        $rutaFotoPerfil = base_url(RECURSOS_ENCUESTADOR_IMAGES . '/user.png');
 
         if ($session->get('isLoggedIn') && is_array($userData)) {
             $nombreCompleto = esc($userData['nombre'] ?? '') . ' ' .
@@ -157,7 +136,6 @@ class Encuestador extends Controller
             }
         }
 
-        // Pasar todos los datos a la vista
         $data = [
             'isLoggedIn' => $session->get('isLoggedIn'),
             'userData'   => $userData,
@@ -166,18 +144,115 @@ class Encuestador extends Controller
             'rutaFotoPerfil' => $rutaFotoPerfil,
             'encuesta'   => $encuesta,
             'preguntas'  => $preguntas,
-
-            // Añadimos los datos geográficos
-            'estados' => $estados,
-            'distritosFederales' => $distritosFederales,
-            'distritosLocales' => $distritosLocales,
-            'municipios' => $municipios,
-            'secciones' => $secciones,
-            'comunidades' => $comunidades,
+            'comunidades' => $comunidadesConJerarquia,
+            'id_encuestador' => $id_encuestador,
         ];
 
-        // La vista que mostrará todo es 'encuestador/ver_encuesta'
-        // Asegúrate de que tu archivo de vista se llame ver_encuesta.php
         return view('encuestador/ver_encuesta', $data);
+    }
+
+    /**
+     * Método auxiliar para obtener todas las comunidades con su jerarquía de padres completa.
+     * La lógica está adaptada para el flujo de abajo hacia arriba.
+     * @return array
+     */
+    private function getComunidadesConJerarquiaCompleta()
+    {
+        $comunidades = $this->comunidadModel->findAll();
+        $comunidadesConJerarquia = [];
+
+        foreach ($comunidades as $comunidad) {
+            $seccion = $this->seccionModel->find($comunidad['id_seccion']);
+            if ($seccion) {
+                $comunidad['seccion'] = $seccion;
+                $municipio = $this->municipioModel->find($seccion['id_municipio']);
+                if ($municipio) {
+                    $comunidad['seccion']['municipio'] = $municipio;
+                    $distritoLocal = $this->distritoLocalModel->find($municipio['id_distrito_local']);
+                    if ($distritoLocal) {
+                        $comunidad['seccion']['municipio']['distrito_local'] = $distritoLocal;
+                        $distritoFederal = $this->distritoFederalModel->find($distritoLocal['id_distrito_federal']);
+                        if ($distritoFederal) {
+                            $comunidad['seccion']['municipio']['distrito_local']['distrito_federal'] = $distritoFederal;
+                            $estado = $this->estadoModel->find($distritoFederal['id_estado']);
+                            if ($estado) {
+                                $comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['estado'] = $estado;
+                            }
+                        }
+                    }
+                }
+            }
+            $comunidadesConJerarquia[] = $comunidad;
+        }
+
+        return $comunidadesConJerarquia;
+    }
+
+    /**
+     * Procesa la inserción de las respuestas de la encuesta.
+     * El formulario debe enviar los datos de las preguntas, la encuesta, el usuario y la ubicación.
+     */
+    // Método que coincide con la ruta 'encuestas/guardar'
+    public function guardarRespuestas()
+    {
+        $session = session();
+
+        if ($this->request->getMethod() !== 'post' || !$session->get('isLoggedIn')) {
+            return redirect()->to(base_url('formularios'))->with('error', 'Acceso no autorizado.');
+        }
+
+        $idUsuario = $session->get('usuario')['id_usuario'];
+        $idEncuesta = $this->request->getPost('id_encuesta');
+        $idComunidad = $this->request->getPost('id_comunidad');
+
+        // ** AÑADIDO: Lógica para obtener la jerarquía geográfica completa desde el ID de la comunidad **
+        // Se obtiene el objeto comunidad completo desde el modelo
+        $comunidad = $this->comunidadModel->find($idComunidad);
+        if (!$comunidad) {
+            return redirect()->to(base_url('encuestas/ver/' . $idEncuesta))->with('error', 'Error: La comunidad seleccionada no es válida.');
+        }
+
+        // Se obtienen los IDs de los padres a partir del ID de la comunidad
+        $seccion = $this->seccionModel->find($comunidad['id_seccion']);
+        $municipio = $this->municipioModel->find($seccion['id_municipio']);
+        $distritoLocal = $this->distritoLocalModel->find($municipio['id_distrito_local']);
+        $distritoFederal = $this->distritoFederalModel->find($distritoLocal['id_distrito_federal']);
+        $estado = $this->estadoModel->find($distritoFederal['id_estado']);
+
+        // Se asignan los IDs a las variables
+        $idEstado = $estado['id_estado'];
+        $idDistritoFederal = $distritoFederal['id_distrito_federal'];
+        $idDistritoLocal = $distritoLocal['id_distrito_local'];
+        $idMunicipio = $municipio['id_municipio'];
+        $idSeccion = $seccion['id_seccion'];
+        // El id_comunidad ya lo tenemos del formulario
+        
+        foreach ($this->request->getPost() as $key => $value) {
+            // Procesar solo los campos que corresponden a preguntas
+            if (strpos($key, 'respuesta_') === 0) {
+                $idPregunta = str_replace('respuesta_', '', $key);
+
+                // El valor del campo 'respuesta_[id_pregunta]' es el 'id_opcion' seleccionado.
+                $idOpcion = $value;
+
+                $data = [
+                    'id_usuario' => $idUsuario,
+                    'id_encuesta' => $idEncuesta,
+                    'id_pregunta' => $idPregunta,
+                    'id_opcion' => $idOpcion,
+                    'respuesta_texto' => null, // No hay texto libre en tu formulario actual
+                    'id_estado' => $idEstado,
+                    'id_distritofederal' => $idDistritoFederal,
+                    'id_distritolocal' => $idDistritoLocal,
+                    'id_municipio' => $idMunicipio,
+                    'id_seccion' => $idSeccion,
+                    'id_comunidad' => $idComunidad,
+                ];
+                
+                $this->respuestaModel->insert($data);
+            }
+        }
+
+        return redirect()->to(base_url('formularios'))->with('success', 'Respuestas guardadas exitosamente.');
     }
 }

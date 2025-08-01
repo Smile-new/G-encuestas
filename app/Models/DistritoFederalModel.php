@@ -15,21 +15,28 @@ class DistritoFederalModel extends Model
     protected $useTimestamps = false;
 
     /**
-     * Obtiene todos los Distritos Federales con la información de su Estado asociado.
-     *
-     * @return array Un array de Distritos Federales, cada uno con un índice 'estado'
-     * que contiene los datos del estado padre.
+     * Obtiene un Distrito Federal y su Estado padre.
+     * @param int $id_distrito_federal
+     * @return array|null
      */
-    public function getDistritosFederalesConEstado()
+    public function getDistritoFederalConEstado(int $id_distrito_federal)
     {
-        $distritosFederales = $this->findAll();
-        $estadoModel = new EstadoModel(); // Instancia el modelo padre
-
-        foreach ($distritosFederales as $key => $df) {
-            // Busca el estado asociado y lo adjunta
-            $distritosFederales[$key]['estado'] = $estadoModel->find($df['id_estado']);
+        $distritoFederal = $this->find($id_distrito_federal);
+        if ($distritoFederal) {
+            $estadoModel = new EstadoModel();
+            $distritoFederal['estado'] = $estadoModel->find($distritoFederal['id_estado']);
         }
+        return $distritoFederal;
+    }
 
-        return $distritosFederales;
+    /**
+     * Obtiene todos los Distritos Locales que pertenecen a un Distrito Federal.
+     * @param int $id_distrito_federal
+     * @return array
+     */
+    public function getDistritosLocalesByDistritoFederal(int $id_distrito_federal)
+    {
+        $distritoLocalModel = new DistritoLocalModel();
+        return $distritoLocalModel->where('id_distrito_federal', $id_distrito_federal)->findAll();
     }
 }

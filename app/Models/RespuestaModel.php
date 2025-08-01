@@ -6,22 +6,33 @@ use CodeIgniter\Model;
 
 class RespuestaModel extends Model
 {
-    protected $table = 'respuestas'; // Nombre de la tabla
-    protected $primaryKey = 'id_respuesta'; // Clave primaria de la tabla
+    protected $table = 'respuestas';
+
+    protected $primaryKey = 'id_respuesta';
+
+    protected $useAutoIncrement = true;
+
+    protected $returnType = 'array';
 
     protected $allowedFields = [
+        'id_usuario',
         'id_encuesta',
         'id_pregunta',
-        'id_usuario',
-        'respuesta_texto',
         'id_opcion',
-        // Nuevos campos de geolocalización de dirección
-        'calle',
-        'colonia',
-        'municipio',
-        'estado',
-        'fecha_ubicacion' // Campo para la fecha y hora de la ubicación
+        'respuesta_texto',
+        'id_estado',
+        'id_distritofederal',
+        'id_distritolocal',
+        'id_municipio',
+        'id_seccion',
+        'id_comunidad',
     ];
 
-   
+    protected $useTimestamps = true;
+
+    protected $createdField = 'fecha_respuesta';
+
+    protected $updatedField = '';
+
+    protected $useSoftDeletes = false;
 }

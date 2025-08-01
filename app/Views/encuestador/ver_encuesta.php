@@ -116,7 +116,7 @@
 
         /* ESTILOS MEJORADOS PARA EL BOTÓN "VOLVER A FORMULARIOS" */
         .btn-back {
-            background-color:rgb(237, 102, 6) !important; /* Fondo negro */
+            background-color:rgb(237, 102, 6) !important; /* Fondo naranja */
             color: #fff;
             border: none;
             padding: 14px 28px; /* Un poco más grande */
@@ -137,82 +137,88 @@
             transform: translateY(-3px); /* Efecto de elevación al pasar el ratón */
             box-shadow: 0 8px 16px rgba(128, 0, 128, 0.4); /* Sombra más grande y morada al pasar el ratón */
         }
+        
+        /* ESTILOS PARA CAMPOS DESHABILITADOS */
+        .form-line.disabled select {
+            background-color: #f5f5f5; /* Fondo gris para indicar que está deshabilitado */
+            cursor: not-allowed;
+            border-bottom: 1px dashed #ccc;
+        }
 
-       /* CONTENEDOR GENERAL */
-.location-select-container {
-    margin-bottom: 25px;
-    padding: 20px;
-    background-color: var(--bg-card);
-    border-radius: 10px;
-    box-shadow: 0 3px 6px var(--shadow-subtle);
-}
+        /* CONTENEDOR GENERAL */
+        .location-select-container {
+            margin-bottom: 25px;
+            padding: 20px;
+            background-color: var(--bg-card);
+            border-radius: 10px;
+            box-shadow: 0 3px 6px var(--shadow-subtle);
+        }
 
-.location-select-container h3 {
-    font-size: 1.4em;
-    font-weight: 700;
-    color: var(--primary-red);
-    margin-top: 0;
-    margin-bottom: 20px;
-    border-bottom: 2px solid var(--border-subtle);
-    padding-bottom: 10px;
-}
+        .location-select-container h3 {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: var(--primary-red);
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-subtle);
+            padding-bottom: 10px;
+        }
 
-/* GRUPO DEL FORMULARIO */
-.form-group.form-float {
-    margin-bottom: 25px;
-}
+        /* GRUPO DEL FORMULARIO */
+        .form-group.form-float {
+            margin-bottom: 25px;
+        }
 
-/* LÍNEA FLOTANTE */
-.form-line {
-    position: relative;
-    padding-top: 20px; /* Espacio para el label */
-    padding-bottom: 5px;
-}
+        /* LÍNEA FLOTANTE */
+        .form-line {
+            position: relative;
+            padding-top: 20px; /* Espacio para el label */
+            padding-bottom: 5px;
+        }
 
-/* SELECT */
-.form-line select {
-    width: 100%;
-    border: none;
-    border-bottom: 1px solid #ddd;
-    padding: 8px 0;
-    background-color: transparent;
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.2s ease-in-out;
-}
+        /* SELECT */
+        .form-line select {
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid #ddd;
+            padding: 8px 0;
+            background-color: transparent;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s ease-in-out;
+        }
 
-/* ESTADO ACTIVO DEL SELECT */
-.form-line select:focus {
-    border-bottom-color: var(--primary-red);
-}
+        /* ESTADO ACTIVO DEL SELECT */
+        .form-line select:focus {
+            border-bottom-color: var(--primary-red);
+        }
 
-/* LABEL FLOTANTE */
-.form-line label {
-    position: absolute;
-    left: 0;
-    top: 24px;
-    font-size: 16px;
-    color: #aaa;
-    pointer-events: none;
-    transition: 0.2s ease all;
-}
+        /* LABEL FLOTANTE */
+        .form-line label {
+            position: absolute;
+            left: 0;
+            top: 24px;
+            font-size: 16px;
+            color: #aaa;
+            pointer-events: none;
+            transition: 0.2s ease all;
+        }
 
-/* CUANDO HAY FOCO O VALOR SELECCIONADO */
-.form-line select:focus ~ label,
-.form-line select:not(:placeholder-shown) ~ label,
-.form-line select:valid ~ label {
-    top: 0;
-    font-size: 12px;
-    color: var(--primary-red);
-}
+        /* CUANDO HAY FOCO O VALOR SELECCIONADO */
+        .form-line select:focus ~ label,
+        .form-line select:not(:placeholder-shown) ~ label,
+        .form-line select:valid ~ label {
+            top: 0;
+            font-size: 12px;
+            color: var(--primary-red);
+        }
 
-/* FEEDBACK INVÁLIDO */
-.form-line .invalid-feedback {
-    color: red;
-    font-size: 0.85em;
-    margin-top: 5px;
-}
-
+        /* FEEDBACK INVÁLIDO */
+        .form-line .invalid-feedback {
+            color: red;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
 
         /* Responsive adjustments */
         @media screen and (max-width: 768px) {
@@ -341,43 +347,52 @@
     </section>
 
     <section class="content">
-        <div class="container-fluid">
-            <div class="block-header">
-                <h2>DETALLES DE LA ENCUESTA</h2>
-            </div>
+    <div class="container-fluid">
+        <div class="block-header">
+            <h2>DETALLES DE LA ENCUESTA</h2>
+        </div>
 
-            <?php if (isset($encuesta) && !empty($encuesta)): ?>
-                <div class="row clearfix">
-                    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        <div class="card survey-detail-card">
-                            <div class="header">
-                                <h2><?= esc($encuesta['titulo']) ?></h2>
-                                <p class="survey-description-header"><?= esc($encuesta['descripcion']) ?></p>
-                            </div>
-                            <div class="body">
+        <?php if (isset($encuesta) && !empty($encuesta)): ?>
+            <div class="row clearfix">
+                <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
+                    <div class="card survey-detail-card">
+                        <div class="header">
+                            <h2><?= esc($encuesta['titulo']) ?></h2>
+                            <p class="survey-description-header"><?= esc($encuesta['descripcion']) ?></p>
+                        </div>
+                        <div class="body">
+                            <form action="<?= base_url('encuestas/guardar') ?>" method="post" id="surveyForm">
+                                <input type="hidden" name="id_encuesta" value="<?= esc($encuesta['id_encuesta']) ?>">
+                                <input type="hidden" name="id_encuestador" value="<?= esc($id_encuestador) ?>">
+
                                 <div class="location-select-container">
                                     <h3>Datos Geográficos de la Encuesta</h3>
                                     <div class="row">
                                         <div class="col-sm-6">
                                             <div class="form-group form-float">
-                                                <div class="form-line">
-                                                    <select class="form-control show-tick" id="selectEstado" name="id_estado" required>
-                                                        <option value="">-- Seleccione un Estado --</option>
-                                                        <?php foreach ($estados as $estado): ?>
-                                                            <option value="<?= esc($estado['id_estado']) ?>"><?= esc($estado['nombre_estado']) ?></option>
+                                                <div class="form-line disabled">
+                                                    <select class="form-control show-tick" id="selectEstado" name="id_estado" required disabled>
+                                                        <option value="">-- Estado --</option>
+                                                        <?php foreach ($comunidades as $comunidad): ?>
+                                                            <option value="<?= esc($comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['estado']['id_estado']) ?>">
+                                                                <?= esc($comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['estado']['nombre_estado']) ?>
+                                                            </option>
                                                         <?php endforeach; ?>
                                                     </select>
-                                                    <label class="form-label">Estado</label>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-sm-6">
                                             <div class="form-group form-float">
-                                                <div class="form-line">
+                                                <div class="form-line disabled">
                                                     <select class="form-control show-tick" id="selectDistritoFederal" name="id_distrito_federal" required disabled>
-                                                        <option value="">-- Seleccione un Distrito Federal --</option>
-                                                        </select>
-                                                    <label class="form-label">Distrito Federal</label>
+                                                        <option value="">-- Distrito Federal --</option>
+                                                        <?php foreach ($comunidades as $comunidad): ?>
+                                                            <option value="<?= esc($comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['id_distrito_federal']) ?>">
+                                                                <?= esc($comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['nombre_distrito_federal']) ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
@@ -386,21 +401,29 @@
                                     <div class="row">
                                         <div class="col-sm-6">
                                             <div class="form-group form-float">
-                                                <div class="form-line">
+                                                <div class="form-line disabled">
                                                     <select class="form-control show-tick" id="selectDistritoLocal" name="id_distrito_local" required disabled>
-                                                        <option value="">-- Seleccione un Distrito Local --</option>
-                                                        </select>
-                                                    <label class="form-label">Distrito Local</label>
+                                                        <option value="">-- Distrito Local --</option>
+                                                        <?php foreach ($comunidades as $comunidad): ?>
+                                                            <option value="<?= esc($comunidad['seccion']['municipio']['distrito_local']['id_distrito_local']) ?>">
+                                                                <?= esc($comunidad['seccion']['municipio']['distrito_local']['nombre_distrito_local']) ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-sm-6">
                                             <div class="form-group form-float">
-                                                <div class="form-line">
+                                                <div class="form-line disabled">
                                                     <select class="form-control show-tick" id="selectMunicipio" name="id_municipio" required disabled>
-                                                        <option value="">-- Seleccione un Municipio --</option>
-                                                        </select>
-                                                    <label class="form-label">Municipio</label>
+                                                        <option value="">-- Municipio --</option>
+                                                        <?php foreach ($comunidades as $comunidad): ?>
+                                                            <option value="<?= esc($comunidad['seccion']['municipio']['id_municipio']) ?>">
+                                                                <?= esc($comunidad['seccion']['municipio']['nombre_municipio']) ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
@@ -409,26 +432,42 @@
                                     <div class="row">
                                         <div class="col-sm-6">
                                             <div class="form-group form-float">
-                                                <div class="form-line">
+                                                <div class="form-line disabled">
                                                     <select class="form-control show-tick" id="selectSeccion" name="id_seccion" required disabled>
-                                                        <option value="">-- Seleccione una Sección --</option>
-                                                        </select>
-                                                    <label class="form-label">Sección</label>
+                                                        <option value="">-- Sección --</option>
+                                                        <?php foreach ($comunidades as $comunidad): ?>
+                                                            <option value="<?= esc($comunidad['seccion']['id_seccion']) ?>">
+                                                                <?= esc($comunidad['seccion']['nombre_seccion']) ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-sm-6">
                                             <div class="form-group form-float">
                                                 <div class="form-line">
-                                                    <select class="form-control show-tick" id="selectComunidad" name="id_comunidad" required disabled>
+                                                    <select class="form-control show-tick" id="selectComunidad" name="id_comunidad" required>
                                                         <option value="">-- Seleccione una Comunidad --</option>
-                                                        </select>
-                                                    <label class="form-label">Comunidad</label>
+                                                        <?php foreach ($comunidades as $comunidad): ?>
+                                                            <option 
+                                                                value="<?= esc($comunidad['id_comunidad']) ?>"
+                                                                data-seccion-id="<?= esc($comunidad['seccion']['id_seccion']) ?>"
+                                                                data-municipio-id="<?= esc($comunidad['seccion']['municipio']['id_municipio']) ?>"
+                                                                data-distrito-local-id="<?= esc($comunidad['seccion']['municipio']['distrito_local']['id_distrito_local']) ?>"
+                                                                data-distrito-federal-id="<?= esc($comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['id_distrito_federal']) ?>"
+                                                                data-estado-id="<?= esc($comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['estado']['id_estado']) ?>"
+                                                            >
+                                                                <?= esc($comunidad['nombre_comunidad']) ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+
                                 <?php if (isset($preguntas) && !empty($preguntas)): ?>
                                     <?php foreach ($preguntas as $pregunta): ?>
                                         <div class="question-block">
@@ -436,7 +475,10 @@
                                             <?php if (isset($pregunta['opciones']) && !empty($pregunta['opciones'])): ?>
                                                 <ul class="options-list">
                                                     <?php foreach ($pregunta['opciones'] as $opcion): ?>
-                                                        <li><i class="material-icons">radio_button_unchecked</i> <?= esc($opcion['texto_opcion']) ?></li>
+                                                        <li>
+                                                            <input type="radio" name="respuesta_<?= esc($pregunta['id_pregunta']) ?>" id="opcion_<?= esc($opcion['id_opcion']) ?>" value="<?= esc($opcion['id_opcion']) ?>" required>
+                                                            <label for="opcion_<?= esc($opcion['id_opcion']) ?>"><?= esc($opcion['texto_opcion']) ?></label>
+                                                        </li>
                                                     <?php endforeach; ?>
                                                 </ul>
                                             <?php else: ?>
@@ -449,155 +491,140 @@
                                 <?php endif; ?>
 
                                 <a href="<?= base_url('formularios') ?>" class="btn-back waves-effect">Volver a Formularios</a>
+                                <button type="submit" class="btn-back waves-effect">Enviar Respuestas</button>
+                            </form>
                             </div>
-                        </div>
                     </div>
                 </div>
-            <?php else: ?>
-                <div class="card no-surveys-message">
-                    <i class="material-icons">sentiment_dissatisfied</i>
-                    <h2>Encuesta no encontrada o no disponible.</h2>
-                    <p>Es posible que la encuesta haya sido eliminada o que el enlace sea incorrecto.</p>
-                    <a href="<?= base_url('formularios') ?>" class="btn-back waves-effect">Volver a Formularios</a>
-                </div>
-            <?php endif; ?>
-        </div>
-    </section>
+            </div>
+        <?php else: ?>
+            <div class="card no-surveys-message">
+                <i class="material-icons">sentiment_dissatisfied</i>
+                <h2>Encuesta no encontrada o no disponible.</h2>
+                <p>Es posible que la encuesta haya sido eliminada o que el enlace sea incorrecto.</p>
+                <a href="<?= base_url('formularios') ?>" class="btn-back waves-effect">Volver a Formularios</a>
+                <a href="<?= base_url('formularios') ?>" class="btn-back waves-effect">Enviar Respuetas</a>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>
 
-    <script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/jquery/jquery.min.js') ?>"></script>
-    <script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/bootstrap/js/bootstrap.js') ?>"></script>
-    <script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/node-waves/waves.js') ?>"></script>
-    <script src="<?= base_url(RECURSOS_ENCUESTADOR_JS . '/admin.js') ?>"></script>
+<script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/jquery/jquery.min.js') ?>"></script>
+<script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/bootstrap/js/bootstrap.js') ?>"></script>
+<script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/node-waves/waves.js') ?>"></script>
+<script src="<?= base_url(RECURSOS_ENCUESTADOR_JS . '/admin.js') ?>"></script>
 
-    <script>
+<script>
     $(function () {
-        // Datos de los modelos pasados desde el controlador
-        const distritosFederalesData = <?= json_encode($distritosFederales) ?>;
-        const distritosLocalesData = <?= json_encode($distritosLocales) ?>;
-        const municipiosData = <?= json_encode($municipios) ?>;
-        const seccionesData = <?= json_encode($secciones) ?>;
-        const comunidadesData = <?= json_encode($comunidades) ?>;
-
-        // Selectores
-        const $selectEstado = $('#selectEstado');
-        const $selectDistritoFederal = $('#selectDistritoFederal');
-        const $selectDistritoLocal = $('#selectDistritoLocal');
-        const $selectMunicipio = $('#selectMunicipio');
-        const $selectSeccion = $('#selectSeccion');
+        // Obtenemos los selectores
         const $selectComunidad = $('#selectComunidad');
+        const $selectSeccion = $('#selectSeccion');
+        const $selectMunicipio = $('#selectMunicipio');
+        const $selectDistritoLocal = $('#selectDistritoLocal');
+        const $selectDistritoFederal = $('#selectDistritoFederal');
+        const $selectEstado = $('#selectEstado');
+        const allSelects = [$selectEstado, $selectDistritoFederal, $selectDistritoLocal, $selectMunicipio, $selectSeccion];
 
-        // --- Funciones auxiliares ---
-        function resetAndDisable($select) {
-            $select.html('<option value="">-- Seleccione --</option>').prop('disabled', true);
-            $select.closest('.form-line').find('label').removeClass('active').css({ top: '8px', fontSize: '16px' });
-            if ($.fn.selectpicker) $select.selectpicker('refresh');
-            if (typeof Waves !== 'undefined' && Waves.inputFloat) {
-                Waves.inputFloat.checkAndInvalidateInput($select.get(0));
+        // Función para manejar el "flotado" del label
+        function floatLabel($select) {
+            const formLine = $select.closest('.form-line');
+            if ($select.val() && $select.val() !== '') {
+                formLine.find('label').addClass('active').css({ top: '0px', fontSize: '12px' });
+            } else {
+                formLine.find('label').removeClass('active').css({ top: '24px', fontSize: '16px' });
+            }
+            if ($.fn.selectpicker) {
+                $select.selectpicker('refresh');
             }
         }
 
-        function enableAndFloatLabel($select) {
-            $select.prop('disabled', false);
-            $select.closest('.form-line').find('label').addClass('active').css({ top: '-12px', fontSize: '12px' });
-            if ($.fn.selectpicker) $select.selectpicker('refresh');
-            if (typeof Waves !== 'undefined' && Waves.inputFloat) {
-                Waves.inputFloat.checkAndInvalidateInput($select.get(0));
-            }
-        }
+        // Llenar los selectores de nivel superior con los datos disponibles (sin duplicados)
+        // Usamos un Set para evitar opciones repetidas
+        function populateAllSelects() {
+            const dataComunidades = <?= json_encode($comunidades) ?>;
 
-        function populateSelect($select, items, valueKey, textKey) {
-            $select.html('<option value="">-- Seleccione --</option>');
-            items.forEach(item => {
-                $select.append(`<option value="${item[valueKey]}">${item[textKey]}</option>`);
+            const estadosSet = new Set();
+            const dfSet = new Set();
+            const dlSet = new Set();
+            const municipioSet = new Set();
+            const seccionSet = new Set();
+
+            dataComunidades.forEach(comunidad => {
+                if (comunidad.seccion && comunidad.seccion.municipio && comunidad.seccion.municipio.distrito_local && comunidad.seccion.municipio.distrito_local.distrito_federal && comunidad.seccion.municipio.distrito_local.distrito_federal.estado) {
+                    estadosSet.add(JSON.stringify(comunidad.seccion.municipio.distrito_local.distrito_federal.estado));
+                    dfSet.add(JSON.stringify(comunidad.seccion.municipio.distrito_local.distrito_federal));
+                    dlSet.add(JSON.stringify(comunidad.seccion.municipio.distrito_local));
+                    municipioSet.add(JSON.stringify(comunidad.seccion.municipio));
+                    seccionSet.add(JSON.stringify(comunidad.seccion));
+                }
             });
-            enableAndFloatLabel($select);
+
+            const estados = Array.from(estadosSet).map(item => JSON.parse(item));
+            const dfs = Array.from(dfSet).map(item => JSON.parse(item));
+            const dls = Array.from(dlSet).map(item => JSON.parse(item));
+            const municipios = Array.from(municipioSet).map(item => JSON.parse(item));
+            const secciones = Array.from(seccionSet).map(item => JSON.parse(item));
+            
+            // Llenar selectores con los datos únicos
+            $selectEstado.empty().append('<option value="">-- Estado --</option>');
+            estados.forEach(e => $selectEstado.append(`<option value="${e.id_estado}">${e.nombre_estado}</option>`));
+
+            $selectDistritoFederal.empty().append('<option value="">-- Distrito Federal --</option>');
+            dfs.forEach(d => $selectDistritoFederal.append(`<option value="${d.id_distrito_federal}">${d.nombre_distrito_federal}</option>`));
+
+            $selectDistritoLocal.empty().append('<option value="">-- Distrito Local --</option>');
+            dls.forEach(d => $selectDistritoLocal.append(`<option value="${d.id_distrito_local}">${d.nombre_distrito_local}</option>`));
+
+            $selectMunicipio.empty().append('<option value="">-- Municipio --</option>');
+            municipios.forEach(m => $selectMunicipio.append(`<option value="${m.id_municipio}">${m.nombre_municipio}</option>`));
+
+            $selectSeccion.empty().append('<option value="">-- Sección --</option>');
+            secciones.forEach(s => $selectSeccion.append(`<option value="${s.id_seccion}">${s.nombre_seccion}</option>`));
         }
 
-        // Inicializar: deshabilitar todo menos Estado
-        resetAndDisable($selectDistritoFederal);
-        resetAndDisable($selectDistritoLocal);
-        resetAndDisable($selectMunicipio);
-        resetAndDisable($selectSeccion);
-        resetAndDisable($selectComunidad);
+        // Llamar a la función al cargar la página para llenar todos los selectores
+        populateAllSelects();
 
-        $selectEstado.prop('disabled', false);
-        if ($selectEstado.val() !== '') {
-            $selectEstado.closest('.form-line').find('label').addClass('active').css({ top: '-12px', fontSize: '12px' });
-        }
+        // Inicializar los selectores y sus etiquetas
+        allSelects.forEach($select => floatLabel($select));
+        floatLabel($selectComunidad);
+        
+        // --- Evento para la lógica inversa (bottom-up) cuando se selecciona una comunidad ---
+        $selectComunidad.on('change', function () {
+            const selectedOption = $(this).find('option:selected');
 
-        // --- Eventos encadenados ---
-        $selectEstado.on('change', function () {
-            const estadoId = $(this).val();
-            resetAndDisable($selectDistritoFederal);
-            resetAndDisable($selectDistritoLocal);
-            resetAndDisable($selectMunicipio);
-            resetAndDisable($selectSeccion);
-            resetAndDisable($selectComunidad);
+            // Resetear todos los selectores superiores
+            allSelects.forEach($select => {
+                $select.val('');
+            });
 
-            if (estadoId) {
-                const filtrados = distritosFederalesData.filter(df => parseInt(df.id_estado) === parseInt(estadoId));
-                populateSelect($selectDistritoFederal, filtrados, 'id_distrito_federal', 'nombre_distrito_federal');
+            if (selectedOption.val()) {
+                // Obtener los IDs de los atributos data-
+                const estadoId = selectedOption.data('estado-id');
+                const distritoFederalId = selectedOption.data('distrito-federal-id');
+                const distritoLocalId = selectedOption.data('distrito-local-id');
+                const municipioId = selectedOption.data('municipio-id');
+                const seccionId = selectedOption.data('seccion-id');
+
+                // Establecer los valores en los selectores correspondientes
+                $selectEstado.val(estadoId);
+                $selectDistritoFederal.val(distritoFederalId);
+                $selectDistritoLocal.val(distritoLocalId);
+                $selectMunicipio.val(municipioId);
+                $selectSeccion.val(seccionId);
             }
+            
+            // Actualizar los selectores visualmente (flotar etiquetas y refrescar selectpicker)
+            allSelects.forEach($select => floatLabel($select));
         });
 
-        $selectDistritoFederal.on('change', function () {
-            const dfId = $(this).val();
-            resetAndDisable($selectDistritoLocal);
-            resetAndDisable($selectMunicipio);
-            resetAndDisable($selectSeccion);
-            resetAndDisable($selectComunidad);
-
-            if (dfId) {
-                const filtrados = distritosLocalesData.filter(dl => parseInt(dl.id_distrito_federal) === parseInt(dfId));
-                populateSelect($selectDistritoLocal, filtrados, 'id_distrito_local', 'nombre_distrito_local');
-            }
-        });
-
-        $selectDistritoLocal.on('change', function () {
-            const dlId = $(this).val();
-            resetAndDisable($selectMunicipio);
-            resetAndDisable($selectSeccion);
-            resetAndDisable($selectComunidad);
-
-            if (dlId) {
-                const filtrados = municipiosData.filter(m => parseInt(m.id_distrito_local) === parseInt(dlId));
-                populateSelect($selectMunicipio, filtrados, 'id_municipio', 'nombre_municipio');
-            }
-        });
-
-        $selectMunicipio.on('change', function () {
-            const municipioId = $(this).val();
-            resetAndDisable($selectSeccion);
-            resetAndDisable($selectComunidad);
-
-            if (municipioId) {
-                const filtrados = seccionesData.filter(s => parseInt(s.id_municipio) === parseInt(municipioId));
-                populateSelect($selectSeccion, filtrados, 'id_seccion', 'nombre_seccion');
-            }
-        });
-
-        $selectSeccion.on('change', function () {
-            const seccionId = $(this).val();
-            resetAndDisable($selectComunidad);
-
-            if (seccionId) {
-                const filtrados = comunidadesData.filter(c => parseInt(c.id_seccion) === parseInt(seccionId));
-                populateSelect($selectComunidad, filtrados, 'id_comunidad', 'nombre_comunidad');
-            }
-        });
-
-        // Refrescar selects con estilos al cargar
-        $('.form-line select').each(function () {
-            $(this).focus().blur();
-        });
-
+        // Refrescar todos los selectores de Bootstrap al final de la carga
         setTimeout(function () {
             if ($.fn.selectpicker) {
-                $('.form-control.show-tick').selectpicker();
+                $('.form-control.show-tick').selectpicker('refresh');
             }
         }, 100);
     });
 </script>
-
 </body>
 </html>

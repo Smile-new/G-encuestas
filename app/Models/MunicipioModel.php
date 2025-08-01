@@ -15,20 +15,28 @@ class MunicipioModel extends Model
     protected $useTimestamps = false;
 
     /**
-     * Obtiene todos los Municipios con la información de su Distrito Local asociado.
-     *
-     * @return array Un array de Municipios, cada uno con un índice 'distrito_local'
-     * que contiene los datos del distrito local padre.
+     * Obtiene un Municipio y su Distrito Local padre.
+     * @param int $id_municipio
+     * @return array|null
      */
-    public function getMunicipiosConDistritoLocal()
+    public function getMunicipioConDistritoLocal(int $id_municipio)
     {
-        $municipios = $this->findAll();
-        $distritoLocalModel = new DistritoLocalModel(); // Instancia el modelo padre
-
-        foreach ($municipios as $key => $m) {
-            $municipios[$key]['distrito_local'] = $distritoLocalModel->find($m['id_distrito_local']);
+        $municipio = $this->find($id_municipio);
+        if ($municipio) {
+            $distritoLocalModel = new DistritoLocalModel();
+            $municipio['distrito_local'] = $distritoLocalModel->find($municipio['id_distrito_local']);
         }
+        return $municipio;
+    }
 
-        return $municipios;
+    /**
+     * Obtiene todas las Secciones que pertenecen a un Municipio.
+     * @param int $id_municipio
+     * @return array
+     */
+    public function getSeccionesByMunicipio(int $id_municipio)
+    {
+        $seccionModel = new SeccionModel();
+        return $seccionModel->where('id_municipio', $id_municipio)->findAll();
     }
 }

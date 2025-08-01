@@ -15,20 +15,28 @@ class SeccionModel extends Model
     protected $useTimestamps = false;
 
     /**
-     * Obtiene todas las Secciones con la información de su Municipio asociado.
-     *
-     * @return array Un array de Secciones, cada una con un índice 'municipio'
-     * que contiene los datos del municipio padre.
+     * Obtiene una Sección y su Municipio padre.
+     * @param int $id_seccion
+     * @return array|null
      */
-    public function getSeccionesConMunicipio()
+    public function getSeccionConMunicipio(int $id_seccion)
     {
-        $secciones = $this->findAll();
-        $municipioModel = new MunicipioModel(); // Instancia el modelo padre
-
-        foreach ($secciones as $key => $s) {
-            $secciones[$key]['municipio'] = $municipioModel->find($s['id_municipio']);
+        $seccion = $this->find($id_seccion);
+        if ($seccion) {
+            $municipioModel = new MunicipioModel();
+            $seccion['municipio'] = $municipioModel->find($seccion['id_municipio']);
         }
+        return $seccion;
+    }
 
-        return $secciones;
+    /**
+     * Obtiene todas las Comunidades que pertenecen a una Sección.
+     * @param int $id_seccion
+     * @return array
+     */
+    public function getComunidadesBySeccion(int $id_seccion)
+    {
+        $comunidadModel = new ComunidadModel();
+        return $comunidadModel->where('id_seccion', $id_seccion)->findAll();
     }
 }

@@ -15,20 +15,28 @@ class DistritoLocalModel extends Model
     protected $useTimestamps = false;
 
     /**
-     * Obtiene todos los Distritos Locales con la información de su Distrito Federal asociado.
-     *
-     * @return array Un array de Distritos Locales, cada uno con un índice 'distrito_federal'
-     * que contiene los datos del distrito federal padre.
+     * Obtiene un Distrito Local y su Distrito Federal padre.
+     * @param int $id_distrito_local
+     * @return array|null
      */
-    public function getDistritosLocalesConDistritoFederal()
+    public function getDistritoLocalConDistritoFederal(int $id_distrito_local)
     {
-        $distritosLocales = $this->findAll();
-        $distritoFederalModel = new DistritoFederalModel(); // Instancia el modelo padre
-
-        foreach ($distritosLocales as $key => $dl) {
-            $distritosLocales[$key]['distrito_federal'] = $distritoFederalModel->find($dl['id_distrito_federal']);
+        $distritoLocal = $this->find($id_distrito_local);
+        if ($distritoLocal) {
+            $distritoFederalModel = new DistritoFederalModel();
+            $distritoLocal['distrito_federal'] = $distritoFederalModel->find($distritoLocal['id_distrito_federal']);
         }
+        return $distritoLocal;
+    }
 
-        return $distritosLocales;
+    /**
+     * Obtiene todos los Municipios que pertenecen a un Distrito Local.
+     * @param int $id_distrito_local
+     * @return array
+     */
+    public function getMunicipiosByDistritoLocal(int $id_distrito_local)
+    {
+        $municipioModel = new MunicipioModel();
+        return $municipioModel->where('id_distrito_local', $id_distrito_local)->findAll();
     }
 }
