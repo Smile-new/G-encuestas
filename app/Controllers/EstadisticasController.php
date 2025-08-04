@@ -1,183 +1,196 @@
 <?php
+
 namespace App\Controllers;
 
+use CodeIgniter\Controller;
+use App\Models\RespuestaModel;
 use App\Models\EncuestaModel;
 use App\Models\PreguntaModel;
-use App\Models\RespuestaModel;
 use App\Models\OpcionModel;
 use App\Models\EstadoModel;
+use App\Models\DistritoFederalModel;
+use App\Models\DistritoLocalModel;
 use App\Models\MunicipioModel;
-use App\Models\UsuarioModel;
-use App\Models\SeccionModel; // <-- NUEVO: Importar el SeccionModel
+use App\Models\SeccionModel;
+use App\Models\ComunidadModel;
 
-class EstadisticasController extends BaseController
+class EstadisticasController extends Controller
 {
+    protected $respuestaModel;
     protected $encuestaModel;
-    protected $estadoModel;
     protected $preguntaModel;
+    protected $opcionModel;
+    protected $estadoModel;
+    protected $distritoFederalModel;
+    protected $distritoLocalModel;
     protected $municipioModel;
-    protected $seccionModel; // <-- NUEVO: Declarar la propiedad para SeccionModel
+    protected $seccionModel;
+    protected $comunidadModel;
 
     public function __construct()
     {
+        $this->respuestaModel = new RespuestaModel();
         $this->encuestaModel = new EncuestaModel();
-        $this->estadoModel = new EstadoModel();
         $this->preguntaModel = new PreguntaModel();
+        $this->opcionModel = new OpcionModel();
+        $this->estadoModel = new EstadoModel();
+        $this->distritoFederalModel = new DistritoFederalModel();
+        $this->distritoLocalModel = new DistritoLocalModel();
         $this->municipioModel = new MunicipioModel();
-        $this->seccionModel = new SeccionModel(); // <-- NUEVO: Instanciar SeccionModel
+        $this->seccionModel = new SeccionModel();
+        $this->comunidadModel = new ComunidadModel();
     }
 
+    /**
+     * Muestra la interfaz de estadísticas para el usuario.
+     */
     public function index()
     {
+        $session = session();
+        if (!$session->get('isLoggedIn')) {
+            return redirect()->to(base_url('login'))->with('error', 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+        }
+
+        $userData = $session->get('usuario');
+        $nombreCompleto = esc($userData['nombre'] ?? '') . ' ' . esc($userData['apellido_paterno'] ?? '');
+        $nombreUsuario = esc($userData['usuario'] ?? '');
+        $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto'] ?? 'user.png'));
+        $rolTexto = '';
+        if (isset($userData['id_rol'])) {
+            switch ($userData['id_rol']) {
+                case 1: $rolTexto = 'Administrador'; break;
+                case 2: $rolTexto = 'Operador'; break;
+                case 3: $rolTexto = 'Encuestador'; break;
+                default: $rolTexto = 'Miembro'; break;
+            }
+        }
+        
+        $encuestas = $this->encuestaModel->where('activa', 1)->findAll();
+        $estados = $this->estadoModel->findAll();
+
         $data = [
-            'encuestas' => $this->encuestaModel->findAll(),
-            'estados' => $this->estadoModel->findAll()
+            'isLoggedIn' => $session->get('isLoggedIn'),
+            'userData'   => $userData,
+            'nombreCompleto' => $nombreCompleto,
+            'nombreUsuario' => $nombreUsuario,
+            'rolTexto' => $rolTexto,
+            'rutaFotoPerfil' => $rutaFotoPerfil,
+            'encuestas' => $encuestas,
+            'estados' => $estados,
         ];
-        return view('administrador/estadisticas', $data);
+
+        return view('admin/estadisticas', $data);
     }
 
+    /**
+     * Método AJAX para obtener las preguntas de una encuesta específica.
+     */
     public function getPreguntas($idEncuesta)
     {
         $preguntas = $this->preguntaModel->where('id_encuesta', $idEncuesta)->findAll();
         return $this->response->setJSON($preguntas);
     }
-
-    public function getMunicipios($idEstado)
+    
+    /**
+     * Método AJAX para obtener los distritos federales de un estado.
+     */
+    public function getDistritosFederales($idEstado)
     {
-        $municipios = $this->municipioModel->where('id_estado', $idEstado)->findAll();
-        if(empty($municipios)) {
-            return $this->response->setJSON([]);
-        }
+        $distritosFederales = $this->distritoFederalModel->where('id_estado', $idEstado)->findAll();
+        return $this->response->setJSON($distritosFederales);
+    }
+
+    /**
+     * Método AJAX para obtener los distritos locales de un distrito federal.
+     */
+    public function getDistritosLocales($idDistritoFederal)
+    {
+        $distritosLocales = $this->distritoLocalModel->where('id_distrito_federal', $idDistritoFederal)->findAll();
+        return $this->response->setJSON($distritosLocales);
+    }
+
+    /**
+     * Método AJAX para obtener los municipios de un distrito local.
+     */
+    public function getMunicipios($idDistritoLocal)
+    {
+        $municipios = $this->municipioModel->where('id_distrito_local', $idDistritoLocal)->findAll();
         return $this->response->setJSON($municipios);
     }
 
-    // <-- NUEVO: Método para obtener secciones basado en el id_municipio
+    /**
+     * Método AJAX para obtener las secciones de un municipio.
+     */
     public function getSecciones($idMunicipio)
     {
         $secciones = $this->seccionModel->where('id_municipio', $idMunicipio)->findAll();
-        if(empty($secciones)) {
-            return $this->response->setJSON([]);
-        }
         return $this->response->setJSON($secciones);
     }
 
-    public function obtenerResultadosResumen()
+    /**
+     * Método AJAX para obtener las comunidades de una sección.
+     */
+    public function getComunidades($idSeccion)
     {
-        $id_pregunta = $this->request->getPost('id_pregunta');
-        $id_estado = $this->request->getPost('id_estado');
-        $id_municipio = $this->request->getPost('id_municipio');
-        $id_seccion = $this->request->getPost('id_seccion'); // <-- NUEVO: Obtener id_seccion
-
-        $db = \Config\Database::connect();
-        
-        $sql = "
-            SELECT 
-                O.opcion_texto as opcion, 
-                COUNT(R.id_respuesta) as votos
-            FROM respuestas R
-            JOIN opciones O ON R.id_opcion = O.id_opcion
-            JOIN usuarios U ON R.id_usuario = U.id_usuario
-            WHERE R.id_pregunta = ?
-        ";
-        $params = [$id_pregunta];
-
-        if ($id_estado) {
-            $sql .= " AND U.id_estado = ?";
-            $params[] = $id_estado;
-        }
-        if ($id_municipio) {
-            $sql .= " AND U.id_municipio = ?";
-            $params[] = $id_municipio;
-        }
-        if ($id_seccion) { // <-- NUEVO: Añadir filtro por sección
-            $sql .= " AND U.id_seccion = ?";
-            $params[] = $id_seccion;
-        }
-
-        $sql .= "
-            GROUP BY O.opcion_texto
-            ORDER BY votos DESC
-        ";
-
-        $query = $db->query($sql, $params);
-
-        return $this->response->setJSON($query->getResultArray());
+        $comunidades = $this->comunidadModel->where('id_seccion', $idSeccion)->findAll();
+        return $this->response->setJSON($comunidades);
     }
 
-    public function obtenerRespuestasDetalle()
+    /**
+     * Método AJAX para obtener los datos de las respuestas de una pregunta.
+     */
+    public function getRespuestas()
     {
-        $id_pregunta = $this->request->getPost('id_pregunta');
-        $id_estado = $this->request->getPost('id_estado');
-        $id_municipio = $this->request->getPost('id_municipio');
-        $id_seccion = $this->request->getPost('id_seccion'); // <-- NUEVO: Obtener id_seccion
+        $idEncuesta = $this->request->getGet('id_encuesta');
+        $idPregunta = $this->request->getGet('id_pregunta');
+        $idEstado = $this->request->getGet('id_estado');
+        $idDistritoFederal = $this->request->getGet('id_distrito_federal');
+        $idDistritoLocal = $this->request->getGet('id_distrito_local');
+        $idMunicipio = $this->request->getGet('id_municipio');
+        $idSeccion = $this->request->getGet('id_seccion');
+        $idComunidad = $this->request->getGet('id_comunidad');
 
-        $db = \Config\Database::connect();
+        $query = $this->respuestaModel
+                        ->select('id_opcion, COUNT(id_respuesta) as total')
+                        ->where('id_encuesta', $idEncuesta)
+                        ->where('id_pregunta', $idPregunta);
         
-        $sql = "
-            SELECT
-                O.opcion_texto AS opcion_elegida,
-                (SELECT COUNT(r2.id_respuesta)
-                 FROM respuestas r2
-                 JOIN usuarios u2 ON r2.id_usuario = u2.id_usuario
-                 WHERE r2.id_pregunta = R.id_pregunta
-                 AND r2.id_opcion = R.id_opcion
-        ";
-        $params = [];
-
-        // Parámetros para la subconsulta
-        if ($id_estado) {
-            $sql .= " AND u2.id_estado = ?";
-            $params[] = $id_estado;
+        if (!empty($idEstado)) {
+            $query->where('id_estado', $idEstado);
         }
-        if ($id_municipio) {
-            $sql .= " AND u2.id_municipio = ?";
-            $params[] = $id_municipio;
+        // Corrección: Usar el nombre de campo sin guion bajo, como en tu RespuestaModel
+        if (!empty($idDistritoFederal)) {
+            $query->where('id_distritofederal', $idDistritoFederal);
         }
-        if ($id_seccion) { // <-- NUEVO: Añadir filtro por sección en subconsulta
-            $sql .= " AND u2.id_seccion = ?";
-            $params[] = $id_seccion;
+        // Corrección: Usar el nombre de campo sin guion bajo, como en tu RespuestaModel
+        if (!empty($idDistritoLocal)) {
+            $query->where('id_distritolocal', $idDistritoLocal);
+        }
+        if (!empty($idMunicipio)) {
+            $query->where('id_municipio', $idMunicipio);
+        }
+        if (!empty($idSeccion)) {
+            $query->where('id_seccion', $idSeccion);
+        }
+        if (!empty($idComunidad)) {
+            $query->where('id_comunidad', $idComunidad);
         }
 
-        $sql .= "
-                ) AS votos,
-                TRIM(
-                    CONCAT_WS(', ',
-                        NULLIF(R.calle, ''),
-                        NULLIF(R.colonia, ''),
-                        NULLIF(R.municipio, ''),
-                        NULLIF(R.estado, '')
-                    )
-                ) AS ubicacion_completa,
-                R.fecha_ubicacion
-            FROM respuestas R
-            JOIN opciones O ON R.id_opcion = O.id_opcion
-            JOIN usuarios U ON R.id_usuario = U.id_usuario
-            WHERE R.id_pregunta = ?
-        ";
-        // El primer parámetro de la consulta principal (id_pregunta) se agrega al final del array $params
-        // después de todos los parámetros de la subconsulta.
-        $params[] = $id_pregunta; 
+        $resultados = $query->groupBy('id_opcion')
+                            ->findAll();
 
-        // Parámetros para la consulta principal
-        if ($id_estado) {
-            $sql .= " AND U.id_estado = ?";
-            $params[] = $id_estado;
+        $opcionModel = new OpcionModel();
+        $datosGrafica = [];
+        foreach ($resultados as $resultado) {
+            $opcion = $opcionModel->find($resultado['id_opcion']);
+            if ($opcion) {
+                $datosGrafica[] = [
+                    'opcion' => $opcion['texto_opcion'],
+                    'total' => (int) $resultado['total']
+                ];
+            }
         }
-        if ($id_municipio) {
-            $sql .= " AND U.id_municipio = ?";
-            $params[] = $id_municipio;
-        }
-        if ($id_seccion) { // <-- NUEVO: Añadir filtro por sección en consulta principal
-            $sql .= " AND U.id_seccion = ?";
-            $params[] = $id_seccion;
-        }
-
-        $sql .= "
-            ORDER BY O.opcion_texto ASC, R.fecha_ubicacion DESC
-        ";
-
-        $query = $db->query($sql, $params);
-
-        return $this->response->setJSON($query->getResultArray());
+        
+        return $this->response->setJSON($datosGrafica);
     }
 }

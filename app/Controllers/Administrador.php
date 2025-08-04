@@ -189,11 +189,7 @@ class Administrador extends Controller // Asegúrate de que este nombre de clase
     }
 
     // Método para la visualización de estadísticas (vista estadisticas.php)
-    public function estadisticas()
-    {
-        // ... (Tu lógica existente para estadisticas)
-        return view('admin/estadisticas');
-    }
+   
 
     // Aquí puedes añadir otros métodos como `tablas()`, `users()`, `crear_encuesta()` etc.
     // public function tablas() { /* ... */ return view('admin/tablas'); }

@@ -84,16 +84,21 @@ $routes->get('/logout', 'LoginController::logout');
 
 
 
-$routes->get('estadisticas/obtenerPreguntas/(:num)', 'Encuestas::obtenerPreguntas/$1');
-$routes->get('estadisticas/obtenerResultados/(:num)', 'Encuestas::obtenerResultados/$1');
+//Estadisticas
+$routes->get('estadistica', 'EstadisticasController::index');
+$routes->get('estadistica/getPreguntas/(:num)', 'EstadisticasController::getPreguntas/$1');
+$routes->get('estadistica/getDistritosFederales/(:num)', 'EstadisticasController::getDistritosFederales/$1');
+$routes->get('estadistica/getDistritosLocales/(:num)', 'EstadisticasController::getDistritosLocales/$1');
+$routes->get('estadistica/getMunicipios/(:num)', 'EstadisticasController::getMunicipios/$1');
+$routes->get('estadistica/getSecciones/(:num)', 'EstadisticasController::getSecciones/$1');
+$routes->get('estadistica/getComunidades/(:num)', 'EstadisticasController::getComunidades/$1');
+$routes->get('estadistica/getRespuestas', 'EstadisticasController::getRespuestas');
 
 
 
 
 //Administrador
     $routes->get('dashboard', 'Administrador::index'); // Alias para /administrador/dashboard   
-    $routes->get('estadistica', 'Administrador::estadisticas');
-    
     
 
 
