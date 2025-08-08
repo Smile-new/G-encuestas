@@ -8,17 +8,17 @@ $userData = $session->get('usuario'); // Obtener todo el array 'usuario' de la s
 
 // Definir valores por defecto si el usuario no está logueado o los datos no existen
 $nombreCompleto = "Invitado";
-$nombreUsuario = "invitado"; // Se usará el campo 'usuario' (username)
+$nombreUsuario = "invitado";
 $rolTexto = "Rol Desconocido";
-$rutaFotoPerfil = base_url(RECURSOS_ADMIN_IMAGES . '/faces/face15.jpg'); // Imagen por defecto de la plantilla
+$rutaFotoPerfil = base_url(RECURSOS_ADMIN_IMAGES . '/faces/face15.jpg');
 
 if ($isLoggedIn && is_array($userData)) {
     $nombreCompleto = esc($userData['nombre']) . ' ' .
                       esc($userData['apellido_paterno']) . ' ' .
                       esc($userData['apellido_materno']);
-    $nombreUsuario = esc($userData['usuario']); // Usamos el campo 'usuario' del array de sesión
+    $nombreUsuario = esc($userData['usuario']);
     
-    $id_rol = $userData['id_rol'] ?? null; // Usar id_rol para el rol
+    $id_rol = $userData['id_rol'] ?? null;
     switch ($id_rol) {
         case 1: $rolTexto = 'Administrador'; break;
         case 2: $rolTexto = 'Operador'; break;
@@ -26,9 +26,7 @@ if ($isLoggedIn && is_array($userData)) {
         default: $rolTexto = 'Miembro'; break;
     }
 
-    // Si hay una foto de usuario cargada en la sesión, usarla; de lo contrario, usar la por defecto
     if (!empty($userData['foto'])) {
-        // Asegúrate de que 'public/img_user/' sea la ruta correcta donde guardas las fotos de usuario
         $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto']));
     }
 }
@@ -40,77 +38,128 @@ if ($isLoggedIn && is_array($userData)) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Corona Admin - <?= esc($title ?? 'Gestión de Preguntas por Encuesta') ?></title>
-    <!-- Tus estilos CSS y enlaces a recursos aquí (asumiendo que RECURSOS_ADMIN_VENDORS, etc., están definidos) -->
+    
+    <!-- Enlaces a recursos CSS de la plantilla original -->
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/mdi/css/materialdesignicons.min.css') ?>">
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/css/vendor.bundle.base.css') ?>">
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_CSS . '/style.css') ?>">
     
-    <!-- Incluye jQuery si no está ya en vendor.bundle.base.js -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Estilos CSS personalizados para el nuevo diseño -->
     <style>
-        /* Estilos ajustados para una apariencia más sencilla y compacta */
-        .accordion-item {
-            margin-bottom: 10px; /* Reducido de 15px */
-            border: 1px solid #3a3a3a; /* Un borde ligeramente más suave */
-            border-radius: 6px; /* Bordes un poco menos redondeados */
-            overflow: hidden;
-        }
-        .accordion-button {
-            background-color:rgb(3, 0, 32) !important;
-            color: #fff !important;
-            font-weight: bold;
-            padding: 0.8rem 1rem; /* Reducido de 1rem 1.25rem */
-            border-bottom: 1px solid #444;
-            font-size: 0.95rem; /* Fuente ligeramente más pequeña */
-        }
-        .accordion-button:not(.collapsed) {
-            background-color:rgb(3, 0, 32) !important;
-            color: #fff !important;
-        }
-        .accordion-body {
+        /* Estilos generales para el contenedor principal de la página */
+        .content-wrapper {
             background-color: #1a1a1a;
-            padding: 1rem; /* Reducido de 1.25rem */
-            border-top: 1px solid #444;
+            color: #f8f9fa;
         }
-        .list-group-item {
-            background-color: #2a2a2a;
-            color: #e0e0e0;
-            border: 1px solid #3a3a3a;
-            margin-bottom: 3px; /* Reducido de 5px */
-            padding: 0.6rem 0.8rem; /* Reducido para opciones más compactas */
-            font-size: 0.9rem; /* Fuente más pequeña para opciones */
-            border-radius: 4px; /* Ligeramente redondeado */
-        }
-        /* Estilos para el select */
+        
+        /* Estilos para el selector de encuestas */
         #select-encuesta {
             width: 100%;
-            padding: 8px 12px; /* Reducido */
-            margin-bottom: 15px; /* Reducido */
-            border: 1px solid #444;
-            border-radius: 4px; /* Reducido */
-            background-color: #2a2a2a;
-            color: #fff;
-            font-size: 0.95rem; /* Ligeramente más pequeño */
+            padding: 10px 15px;
+            margin-bottom: 25px;
+            border: 1px solid #495057;
+            border-radius: 6px;
+            background-color: #343a40;
+            color: #e9ecef;
+            font-size: 1rem;
+            transition: all 0.3s ease;
         }
+
+        #select-encuesta:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+        }
+
         #select-encuesta option {
-            background-color:rgb(13, 0, 51));
+            background-color: #343a40;
+            color: #e9ecef;
+        }
+        
+        /* Estilos para las tarjetas de preguntas */
+        .card-question {
+            border: 1px solid #3a3a3a;
+            border-left: 4px solid #007bff;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .card-question:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-question .card-body {
+            background-color: #2a2a2a;
+            color: #f8f9fa;
+        }
+
+        /* Estilos para la lista de opciones de una pregunta */
+        .list-group-flush {
+            border-top: 1px solid #3a3a3a;
+        }
+        
+        .list-group-item {
+            background-color: transparent !important;
+            border: none !important;
+            color: #e0e0e0;
+            padding: 0.75rem 0;
+            font-size: 0.95rem;
+        }
+        
+        .list-group-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-group-item:before {
+            content: "•";
+            color: #007bff;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+
+        /* Estilos para los botones de acción */
+        .btn-outline-info {
+            color: #17a2b8;
+            border-color: #17a2b8;
+        }
+        
+        .btn-outline-info:hover {
+            background-color: #17a2b8;
             color: #fff;
         }
-        .card-body {
-            padding: 20px; /* Reducido de 30px */
+        
+        .btn-outline-danger {
+            color: #dc3545;
+            border-color: #dc3545;
         }
-        .card-title {
-            font-size: 1.15rem; /* Ligeramente más pequeño */
+        
+        .btn-outline-danger:hover {
+            background-color: #dc3545;
+            color: #fff;
         }
-        .card-description {
-            font-size: 0.9rem; /* Ligeramente más pequeño */
-            margin-bottom: 15px; /* Ajuste */
+        
+        /* Estilos para el mensaje inicial y el de carga */
+        .initial-message-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px; /* Altura mínima para el contenedor */
+            text-align: center;
+            padding: 20px;
         }
+        
     </style>
 </head>
 <body>
     <div class="container-scroller">
-        <!-- Sidebar -->
+        <!-- Sidebar and Navbar as provided by the user -->
+        <!-- ... (código de la barra lateral y la barra de navegación) ... -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <div class="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top">
                <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo.png') ?>" alt="logo" /> </a>
@@ -120,14 +169,11 @@ if ($isLoggedIn && is_array($userData)) {
                     <div class="profile-desc">
               <div class="profile-pic">
                 <div class="count-indicator">
-                  <!-- Foto de perfil dinámica en el sidebar -->
                   <img class="img-xs rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil">
                   <span class="count bg-success"></span>
                 </div>
                 <div class="profile-name">
-                  <!-- Nombre completo dinámico en el sidebar -->
                   <h5 class="mb-0 font-weight-normal"><?= $nombreCompleto ?></h5>
-                  <!-- Rol dinámico en el sidebar -->
                   <span><?= $rolTexto ?></span>
                 </div>
               </div>
@@ -169,7 +215,6 @@ if ($isLoggedIn && is_array($userData)) {
             </ul>
         </nav>
 
-        <!-- Main Panel -->
         <div class="main-panel">
             <nav class="navbar p-0 fixed-top d-flex flex-row">
                 <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
@@ -183,9 +228,7 @@ if ($isLoggedIn && is_array($userData)) {
               <li class="nav-item dropdown">
                 <a class="nav-link" id="profileDropdown" href="#" data-toggle="dropdown">
                   <div class="navbar-profile">
-                    <!-- Foto de perfil dinámica en la navbar -->
                     <img class="img-xs rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil">
-                    <!-- Nombre completo dinámico en la navbar (visible en desktop) -->
                     <p class="mb-0 d-none d-sm-block navbar-profile-name"><?= $nombreCompleto ?></p>
                     <i class="mdi mdi-menu-down d-none d-sm-block"></i>
                   </div>
@@ -204,7 +247,6 @@ if ($isLoggedIn && is_array($userData)) {
                     </div>
                   </a>
                   <div class="dropdown-divider"></div>
-                  <!-- Enlace de cerrar sesión dinámico -->
                   <a class="dropdown-item preview-item" href="<?= base_url('logout') ?>">
                     <div class="preview-thumbnail">
                       <div class="preview-icon bg-dark rounded-circle">
@@ -237,30 +279,47 @@ if ($isLoggedIn && is_array($userData)) {
                     </nav>
                 </div>
 
+                <!-- Nuevo diseño con layout de dos columnas -->
                 <div class="row">
-                    <div class="col-lg-12 grid-margin stretch-card">
+                    <!-- Columna para el selector de encuesta -->
+                    <div class="col-lg-4 grid-margin stretch-card">
                         <div class="card">
                             <div class="card-body">
-                                <h4 class="card-title">Selecciona una Encuesta</h4>
-                                <p class="card-description">Elige una encuesta del menú desplegable para ver y gestionar sus preguntas.</p>
-
+                                <h4 class="card-title">🔍 Selecciona una Encuesta</h4>
+                                <p class="card-description">
+                                    Elige una encuesta del menú desplegable para ver sus preguntas.
+                                </p>
                                 <div class="form-group">
                                     <label for="select-encuesta">Encuesta:</label>
                                     <select id="select-encuesta" class="form-control">
-                                        <option value="">-- Selecciona una Encuesta --</option>
+                                        <option value="">-- Seleccionar --</option>
                                         <?php if (!empty($encuestas)): ?>
                                             <?php foreach ($encuestas as $encuesta_item): ?>
-                                                <option value="<?= esc($encuesta_item['id_encuesta']) ?>"><?= esc($encuesta_item['titulo']) ?></option>
+                                                <option value="<?= esc($encuesta_item['id_encuesta']) ?>">
+                                                    <?= esc($encuesta_item['titulo']) ?>
+                                                </option>
                                             <?php endforeach; ?>
                                         <?php endif; ?>
                                     </select>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
 
-                                <div id="preguntas-container" style="margin-top: 20px;"> <!-- Reducido de 30px -->
-                                    <!-- Las preguntas y opciones se cargarán aquí dinámicamente -->
-                                    <p class="text-muted text-center" id="initial-message">Selecciona una encuesta para ver sus preguntas y opciones.</p>
+                    <!-- Columna para mostrar las preguntas -->
+                    <div class="col-lg-8 grid-margin stretch-card">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4 class="card-title">📋 Preguntas de la Encuesta</h4>
+                                <p class="card-description" id="questions-description">
+                                    Las preguntas y sus opciones se mostrarán a continuación.
+                                </p>
+                                <div id="preguntas-container" class="initial-message-container">
+                                    <p class="text-muted text-center" id="initial-message">
+                                        Selecciona una encuesta para ver sus preguntas.
+                                    </p>
+                                    <i class="mdi mdi-clipboard-text-outline text-muted" style="font-size: 50px;"></i>
                                 </div>
-
                             </div>
                         </div>
                     </div>
@@ -282,17 +341,21 @@ if ($isLoggedIn && is_array($userData)) {
         <script src="<?= base_url(RECURSOS_ADMIN_JS . '/misc.js') ?>"></script>
         <script src="<?= base_url(RECURSOS_ADMIN_JS . '/settings.js') ?>"></script>
         <script src="<?= base_url(RECURSOS_ADMIN_JS . '/todolist.js') ?>"></script>
+        
+        <!-- Script para la carga dinámica de preguntas -->
         <script>
             $(document).ready(function() {
                 const baseUrl = "<?= base_url(); ?>";
+                const preguntasContainer = $('#preguntas-container');
 
                 $('#select-encuesta').change(function() {
                     const idEncuesta = $(this).val();
-                    const preguntasContainer = $('#preguntas-container');
-                    preguntasContainer.html('<p class="text-muted text-center">Cargando preguntas...</p>');
 
+                    // Muestra un indicador de carga al inicio de la petición
+                    preguntasContainer.html('<div class="initial-message-container"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="text-muted mt-3">Cargando preguntas...</p></div>');
+                    
                     if (idEncuesta === "") {
-                        preguntasContainer.html('<p class="text-muted text-center">Selecciona una encuesta para ver sus preguntas y opciones.</p>');
+                        preguntasContainer.html('<div class="initial-message-container"><p class="text-muted" id="initial-message">Selecciona una encuesta para ver sus preguntas.</p><i class="mdi mdi-clipboard-text-outline text-muted" style="font-size: 50px;"></i></div>');
                         return;
                     }
 
@@ -303,43 +366,43 @@ if ($isLoggedIn && is_array($userData)) {
                         dataType: 'json',
                         success: function(data) {
                             if (data.length > 0) {
-                                let htmlContent = '<div class="accordion" id="accordionPreguntas">';
+                                let htmlContent = '<div class="d-flex flex-column gap-3 mt-3">';
                                 $.each(data, function(index, pregunta) {
-                                    // Utiliza `pregunta.id_pregunta` para los IDs de collapse y heading
+                                    // Genera el HTML para cada tarjeta de pregunta
                                     htmlContent += `
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header" id="heading${pregunta.id_pregunta}">
-                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse${pregunta.id_pregunta}" aria-expanded="false" aria-controls="collapse${pregunta.id_pregunta}">
-                                                    Pregunta ${index + 1}: ${pregunta.texto_pregunta}
-                                                    <!-- Eliminado: <small class="ms-auto text-muted">(Tipo: ${pregunta.tipo_pregunta})</small> -->
-                                                </button>
-                                            </h2>
-                                            <div id="collapse${pregunta.id_pregunta}" class="accordion-collapse collapse" aria-labelledby="heading${pregunta.id_pregunta}" data-bs-parent="#accordionPreguntas">
-                                                <div class="accordion-body">
-                                                    `;
-                                    if (pregunta.opciones && pregunta.opciones.length > 0) {
-                                        htmlContent += `<h6>Opciones:</h6><ul class="list-group">`;
-                                        $.each(pregunta.opciones, function(opIndex, opcion) {
-                                            htmlContent += `<li class="list-group-item">${opcion.texto_opcion}</li>`;
-                                        });
-                                        htmlContent += `</ul>`;
-                                    } else {
-                                        htmlContent += `<p class="text-muted">Esta pregunta no tiene opciones registradas.</p>`;
-                                    }
-                                    htmlContent += `
+                                        <div class="card card-question">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h5 class="card-title mb-0">
+                                                        <span class="badge bg-primary me-2">#${index + 1}</span>
+                                                        ${pregunta.texto_pregunta}
+                                                    </h5>
+                                                    <!-- Eliminado: Botones de acción aquí -->
                                                 </div>
+                                                <p class="card-subtitle mb-2 text-muted">Tipo de pregunta: <strong>${pregunta.tipo_pregunta}</strong></p>
+                                                
+                                                ${pregunta.opciones && pregunta.opciones.length > 0 ? `
+                                                    <ul class="list-group list-group-flush mt-3">
+                                                        ${pregunta.opciones.map(opcion => `<li class="list-group-item">${opcion.texto_opcion}</li>`).join('')}
+                                                    </ul>
+                                                ` : `
+                                                    <div class="alert alert-warning mt-3 mb-0" role="alert">
+                                                        Esta pregunta no tiene opciones.
+                                                    </div>
+                                                `}
                                             </div>
                                         </div>`;
                                 });
-                                htmlContent += `</div>`;
+                                htmlContent += '</div>';
                                 preguntasContainer.html(htmlContent);
                             } else {
-                                preguntasContainer.html('<div class="alert alert-info text-center" role="alert">Esta encuesta no tiene preguntas registradas.</div>');
+                                // Muestra un mensaje si no hay preguntas
+                                preguntasContainer.html('<div class="initial-message-container"><div class="alert alert-info" role="alert">Esta encuesta no tiene preguntas registradas.</div></div>');
                             }
                         },
                         error: function(xhr, status, error) {
                             console.error("Error al cargar preguntas:", status, error, xhr.responseText);
-                            preguntasContainer.html('<div class="alert alert-danger text-center" role="alert">Error al cargar las preguntas. Por favor, intente de nuevo.</div>');
+                            preguntasContainer.html('<div class="initial-message-container"><div class="alert alert-danger" role="alert">Error al cargar las preguntas. Por favor, intente de nuevo.</div></div>');
                         }
                     });
                 });
