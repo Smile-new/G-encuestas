@@ -8,7 +8,7 @@ use App\Models\PreguntaModel;
 use App\Models\OpcionModel;
 use CodeIgniter\Database\Exceptions\DatabaseException; // Para manejar errores de base de datos
 
-class EncuestaController extends BaseController
+class Encuestas extends BaseController
 {
     // Se elimina el 'use ResponseTrait' si no se está usando $this->respond() o $this->fail()
     // Si necesitas usar respuestas JSON directas (ej. para APIs), manténlo.
@@ -277,21 +277,29 @@ class EncuestaController extends BaseController
      * Elimina una encuesta.
      * @param int $id El ID de la encuesta a eliminar.
      */
-    public function delete($id = null)
-    {
-        try {
-            if ($this->encuestaModel->delete($id)) {
-                // Debido a ON DELETE CASCADE, las preguntas y opciones asociadas se eliminarán automáticamente.
-                session()->setFlashdata('message', 'Encuesta eliminada exitosamente.');
-            } else {
-                session()->setFlashdata('error', 'No se pudo eliminar la encuesta.');
-            }
-        } catch (\Exception $e) {
-            session()->setFlashdata('error', 'Error al eliminar la encuesta: ' . $e->getMessage());
-        }
+    public function delete($id)
+{
+    // 1. Obtener todas las preguntas asociadas a la encuesta
+    $preguntas = $this->preguntaModel->where('id_encuesta', $id)->findAll();
 
-        return redirect()->to(base_url('encuestas')); // Redirige a la lista de encuestas
+    // 2. Extraer los IDs de esas preguntas
+    $idPreguntas = array_column($preguntas, 'id_pregunta');
+
+    // 3. Si hay preguntas, borrar sus opciones primero
+    if (!empty($idPreguntas)) {
+        $this->opcionModel->whereIn('id_pregunta', $idPreguntas)->delete();
     }
+
+    // 4. Borrar preguntas de la encuesta
+    $this->preguntaModel->where('id_encuesta', $id)->delete();
+
+    // 5. Borrar la encuesta
+    $this->encuestaModel->delete($id);
+
+    // 6. Redirigir con mensaje
+    return redirect()->to(base_url('encuestas'))->with('success', 'Encuesta eliminada correctamente');
+}
+
 
    public function estatus($id = null)
 {

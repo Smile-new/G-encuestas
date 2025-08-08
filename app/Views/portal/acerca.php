@@ -89,7 +89,7 @@
                                 <li class="active"><a href="<?= base_url('acerca') ?>">Acerca de</a></li>
                                 <li><a href="<?= base_url('servicios') ?>">Servicios</a></li>
                                 <li><a href="<?= base_url('contacto') ?>">Contacto</a></li>
-                                <li><a href="<?= base_url('login') ?>">Inicio Sesion</a></li>
+                               
 
                             </ul>
                         </nav>

@@ -48,13 +48,13 @@ $routes->get('/administrador', 'Administrador::index');
 
     //Encuestas
    // Routes for Encuestas (Surveys)
-$routes->get('encuestas', 'EncuestaController::index');
-$routes->get('encuestas/create', 'EncuestaController::create');
-$routes->post('encuestas/store', 'EncuestaController::store');
-$routes->get('encuestas/edit/(:num)', 'EncuestaController::edit/$1');
-$routes->post('encuestas/update/(:num)', 'EncuestaController::update/$1');
-$routes->post('encuestas/delete/(:num)', 'EncuestaController::delete/$1');
-$routes->get('encuestas/estatus/(:num)', 'EncuestaController::estatus/$1');
+$routes->get('encuestas', 'Encuestas::index');
+$routes->get('encuestas/create', 'Encuestas::create');
+$routes->post('encuestas/store', 'Encuestas::store');
+$routes->get('encuestas/edit/(:num)', 'Encuestas::edit/$1');
+$routes->post('encuestas/update/(:num)', 'Encuestas::update/$1');
+$routes->post('encuestas/delete/(:num)', 'Encuestas::delete/$1');
+$routes->get('encuestas/estatus/(:num)', 'Encuestas::estatus/$1');
 
 
 
@@ -93,6 +93,7 @@ $routes->get('estadistica/getMunicipios/(:num)', 'EstadisticasController::getMun
 $routes->get('estadistica/getSecciones/(:num)', 'EstadisticasController::getSecciones/$1');
 $routes->get('estadistica/getComunidades/(:num)', 'EstadisticasController::getComunidades/$1');
 $routes->get('estadistica/getRespuestas', 'EstadisticasController::getRespuestas');
+$routes->get('estadistica/getOpcionesPregunta/(:num)', 'EstadisticasController::getOpcionesPregunta/$1');
 
 
 

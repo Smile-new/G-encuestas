@@ -90,6 +90,24 @@ class EstadisticasController extends Controller
         $preguntas = $this->preguntaModel->where('id_encuesta', $idEncuesta)->findAll();
         return $this->response->setJSON($preguntas);
     }
+
+    /**
+     * Método AJAX para obtener las opciones de una pregunta específica.
+     * Este es el nuevo método que se llama desde el frontend.
+     */
+    // app/Controllers/EstadisticasController.php
+
+public function getOpcionesPregunta($idPregunta)
+{
+    // // Comenta la verificación de AJAX temporalmente
+    // if ($this->request->isAJAX()) {
+    $opciones = $this->opcionModel->where('id_pregunta', $idPregunta)->findAll();
+    return $this->response->setJSON($opciones);
+    // }
+
+    // // Si no es una solicitud AJAX, devolvemos un error
+    // return $this->response->setStatusCode(403)->setBody('Acceso no autorizado.');
+}
     
     /**
      * Método AJAX para obtener los distritos federales de un estado.
@@ -138,6 +156,7 @@ class EstadisticasController extends Controller
 
     /**
      * Método AJAX para obtener los datos de las respuestas de una pregunta.
+     * Este método ya no devuelve un arreglo con el texto de la opción.
      */
     public function getRespuestas()
     {
@@ -151,20 +170,18 @@ class EstadisticasController extends Controller
         $idComunidad = $this->request->getGet('id_comunidad');
 
         $query = $this->respuestaModel
-                        ->select('id_opcion, COUNT(id_respuesta) as total')
-                        ->where('id_encuesta', $idEncuesta)
-                        ->where('id_pregunta', $idPregunta);
+            ->select('id_opcion, COUNT(id_respuesta) as total')
+            ->where('id_encuesta', $idEncuesta)
+            ->where('id_pregunta', $idPregunta);
         
         if (!empty($idEstado)) {
             $query->where('id_estado', $idEstado);
         }
-        // Corrección: Usar el nombre de campo sin guion bajo, como en tu RespuestaModel
         if (!empty($idDistritoFederal)) {
-            $query->where('id_distritofederal', $idDistritoFederal);
+            $query->where('id_distrito_federal', $idDistritoFederal);
         }
-        // Corrección: Usar el nombre de campo sin guion bajo, como en tu RespuestaModel
         if (!empty($idDistritoLocal)) {
-            $query->where('id_distritolocal', $idDistritoLocal);
+            $query->where('id_distrito_local', $idDistritoLocal);
         }
         if (!empty($idMunicipio)) {
             $query->where('id_municipio', $idMunicipio);
@@ -177,20 +194,8 @@ class EstadisticasController extends Controller
         }
 
         $resultados = $query->groupBy('id_opcion')
-                            ->findAll();
+            ->findAll();
 
-        $opcionModel = new OpcionModel();
-        $datosGrafica = [];
-        foreach ($resultados as $resultado) {
-            $opcion = $opcionModel->find($resultado['id_opcion']);
-            if ($opcion) {
-                $datosGrafica[] = [
-                    'opcion' => $opcion['texto_opcion'],
-                    'total' => (int) $resultado['total']
-                ];
-            }
-        }
-        
-        return $this->response->setJSON($datosGrafica);
+        return $this->response->setJSON($resultados);
     }
 }

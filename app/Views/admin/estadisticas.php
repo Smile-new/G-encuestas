@@ -36,6 +36,28 @@ if ($isLoggedIn && is_array($userData)) {
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/css/vendor.bundle.base.css') ?>">
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_CSS . '/style.css') ?>">
     <link rel="shortcut icon" href="<?= base_url(RECURSOS_ADMIN_IMAGES . '/favicon.png') ?>" />
+    <style>
+        /* Estilos personalizados para el tema oscuro */
+        label {
+            color: #ffffff;
+        }
+        select.form-control {
+            color: #ffffff;
+            background-color: #2a2c3d;
+            border-color: #4a4a4a;
+        }
+        select.form-control option {
+            background-color: #2a2c3d;
+            color: #ffffff;
+        }
+        canvas#barChart {
+            background-color: #ffffff;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+        }
+    </style>
 </head>
 <body>
     <div class="container-scroller">
@@ -52,8 +74,8 @@ if ($isLoggedIn && is_array($userData)) {
                                 <span class="count bg-success"></span>
                             </div>
                             <div class="profile-name">
-                                <h5 class="mb-0 font-weight-normal"><?= $nombreCompleto ?></h5>
-                                <span><?= $rolTexto ?></span>
+                                <h5 class="mb-0 font-weight-normal"><?= esc($nombreCompleto) ?></h5>
+                                <span><?= esc($rolTexto) ?></span>
                             </div>
                         </div>
                     </div>
@@ -107,7 +129,7 @@ if ($isLoggedIn && is_array($userData)) {
                             <a class="nav-link" id="profileDropdown" href="#" data-toggle="dropdown">
                                 <div class="navbar-profile">
                                     <img class="img-xs rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil">
-                                    <p class="mb-0 d-none d-sm-block navbar-profile-name"><?= $nombreCompleto ?></p>
+                                    <p class="mb-0 d-none d-sm-block navbar-profile-name"><?= esc($nombreCompleto) ?></p>
                                     <i class="mdi mdi-menu-down d-none d-sm-block"></i>
                                 </div>
                             </a>
@@ -148,7 +170,7 @@ if ($isLoggedIn && is_array($userData)) {
                                                 <select class="form-control" id="encuesta_select">
                                                     <option value="">Selecciona una encuesta</option>
                                                     <?php foreach ($encuestas as $encuesta): ?>
-                                                        <option value="<?= $encuesta['id_encuesta'] ?>"><?= esc($encuesta['titulo']) ?></option>
+                                                        <option value="<?= esc($encuesta['id_encuesta']) ?>"><?= esc($encuesta['titulo']) ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
@@ -165,7 +187,7 @@ if ($isLoggedIn && is_array($userData)) {
                                                 <select class="form-control" id="estado_select">
                                                     <option value="">Selecciona un estado</option>
                                                     <?php foreach ($estados as $estado): ?>
-                                                        <option value="<?= $estado['id_estado'] ?>"><?= esc($estado['nombre_estado']) ?></option>
+                                                        <option value="<?= esc($estado['id_estado']) ?>"><?= esc($estado['nombre_estado']) ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
@@ -216,7 +238,10 @@ if ($isLoggedIn && is_array($userData)) {
                                     <div id="no_data_message" class="text-center" style="display: block;">
                                         <p>Selecciona una encuesta y una pregunta para ver los resultados.</p>
                                     </div>
-                                    <canvas id="barChart" style="height:230px; display: none;"></canvas>
+                                    <div class="chart-container">
+                                        <canvas id="barChart" style="display: none;"></canvas>
+                                    </div>
+                                    <div id="chart-data-summary" class="mt-4" style="display: none;"></div>
                                 </div>
                             </div>
                         </div>
@@ -230,234 +255,241 @@ if ($isLoggedIn && is_array($userData)) {
                     </div>
                 </footer>
             </div>
-            </div>
         </div>
+    </div>
     <script src="<?= base_url(RECURSOS_ADMIN_VENDORS . '/js/vendor.bundle.base.js') ?>"></script>
-    <script src="<?= base_url(RECURSOS_ADMIN_VENDORS . '/chart.js/Chart.min.js') ?>"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="<?= base_url(RECURSOS_ADMIN_JS . '/off-canvas.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_ADMIN_JS . '/hoverable-collapse.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_ADMIN_JS . '/misc.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_ADMIN_JS . '/settings.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_ADMIN_JS . '/todolist.js') ?>"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const encuestaSelect = document.getElementById('encuesta_select');
-            const preguntaSelect = document.getElementById('pregunta_select');
-            const estadoSelect = document.getElementById('estado_select');
-            const distritoFederalSelect = document.getElementById('distrito_federal_select');
-            const distritoLocalSelect = document.getElementById('distrito_local_select');
-            const municipioSelect = document.getElementById('municipio_select');
-            const seccionSelect = document.getElementById('seccion_select');
-            const comunidadSelect = document.getElementById('comunidad_select');
-            const chartCanvas = document.getElementById('barChart');
-            const noDataMessage = document.getElementById('no_data_message');
-            const tituloGrafico = document.getElementById('titulo_grafico');
-            let myChart = null;
+    document.addEventListener('DOMContentLoaded', function () {
+        const encuestaSelect = document.getElementById('encuesta_select');
+        const preguntaSelect = document.getElementById('pregunta_select');
+        const estadoSelect = document.getElementById('estado_select');
+        const distritoFederalSelect = document.getElementById('distrito_federal_select');
+        const distritoLocalSelect = document.getElementById('distrito_local_select');
+        const municipioSelect = document.getElementById('municipio_select');
+        const seccionSelect = document.getElementById('seccion_select');
+        const comunidadSelect = document.getElementById('comunidad_select');
+        const chartCanvas = document.getElementById('barChart');
+        const noDataMessage = document.getElementById('no_data_message');
+        const tituloGrafico = document.getElementById('titulo_grafico');
+        const chartDataSummary = document.getElementById('chart-data-summary');
 
-            const baseUrl = '<?= base_url("estadistica") ?>';
+        let myChart = null;
+        const baseUrl = '<?= base_url("estadistica") ?>';
 
-            function limpiarSelect(selectElement, disabled = true, placeholder = 'Selecciona...') {
-                selectElement.innerHTML = `<option value="">${placeholder}</option>`;
-                selectElement.disabled = disabled;
+        // Función genérica para limpiar y cargar selectores
+        function cargarSelect(selectElement, data, idKey, textKey, placeholder, disabled = false) {
+            selectElement.innerHTML = `<option value="">${placeholder}</option>`;
+            data.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item[idKey];
+                option.textContent = item[textKey];
+                selectElement.appendChild(option);
+            });
+            selectElement.disabled = disabled;
+        }
+
+        // Función principal para actualizar el gráfico y los filtros
+        async function actualizarGrafico() {
+            const idEncuesta = encuestaSelect.value;
+            const idPregunta = preguntaSelect.value;
+
+            if (!idEncuesta || !idPregunta) {
+                if (myChart) { myChart.destroy(); }
+                noDataMessage.style.display = 'block';
+                noDataMessage.textContent = "Selecciona una encuesta y una pregunta para ver los resultados.";
+                chartCanvas.style.display = 'none';
+                chartDataSummary.style.display = 'none';
+                return;
             }
 
-            function cargarSelect(selectElement, data, idKey, textKey, placeholder) {
-                limpiarSelect(selectElement, false, placeholder);
-                data.forEach(item => {
-                    const option = document.createElement('option');
-                    option.value = item[idKey];
-                    option.textContent = item[textKey];
-                    selectElement.appendChild(option);
-                });
-            }
-            
-            function actualizarGrafico() {
-                const idEncuesta = encuestaSelect.value;
-                const idPregunta = preguntaSelect.value;
+            tituloGrafico.textContent = `Resultados: ${preguntaSelect.options[preguntaSelect.selectedIndex].text}`;
 
-                if (!idEncuesta || !idPregunta) {
+            const params = new URLSearchParams({
+                id_encuesta: idEncuesta,
+                id_pregunta: idPregunta,
+                id_estado: estadoSelect.value,
+                id_distrito_federal: distritoFederalSelect.value,
+                id_distrito_local: distritoLocalSelect.value,
+                id_municipio: municipioSelect.value,
+                id_seccion: seccionSelect.value,
+                id_comunidad: comunidadSelect.value,
+            });
+
+            try {
+                // Obtener todas las opciones de respuesta para la pregunta
+                const opcionesResponse = await fetch(`${baseUrl}/getOpcionesPregunta/${idPregunta}`);
+                if (!opcionesResponse.ok) {
+                    throw new Error(`Error HTTP! status: ${opcionesResponse.status}`);
+                }
+                const opcionesData = await opcionesResponse.json();
+
+                // Obtener las respuestas con los filtros aplicados
+                const respuestasResponse = await fetch(`${baseUrl}/getRespuestas?${params.toString()}`);
+                if (!respuestasResponse.ok) {
+                    throw new Error(`Error HTTP! status: ${respuestasResponse.status}`);
+                }
+                const respuestasData = await respuestasResponse.json();
+
+                if (myChart) { myChart.destroy(); }
+
+                if (opcionesData && opcionesData.length > 0) {
+                    const datosMapeados = {};
+                    opcionesData.forEach(opcion => {
+                        datosMapeados[opcion.texto_opcion] = 0;
+                    });
+
+                    respuestasData.forEach(respuesta => {
+                        const opcionEncontrada = opcionesData.find(opcion => opcion.id_opcion == respuesta.id_opcion);
+                        if (opcionEncontrada) {
+                            datosMapeados[opcionEncontrada.texto_opcion] = parseInt(respuesta.total, 10);
+                        }
+                    });
+
+                    const labels = Object.keys(datosMapeados);
+                    const totals = Object.values(datosMapeados);
+                    const totalRespuestas = totals.reduce((sum, current) => sum + current, 0);
+
+                    const porcentajes = totals.map(total => totalRespuestas > 0 ? ((total / totalRespuestas) * 100).toFixed(1) : 0);
+
+                    let summaryHtml = `<strong>Total de respuestas: ${totalRespuestas}</strong><br>`;
+                    labels.forEach((label, index) => {
+                        summaryHtml += `${label}: ${totals[index]} (${porcentajes[index]}%)<br>`;
+                    });
+                    chartDataSummary.innerHTML = summaryHtml;
+                    chartDataSummary.style.display = 'block';
+
+                    const colores = ['#FF1493', '#00FFFF', '#FFD700', '#32CD32', '#9400D3', '#FF4500'];
+
+                    const chartData = {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total de Respuestas',
+                            data: totals,
+                            backgroundColor: totals.map((_, index) => colores[index % colores.length]),
+                            borderColor: totals.map((_, index) => colores[index % colores.length]),
+                            borderWidth: 1
+                        }]
+                    };
+
+                    const ctx = chartCanvas.getContext('2d');
+                    myChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: chartData,
+                        options: {
+                            maintainAspectRatio: false,
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        color: '#000000' // Color del texto de la leyenda
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const value = context.parsed.y;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                            return `${context.label}: ${value} (${percentage}%)`;
+                                        }
+                                    }
+                                },
+                                datalabels: {
+                                    color: '#000000', // Color del texto de las etiquetas de datos
+                                    anchor: 'end',
+                                    align: 'start',
+                                    offset: -10,
+                                    font: {
+                                        weight: 'bold'
+                                    },
+                                    formatter: (value, context) => {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                        return `${value} (${percentage})`;
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    suggestedMax: Math.max(...totals) > 5 ? Math.max(...totals) + 1 : 5,
+                                    ticks: {
+                                        precision: 0,
+                                        color: '#000000' // Color del texto de los ticks del eje Y
+                                    }
+                                },
+                                x: {
+                                    ticks: {
+                                        color: '#000000', // Color del texto de los ticks del eje X
+                                        autoSkip: false,
+                                        maxRotation: 45,
+                                        minRotation: 45
+                                    }
+                                }
+                            },
+                            elements: {
+                                bar: {
+                                    barPercentage: 0.8,
+                                    categoryPercentage: 0.9
+                                }
+                            }
+                        },
+                        plugins: [ChartDataLabels]
+                    });
+
+                    noDataMessage.style.display = 'none';
+                    chartCanvas.style.display = 'block';
+                } else {
                     if (myChart) { myChart.destroy(); }
+                    noDataMessage.textContent = "No hay opciones de respuesta para esta pregunta.";
                     noDataMessage.style.display = 'block';
                     chartCanvas.style.display = 'none';
-                    return;
+                    chartDataSummary.style.display = 'none';
                 }
-
-                tituloGrafico.textContent = `Resultados: ${preguntaSelect.options[preguntaSelect.selectedIndex].text}`;
-
-                const params = new URLSearchParams({
-                    id_encuesta: idEncuesta,
-                    id_pregunta: idPregunta,
-                    id_estado: estadoSelect.value,
-                    id_distrito_federal: distritoFederalSelect.value, 
-                    id_distrito_local: distritoLocalSelect.value,
-                    id_municipio: municipioSelect.value,
-                    id_seccion: seccionSelect.value,
-                    id_comunidad: comunidadSelect.value,
-                });
-
-                fetch(`${baseUrl}/getRespuestas?${params.toString()}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (myChart) { myChart.destroy(); }
-
-                        if (data && data.length > 0) {
-                            const labels = data.map(item => item.opcion);
-                            const totals = data.map(item => item.total);
-
-                            const chartData = {
-                                labels: labels,
-                                datasets: [{
-                                    label: 'Total de Respuestas',
-                                    data: totals,
-                                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                                    borderColor: 'rgba(54, 162, 235, 1)',
-                                    borderWidth: 1
-                                }]
-                            };
-
-                            const ctx = chartCanvas.getContext('2d');
-                            myChart = new Chart(ctx, {
-                                type: 'bar',
-                                data: chartData,
-                                options: {
-                                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-                                }
-                            });
-                            
-                            noDataMessage.style.display = 'none';
-                            chartCanvas.style.display = 'block';
-                        } else {
-                            noDataMessage.textContent = "No hay datos para los filtros seleccionados.";
-                            noDataMessage.style.display = 'block';
-                            chartCanvas.style.display = 'none';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error al obtener datos del gráfico:', error);
-                        if (myChart) { myChart.destroy(); }
-                        noDataMessage.textContent = "Error al cargar los datos. Revisa la consola para más detalles.";
-                        noDataMessage.style.display = 'block';
-                        chartCanvas.style.display = 'none';
-                    });
+            } catch (error) {
+                console.error('Error al obtener datos del gráfico:', error);
+                if (myChart) { myChart.destroy(); }
+                noDataMessage.textContent = "Error al cargar los datos. Revisa la consola para más detalles.";
+                noDataMessage.style.display = 'block';
+                chartCanvas.style.display = 'none';
+                chartDataSummary.style.display = 'none';
             }
+        }
 
-            // Eventos para los selectores
-            encuestaSelect.addEventListener('change', function() {
-                const idEncuesta = this.value;
-                limpiarSelect(preguntaSelect, !idEncuesta, 'Cargando preguntas...');
-                if (idEncuesta) {
-                    fetch(`${baseUrl}/getPreguntas/${idEncuesta}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            cargarSelect(preguntaSelect, data, 'id_pregunta', 'texto_pregunta', 'Selecciona una pregunta');
-                        })
-                        .catch(error => console.error('Error al cargar preguntas:', error));
-                } else {
-                     limpiarSelect(preguntaSelect);
-                }
-                actualizarGrafico();
-            });
-
-            preguntaSelect.addEventListener('change', actualizarGrafico);
+        // Eventos para los selectores
+        encuestaSelect.addEventListener('change', function() {
+            const idEncuesta = this.value;
+            cargarSelect(preguntaSelect, [], 'id_pregunta', 'texto_pregunta', 'Cargando preguntas...', !idEncuesta);
             
-            estadoSelect.addEventListener('change', function() {
-                const idEstado = this.value;
-                limpiarSelect(distritoFederalSelect, !idEstado, 'Cargando distritos federales...');
-                limpiarSelect(distritoLocalSelect);
-                limpiarSelect(municipioSelect);
-                limpiarSelect(seccionSelect);
-                limpiarSelect(comunidadSelect);
-                if (idEstado) {
-                    fetch(`${baseUrl}/getDistritosFederales/${idEstado}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            cargarSelect(distritoFederalSelect, data, 'id_distrito_federal', 'nombre_distrito_federal', 'Selecciona un distrito federal');
-                        })
-                        .catch(error => console.error('Error al cargar distritos federales:', error));
-                } else {
-                    limpiarSelect(distritoFederalSelect);
-                }
-                actualizarGrafico();
-            });
-
-            distritoFederalSelect.addEventListener('change', function() {
-                const idDistritoFederal = this.value;
-                limpiarSelect(distritoLocalSelect, !idDistritoFederal, 'Cargando distritos locales...');
-                limpiarSelect(municipioSelect);
-                limpiarSelect(seccionSelect);
-                limpiarSelect(comunidadSelect);
-                if (idDistritoFederal) {
-                    fetch(`${baseUrl}/getDistritosLocales/${idDistritoFederal}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            cargarSelect(distritoLocalSelect, data, 'id_distrito_local', 'nombre_distrito_local', 'Selecciona un distrito local');
-                        })
-                        .catch(error => console.error('Error al cargar distritos locales:', error));
-                } else {
-                    limpiarSelect(distritoLocalSelect);
-                }
-                actualizarGrafico();
-            });
-
-            distritoLocalSelect.addEventListener('change', function() {
-                const idDistritoLocal = this.value;
-                limpiarSelect(municipioSelect, !idDistritoLocal, 'Cargando municipios...');
-                limpiarSelect(seccionSelect);
-                limpiarSelect(comunidadSelect);
-                if (idDistritoLocal) {
-                    fetch(`${baseUrl}/getMunicipios/${idDistritoLocal}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            cargarSelect(municipioSelect, data, 'id_municipio', 'nombre_municipio', 'Selecciona un municipio');
-                        })
-                        .catch(error => console.error('Error al cargar municipios:', error));
-                } else {
-                    limpiarSelect(municipioSelect);
-                }
-                actualizarGrafico();
-            });
-            
-            municipioSelect.addEventListener('change', function() {
-                const idMunicipio = this.value;
-                limpiarSelect(seccionSelect, !idMunicipio, 'Cargando secciones...');
-                limpiarSelect(comunidadSelect);
-                if (idMunicipio) {
-                    fetch(`${baseUrl}/getSecciones/${idMunicipio}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            cargarSelect(seccionSelect, data, 'id_seccion', 'nombre_seccion', 'Selecciona una sección');
-                        })
-                        .catch(error => console.error('Error al cargar secciones:', error));
-                } else {
-                    limpiarSelect(seccionSelect);
-                }
-                actualizarGrafico();
-            });
-
-            seccionSelect.addEventListener('change', function() {
-                const idSeccion = this.value;
-                limpiarSelect(comunidadSelect, !idSeccion, 'Cargando comunidades...');
-                if (idSeccion) {
-                    fetch(`${baseUrl}/getComunidades/${idSeccion}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            cargarSelect(comunidadSelect, data, 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad');
-                        })
-                        .catch(error => console.error('Error al cargar comunidades:', error));
-                } else {
-                    limpiarSelect(comunidadSelect);
-                }
-                actualizarGrafico();
-            });
-
-            comunidadSelect.addEventListener('change', actualizarGrafico);
+            if (idEncuesta) {
+                fetch(`${baseUrl}/getPreguntas/${idEncuesta}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        cargarSelect(preguntaSelect, data, 'id_pregunta', 'texto_pregunta', 'Selecciona una pregunta');
+                    })
+                    .catch(error => console.error('Error al cargar preguntas:', error));
+            } else {
+                preguntaSelect.value = '';
+            }
+            actualizarGrafico();
         });
+
+        preguntaSelect.addEventListener('change', actualizarGrafico);
+        estadoSelect.addEventListener('change', actualizarGrafico);
+        distritoFederalSelect.addEventListener('change', actualizarGrafico);
+        distritoLocalSelect.addEventListener('change', actualizarGrafico);
+        municipioSelect.addEventListener('change', actualizarGrafico);
+        seccionSelect.addEventListener('change', actualizarGrafico);
+        comunidadSelect.addEventListener('change', actualizarGrafico);
+    });
     </script>
 </body>
 </html>
