@@ -447,6 +447,7 @@ if ($isLoggedIn && is_array($userData)) {
 
                     noDataMessage.style.display = 'none';
                     chartCanvas.style.display = 'block';
+                    chartDataSummary.style.display = 'block';
                 } else {
                     if (myChart) { myChart.destroy(); }
                     noDataMessage.textContent = "No hay opciones de respuesta para esta pregunta.";
@@ -464,30 +465,140 @@ if ($isLoggedIn && is_array($userData)) {
             }
         }
 
-        // Eventos para los selectores
-        encuestaSelect.addEventListener('change', function() {
+        // --- Eventos para los selectores ---
+        // Aquí están las correcciones para encadenar las llamadas
+        // a la API de forma correcta.
+
+        // Evento para el selector de Encuesta
+        encuestaSelect.addEventListener('change', async function() {
             const idEncuesta = this.value;
+            // Reiniciar y deshabilitar los selectores de pregunta y geográficos
             cargarSelect(preguntaSelect, [], 'id_pregunta', 'texto_pregunta', 'Cargando preguntas...', !idEncuesta);
             
+            // Reestablecer los selectores geográficos a su estado inicial
+            cargarSelect(estadoSelect, <?= json_encode($estados) ?>, 'id_estado', 'nombre_estado', 'Selecciona un estado');
+            cargarSelect(distritoFederalSelect, [], 'id_distrito_federal', 'nombre_distrito_federal', 'Selecciona un distrito federal', true);
+            cargarSelect(distritoLocalSelect, [], 'id_distrito_local', 'nombre_distrito_local', 'Selecciona un distrito local', true);
+            cargarSelect(municipioSelect, [], 'id_municipio', 'nombre_municipio', 'Selecciona un municipio', true);
+            cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Selecciona una sección', true);
+            cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
+
             if (idEncuesta) {
-                fetch(`${baseUrl}/getPreguntas/${idEncuesta}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        cargarSelect(preguntaSelect, data, 'id_pregunta', 'texto_pregunta', 'Selecciona una pregunta');
-                    })
-                    .catch(error => console.error('Error al cargar preguntas:', error));
-            } else {
-                preguntaSelect.value = '';
+                try {
+                    const response = await fetch(`${baseUrl}/getPreguntas/${idEncuesta}`);
+                    const data = await response.json();
+                    cargarSelect(preguntaSelect, data, 'id_pregunta', 'texto_pregunta', 'Selecciona una pregunta');
+                } catch (error) {
+                    console.error('Error al cargar preguntas:', error);
+                }
             }
             actualizarGrafico();
         });
 
+        // Evento para el selector de Pregunta
         preguntaSelect.addEventListener('change', actualizarGrafico);
-        estadoSelect.addEventListener('change', actualizarGrafico);
-        distritoFederalSelect.addEventListener('change', actualizarGrafico);
-        distritoLocalSelect.addEventListener('change', actualizarGrafico);
-        municipioSelect.addEventListener('change', actualizarGrafico);
-        seccionSelect.addEventListener('change', actualizarGrafico);
+
+        // Evento para el selector de Estado
+        estadoSelect.addEventListener('change', async function() {
+            const idEstado = this.value;
+            // Limpiar y deshabilitar los siguientes selectores
+            cargarSelect(distritoFederalSelect, [], 'id_distrito_federal', 'nombre_distrito_federal', 'Cargando distritos federales...', !idEstado);
+            cargarSelect(distritoLocalSelect, [], 'id_distrito_local', 'nombre_distrito_local', 'Selecciona un distrito local', true);
+            cargarSelect(municipioSelect, [], 'id_municipio', 'nombre_municipio', 'Selecciona un municipio', true);
+            cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Selecciona una sección', true);
+            cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
+            
+            if (idEstado) {
+                try {
+                    const response = await fetch(`${baseUrl}/getDistritosFederales/${idEstado}`);
+                    const data = await response.json();
+                    cargarSelect(distritoFederalSelect, data, 'id_distrito_federal', 'nombre_distrito_federal', 'Selecciona un distrito federal');
+                } catch (error) {
+                    console.error('Error al cargar distritos federales:', error);
+                }
+            }
+            actualizarGrafico();
+        });
+
+        // Evento para el selector de Distrito Federal
+        distritoFederalSelect.addEventListener('change', async function() {
+            const idDistritoFederal = this.value;
+            // Limpiar y deshabilitar los siguientes selectores
+            cargarSelect(distritoLocalSelect, [], 'id_distrito_local', 'nombre_distrito_local', 'Cargando distritos locales...', !idDistritoFederal);
+            cargarSelect(municipioSelect, [], 'id_municipio', 'nombre_municipio', 'Selecciona un municipio', true);
+            cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Selecciona una sección', true);
+            cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
+
+            if (idDistritoFederal) {
+                try {
+                    const response = await fetch(`${baseUrl}/getDistritosLocales/${idDistritoFederal}`);
+                    const data = await response.json();
+                    cargarSelect(distritoLocalSelect, data, 'id_distrito_local', 'nombre_distrito_local', 'Selecciona un distrito local');
+                } catch (error) {
+                    console.error('Error al cargar distritos locales:', error);
+                }
+            }
+            actualizarGrafico();
+        });
+
+        // Evento para el selector de Distrito Local
+        distritoLocalSelect.addEventListener('change', async function() {
+            const idDistritoLocal = this.value;
+            // Limpiar y deshabilitar los siguientes selectores
+            cargarSelect(municipioSelect, [], 'id_municipio', 'nombre_municipio', 'Cargando municipios...', !idDistritoLocal);
+            cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Selecciona una sección', true);
+            cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
+
+            if (idDistritoLocal) {
+                try {
+                    const response = await fetch(`${baseUrl}/getMunicipios/${idDistritoLocal}`);
+                    const data = await response.json();
+                    cargarSelect(municipioSelect, data, 'id_municipio', 'nombre_municipio', 'Selecciona un municipio');
+                } catch (error) {
+                    console.error('Error al cargar municipios:', error);
+                }
+            }
+            actualizarGrafico();
+        });
+
+        // Evento para el selector de Municipio
+        municipioSelect.addEventListener('change', async function() {
+            const idMunicipio = this.value;
+            // Limpiar y deshabilitar los siguientes selectores
+            cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Cargando secciones...', !idMunicipio);
+            cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
+            
+            if (idMunicipio) {
+                try {
+                    const response = await fetch(`${baseUrl}/getSecciones/${idMunicipio}`);
+                    const data = await response.json();
+                    cargarSelect(seccionSelect, data, 'id_seccion', 'nombre_seccion', 'Selecciona una sección');
+                } catch (error) {
+                    console.error('Error al cargar secciones:', error);
+                }
+            }
+            actualizarGrafico();
+        });
+        
+        // Evento para el selector de Sección
+        seccionSelect.addEventListener('change', async function() {
+            const idSeccion = this.value;
+            // Limpiar y deshabilitar el siguiente selector
+            cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Cargando comunidades...', !idSeccion);
+            
+            if (idSeccion) {
+                try {
+                    const response = await fetch(`${baseUrl}/getComunidades/${idSeccion}`);
+                    const data = await response.json();
+                    cargarSelect(comunidadSelect, data, 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad');
+                } catch (error) {
+                    console.error('Error al cargar comunidades:', error);
+                }
+            }
+            actualizarGrafico();
+        });
+        
+        // Evento para el selector de Comunidad
         comunidadSelect.addEventListener('change', actualizarGrafico);
     });
     </script>
