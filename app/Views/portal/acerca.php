@@ -155,7 +155,7 @@
             <div class="col-lg-6">
                 <div class="about__text">
                     <div class="section-title">
-    <span>RANKER</span>
+    <span>VOTA Y OPINA</span>
     <h2>Así Obtenemos tus Datos</h2>
 </div>
 <div class="row">
@@ -179,7 +179,7 @@
     </div>
 </div>
 <div class="about__text__desc">
-    <p>Con RANKER, siempre tendrás acceso a información confiable y actualizada. Te ayudamos a entender mejor a tu audiencia y a impulsar tus proyectos con decisiones estratégicas.</p>
+    <p>Con VOTA Y OPINA, siempre tendrás acceso a información confiable y actualizada. Te ayudamos a entender mejor a tu audiencia y a impulsar tus proyectos con decisiones estratégicas.</p>
 </div>
                 </div>
             </div>

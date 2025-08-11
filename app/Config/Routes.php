@@ -106,8 +106,15 @@ $routes->get('estadistica/getOpcionesPregunta/(:num)', 'EstadisticasController::
 //Operador
     $routes->get('dash', 'Operador::dashboard'); 
     $routes->get('estat', 'Operador::estadisticas');
-    $routes->get('tab', 'Operador::tablas');
+    
 
+
+    //Opeador Usuarios
+    $routes->get('operador_user', 'Operador_User::index');
+$routes->get('operador_user/create', 'Operador_User::create');
+$routes->post('operador_user/store', 'Operador_User::store');
+$routes->get('operador_user/edit/(:num)', 'Operador_User::edit/$1');
+$routes->post('operador_user/update/(:num)', 'Operador_User::update/$1');
 
 
     //pagina

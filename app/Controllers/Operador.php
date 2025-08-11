@@ -21,11 +21,7 @@ class Operador extends Controller
     }
 
    
-    public function tablas()
-    {
-        // Sin datos iniciales para la vista.
-        return view('operador/tab');
-    }
+   
 
    
     
