@@ -5,17 +5,23 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use App\Models\UsuarioModel;
 use App\Models\RolModel;
+use App\Models\RespuestaModel;
+use App\Models\EncuestaModel; // Importamos el modelo de encuestas
 
 class Operador_User extends BaseController
 {
     protected $usuarioModel;
     protected $rolModel;
+    protected $respuestaModel;
+    protected $encuestaModel; // Propiedad para el modelo de encuestas
     protected $idRolEncuestador;
 
     public function __construct()
     {
         $this->usuarioModel = new UsuarioModel();
         $this->rolModel     = new RolModel();
+        $this->respuestaModel = new RespuestaModel();
+        $this->encuestaModel = new EncuestaModel(); // Inicializamos el modelo de encuestas
         
         // Obtener el ID del rol 'Encuestador' al inicializar el controlador.
         $rolEncuestador = $this->rolModel->where('nombre_rol', 'Encuestador')->first();
@@ -53,6 +59,32 @@ class Operador_User extends BaseController
 
         // Obtener los usuarios filtrados
         $usuariosEncuestadores = $query->findAll();
+        
+        // --- INICIO DE LA LÓGICA MODIFICADA PARA EL CONTEO DE RESPUESTAS ACTIVAS ---
+        
+        // 1. Obtener el conteo de respuestas por usuario solo para encuestas activas.
+        $conteoRespuestas = $this->respuestaModel
+                                ->select('respuestas.id_usuario, COUNT(respuestas.id_respuesta) as respuestas_contestadas')
+                                ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta')
+                                ->where('encuestas.activa', 1) // Condición para encuestas activas
+                                ->groupBy('respuestas.id_usuario')
+                                ->findAll();
+        
+        // 2. Convertir el resultado a un array asociativo para una búsqueda rápida.
+        $conteoMap = [];
+        foreach ($conteoRespuestas as $conteo) {
+            $conteoMap[$conteo['id_usuario']] = $conteo['respuestas_contestadas'];
+        }
+        
+        // 3. Añadir el conteo de respuestas a cada usuario en la lista.
+        foreach ($usuariosEncuestadores as &$usuario) {
+            // Asigna el conteo del mapa, si no existe el usuario, asigna 0.
+            $usuario['respuestas_contestadas'] = $conteoMap[$usuario['id_usuario']] ?? 0;
+        }
+        // Desactivamos la referencia para evitar efectos secundarios.
+        unset($usuario);
+        
+        // --- FIN DE LA LÓGICA MODIFICADA ---
 
         $data = [
             'usuarios' => $usuariosEncuestadores,
@@ -215,6 +247,29 @@ class Operador_User extends BaseController
             return redirect()->to(base_url('operador_user/index'))->with('message', 'Usuario actualizado correctamente.');
         } else {
             return redirect()->back()->withInput()->with('error', 'No se pudo actualizar el usuario. Inténtalo de nuevo.');
+        }
+    }
+
+    /**
+     * Elimina un usuario.
+     */
+    public function delete($id = null)
+    {
+        $usuarioExistente = $this->usuarioModel->find($id);
+
+        if (!$usuarioExistente) {
+            return redirect()->to(base_url('operador_user/index'))->with('error', 'Usuario no encontrado para eliminar.');
+        }
+
+        // Eliminar la foto si existe
+        if (!empty($usuarioExistente['foto']) && file_exists(FCPATH . 'public/img_user/' . $usuarioExistente['foto'])) {
+            unlink(FCPATH . 'public/img_user/' . $usuarioExistente['foto']);
+        }
+
+        if ($this->usuarioModel->delete($id)) {
+            return redirect()->to(base_url('operador_user/index'))->with('message', 'Usuario eliminado correctamente.');
+        } else {
+            return redirect()->back()->with('error', 'No se pudo eliminar el usuario. Inténtalo de nuevo.');
         }
     }
 

@@ -57,12 +57,32 @@ if ($isLoggedIn && is_array($userData)) {
             background-color: #2a2c3d;
             color: #ffffff;
         }
-        canvas#barChart {
+        canvas#chartCanvas {
             background-color: #ffffff;
         }
         .chart-container {
             position: relative;
             height: 400px;
+        }
+        /* Estilos para el PDF */
+        #pdf-content {
+            background-color: #ffffff;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            color: #000000;
+        }
+        #pdf-content h1, #pdf-content h2, #pdf-content h3 {
+            color: #000000;
+        }
+        #pdf-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        #pdf-content th, #pdf-content td {
+            border: 1px solid #000000;
+            padding: 8px;
+            text-align: left;
         }
     </style>
 </head>
@@ -172,7 +192,7 @@ if ($isLoggedIn && is_array($userData)) {
                                     <h4 class="card-title">Filtros de Datos</h4>
                                     <form class="forms-sample">
                                         <div class="row">
-                                            <div class="form-group col-md-4">
+                                            <div class="form-group col-md-3">
                                                 <label for="encuesta_select">Encuesta</label>
                                                 <select class="form-control" id="encuesta_select">
                                                     <option value="">Selecciona una encuesta</option>
@@ -181,11 +201,24 @@ if ($isLoggedIn && is_array($userData)) {
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
-                                            <div class="form-group col-md-4">
+                                            <div class="form-group col-md-3">
                                                 <label for="pregunta_select">Pregunta</label>
                                                 <select class="form-control" id="pregunta_select" disabled>
                                                     <option value="">Selecciona una pregunta</option>
                                                 </select>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="chart_type_select">Tipo de Gráfica</label>
+                                                <select class="form-control" id="chart_type_select">
+                                                    <option value="bar">Gráfica de Barras</option>
+                                                    <option value="doughnut">Gráfica de Dona</option>
+                                                    <option value="line">Gráfica de Líneas</option>
+                                                    <option value="pie">Gráfica de Pastel</option>
+                                                    <option value="radar">Gráfica de Radar</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group col-md-3 d-flex align-items-end">
+                                                <button type="button" class="btn btn-primary" id="download_pdf_btn">Descargar PDF</button>
                                             </div>
                                         </div>
                                         <div class="row">
@@ -240,13 +273,13 @@ if ($isLoggedIn && is_array($userData)) {
                     <div class="row">
                         <div class="col-md-12 grid-margin stretch-card">
                             <div class="card">
-                                <div class="card-body">
+                                <div class="card-body" id="chart-card-body">
                                     <h4 class="card-title" id="titulo_grafico">Resultados de la pregunta</h4>
                                     <div id="no_data_message" class="text-center" style="display: block;">
                                         <p>Selecciona una encuesta y una pregunta para ver los resultados.</p>
                                     </div>
                                     <div class="chart-container">
-                                        <canvas id="barChart" style="display: none;"></canvas>
+                                        <canvas id="chartCanvas" style="display: none;"></canvas>
                                     </div>
                                     <div id="chart-data-summary" class="mt-4" style="display: none;"></div>
                                 </div>
@@ -266,30 +299,35 @@ if ($isLoggedIn && is_array($userData)) {
     </div>
     <script src="<?= base_url(RECURSOS_ADMIN_VENDORS . '/js/vendor.bundle.base.js') ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    <script src="<?= base_url(RECURSOS_ADMIN_JS . '/off-canvas.js') ?>"></script>
-    <script src="<?= base_url(RECURSOS_ADMIN_JS . '/hoverable-collapse.js') ?>"></script>
-    <script src="<?= base_url(RECURSOS_ADMIN_JS . '/misc.js') ?>"></script>
-    <script src="<?= base_url(RECURSOS_ADMIN_JS . '/settings.js') ?>"></script>
-    <script src="<?= base_url(RECURSOS_ADMIN_JS . '/todolist.js') ?>"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     
     <script>
     document.addEventListener('DOMContentLoaded', function () {
         const encuestaSelect = document.getElementById('encuesta_select');
         const preguntaSelect = document.getElementById('pregunta_select');
+        const chartTypeSelect = document.getElementById('chart_type_select'); // Nuevo selector para el tipo de gráfica
         const estadoSelect = document.getElementById('estado_select');
         const distritoFederalSelect = document.getElementById('distrito_federal_select');
         const distritoLocalSelect = document.getElementById('distrito_local_select');
         const municipioSelect = document.getElementById('municipio_select');
         const seccionSelect = document.getElementById('seccion_select');
         const comunidadSelect = document.getElementById('comunidad_select');
-        const chartCanvas = document.getElementById('barChart');
+        const chartCanvas = document.getElementById('chartCanvas');
         const noDataMessage = document.getElementById('no_data_message');
         const tituloGrafico = document.getElementById('titulo_grafico');
         const chartDataSummary = document.getElementById('chart-data-summary');
+        const downloadPdfBtn = document.getElementById('download_pdf_btn');
 
         let myChart = null;
         const baseUrl = '<?= base_url("estadistica") ?>';
+        
+        // Colores consistentes para todos los gráficos
+        const colores = ['#007bff', '#28a745', '#dc3545', '#ffc107', '#17a2b8', '#6610f2', '#fd7e14', '#e83e8c'];
+        
+        // Registramos el plugin de datalabels para que funcione en todos los gráficos
+        Chart.register(ChartDataLabels);
 
         // Función genérica para limpiar y cargar selectores
         function cargarSelect(selectElement, data, idKey, textKey, placeholder, disabled = false) {
@@ -307,6 +345,7 @@ if ($isLoggedIn && is_array($userData)) {
         async function actualizarGrafico() {
             const idEncuesta = encuestaSelect.value;
             const idPregunta = preguntaSelect.value;
+            const chartType = chartTypeSelect.value; // Obtenemos el tipo de gráfica seleccionado
 
             if (!idEncuesta || !idPregunta) {
                 if (myChart) { myChart.destroy(); }
@@ -314,6 +353,7 @@ if ($isLoggedIn && is_array($userData)) {
                 noDataMessage.textContent = "Selecciona una encuesta y una pregunta para ver los resultados.";
                 chartCanvas.style.display = 'none';
                 chartDataSummary.style.display = 'none';
+                downloadPdfBtn.style.display = 'none';
                 return;
             }
 
@@ -366,14 +406,34 @@ if ($isLoggedIn && is_array($userData)) {
 
                     const porcentajes = totals.map(total => totalRespuestas > 0 ? ((total / totalRespuestas) * 100).toFixed(1) : 0);
 
-                    let summaryHtml = `<strong>Total de respuestas: ${totalRespuestas}</strong><br>`;
-                    labels.forEach((label, index) => {
-                        summaryHtml += `${label}: ${totals[index]} (${porcentajes[index]}%)<br>`;
-                    });
+                    let summaryHtml = `
+                        <h6>Resumen de Respuestas</h6>
+                        <table class="table table-bordered mt-3">
+                            <thead>
+                                <tr>
+                                    <th>Opciónes</th>
+                                    <th>Total de votos</th>
+                                    <th>Porcentajes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${labels.map((label, index) => `
+                                    <tr>
+                                        <td>${label}</td>
+                                        <td>${totals[index]}</td>
+                                        <td>${porcentajes[index]}%</td>
+                                    </tr>
+                                `).join('')}
+                                <tr>
+                                    <th>Total de respuestas:</th>
+                                    <th>${totalRespuestas}</th>
+                                    <th>100%</th>
+                                </tr>
+                            </tbody>
+                        </table>
+                    `;
                     chartDataSummary.innerHTML = summaryHtml;
                     chartDataSummary.style.display = 'block';
-
-                    const colores = ['#FF1493', '#00FFFF', '#FFD700', '#32CD32', '#9400D3', '#FF4500'];
 
                     const chartData = {
                         labels: labels,
@@ -382,21 +442,80 @@ if ($isLoggedIn && is_array($userData)) {
                             data: totals,
                             backgroundColor: totals.map((_, index) => colores[index % colores.length]),
                             borderColor: totals.map((_, index) => colores[index % colores.length]),
-                            borderWidth: 1
+                            borderWidth: 1,
+                            pointRadius: chartType === 'line' || chartType === 'radar' ? 5 : 0,
+                            fill: chartType === 'line' || chartType === 'radar' ? 'origin' : false, // Relleno solo en la gráfica de líneas y radar
                         }]
                     };
-
-                    const ctx = chartCanvas.getContext('2d');
-                    myChart = new Chart(ctx, {
-                        type: 'bar',
-                        data: chartData,
-                        options: {
+                    
+                    let chartOptions;
+                    if (chartType === 'doughnut' || chartType === 'pie') {
+                        chartOptions = {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        color: '#000000'
+                                    }
+                                },
+                                datalabels: {
+                                    color: '#000000',
+                                    formatter: (value, context) => {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                        return percentage;
+                                    },
+                                    font: {
+                                        weight: 'bold',
+                                        size: 14
+                                    }
+                                }
+                            }
+                        };
+                    } else if (chartType === 'radar') {
+                        chartOptions = {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            elements: {
+                                line: {
+                                    borderWidth: 3
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        color: '#000000'
+                                    }
+                                }
+                            },
+                            scales: {
+                                r: {
+                                    angleLines: {
+                                        color: '#000000'
+                                    },
+                                    grid: {
+                                        color: '#000000'
+                                    },
+                                    pointLabels: {
+                                        color: '#000000'
+                                    },
+                                    ticks: {
+                                        color: '#000000',
+                                        backdropColor: 'rgba(255, 255, 255, 0.8)' // Fondo blanco para ticks
+                                    }
+                                }
+                            }
+                        };
+                    } else { // 'bar', 'line', 'polarArea', 'bubble'
+                        chartOptions = {
                             maintainAspectRatio: false,
                             responsive: true,
                             plugins: {
                                 legend: {
                                     labels: {
-                                        color: '#000000' // Color del texto de la leyenda
+                                        color: '#000000'
                                     }
                                 },
                                 tooltip: {
@@ -410,7 +529,7 @@ if ($isLoggedIn && is_array($userData)) {
                                     }
                                 },
                                 datalabels: {
-                                    color: '#000000', // Color del texto de las etiquetas de datos
+                                    color: '#000000',
                                     anchor: 'end',
                                     align: 'start',
                                     offset: -10,
@@ -430,12 +549,12 @@ if ($isLoggedIn && is_array($userData)) {
                                     suggestedMax: Math.max(...totals) > 5 ? Math.max(...totals) + 1 : 5,
                                     ticks: {
                                         precision: 0,
-                                        color: '#000000' // Color del texto de los ticks del eje Y
+                                        color: '#000000'
                                     }
                                 },
                                 x: {
                                     ticks: {
-                                        color: '#000000', // Color del texto de los ticks del eje X
+                                        color: '#000000',
                                         autoSkip: false,
                                         maxRotation: 45,
                                         minRotation: 45
@@ -448,19 +567,28 @@ if ($isLoggedIn && is_array($userData)) {
                                     categoryPercentage: 0.9
                                 }
                             }
-                        },
-                        plugins: [ChartDataLabels]
+                        };
+                    }
+
+
+                    const ctx = chartCanvas.getContext('2d');
+                    myChart = new Chart(ctx, {
+                        type: chartType,
+                        data: chartData,
+                        options: chartOptions
                     });
 
                     noDataMessage.style.display = 'none';
                     chartCanvas.style.display = 'block';
                     chartDataSummary.style.display = 'block';
+                    downloadPdfBtn.style.display = 'block';
                 } else {
                     if (myChart) { myChart.destroy(); }
                     noDataMessage.textContent = "No hay opciones de respuesta para esta pregunta.";
                     noDataMessage.style.display = 'block';
                     chartCanvas.style.display = 'none';
                     chartDataSummary.style.display = 'none';
+                    downloadPdfBtn.style.display = 'none';
                 }
             } catch (error) {
                 console.error('Error al obtener datos del gráfico:', error);
@@ -469,17 +597,74 @@ if ($isLoggedIn && is_array($userData)) {
                 noDataMessage.style.display = 'block';
                 chartCanvas.style.display = 'none';
                 chartDataSummary.style.display = 'none';
+                downloadPdfBtn.style.display = 'none';
             }
         }
 
-        // --- Eventos para los selectores ---
-        // Aquí están las correcciones para encadenar las llamadas
-        // a la API de forma correcta.
+        async function generarPDF() {
+            const { jsPDF } = window.jspdf;
 
-        // Evento para el selector de Encuesta
+            if (!encuestaSelect.value || !preguntaSelect.value) {
+                alert("Por favor, selecciona una encuesta y una pregunta primero.");
+                return;
+            }
+
+            const doc = new jsPDF();
+            let y = 10;
+            const margin = 10;
+            const maxWidth = 190;
+
+            // Título
+            doc.setFontSize(20);
+            doc.text("Reporte de Estadísticas de Encuesta", margin, y);
+            y += 10;
+
+            // Datos de la encuesta y pregunta
+            doc.setFontSize(12);
+            doc.text(`Encuesta: ${encuestaSelect.options[encuestaSelect.selectedIndex].text}`, margin, y);
+            y += 7;
+            doc.text(`Pregunta: ${preguntaSelect.options[preguntaSelect.selectedIndex].text}`, margin, y);
+            y += 7;
+            doc.text(`Tipo de Gráfica: ${chartTypeSelect.options[chartTypeSelect.selectedIndex].text}`, margin, y);
+            y += 10;
+            
+            // Sección de filtros geográficos
+            let filtros = "Filtros Geográficos:";
+            doc.text(filtros, margin, y);
+            y += 7;
+            if (estadoSelect.value) doc.text(`Estado: ${estadoSelect.options[estadoSelect.selectedIndex].text}`, margin + 5, y);
+            if (estadoSelect.value) y += 5;
+            if (distritoFederalSelect.value) doc.text(`Distrito Federal: ${distritoFederalSelect.options[distritoFederalSelect.selectedIndex].text}`, margin + 5, y);
+            if (distritoFederalSelect.value) y += 5;
+            if (distritoLocalSelect.value) doc.text(`Distrito Local: ${distritoLocalSelect.options[distritoLocalSelect.selectedIndex].text}`, margin + 5, y);
+            if (distritoLocalSelect.value) y += 5;
+            if (municipioSelect.value) doc.text(`Municipio: ${municipioSelect.options[municipioSelect.selectedIndex].text}`, margin + 5, y);
+            if (municipioSelect.value) y += 5;
+            if (seccionSelect.value) doc.text(`Sección: ${seccionSelect.options[seccionSelect.selectedIndex].text}`, margin + 5, y);
+            if (seccionSelect.value) y += 5;
+            if (comunidadSelect.value) doc.text(`Comunidad: ${comunidadSelect.options[comunidadSelect.selectedIndex].text}`, margin + 5, y);
+            if (comunidadSelect.value) y += 5;
+            if (!estadoSelect.value && !distritoFederalSelect.value && !distritoLocalSelect.value && !municipioSelect.value && !seccionSelect.value && !comunidadSelect.value) {
+                doc.text("Ninguno", margin + 5, y);
+                y += 5;
+            }
+            y += 5;
+
+
+            // Agregar el gráfico y el resumen como una sola imagen
+            html2canvas(document.getElementById('chart-card-body'), { scale: 2, logging: false }).then(canvas => {
+                const chartImage = canvas.toDataURL('image/jpeg', 1.0);
+                const chartWidth = 180;
+                const chartHeight = (canvas.height / canvas.width) * chartWidth;
+                
+                doc.addImage(chartImage, 'JPEG', margin, y, chartWidth, chartHeight);
+                doc.save('reporte-estadisticas.pdf');
+            });
+        }
+
+        // --- Eventos para los selectores ---
         encuestaSelect.addEventListener('change', async function() {
             const idEncuesta = this.value;
-            // Reiniciar y deshabilitar los selectores de pregunta y geográficos
             cargarSelect(preguntaSelect, [], 'id_pregunta', 'texto_pregunta', 'Cargando preguntas...', !idEncuesta);
             
             // Reestablecer los selectores geográficos a su estado inicial
@@ -504,6 +689,9 @@ if ($isLoggedIn && is_array($userData)) {
 
         // Evento para el selector de Pregunta
         preguntaSelect.addEventListener('change', actualizarGrafico);
+        
+        // Evento para el selector de Tipo de Gráfica
+        chartTypeSelect.addEventListener('change', actualizarGrafico);
 
         // Evento para el selector de Estado
         estadoSelect.addEventListener('change', async function() {
@@ -572,7 +760,7 @@ if ($isLoggedIn && is_array($userData)) {
         municipioSelect.addEventListener('change', async function() {
             const idMunicipio = this.value;
             // Limpiar y deshabilitar los siguientes selectores
-            cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Cargando secciones...', !idMunicipio);
+            cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Selecciona una sección', true);
             cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
             
             if (idMunicipio) {
@@ -607,6 +795,9 @@ if ($isLoggedIn && is_array($userData)) {
         
         // Evento para el selector de Comunidad
         comunidadSelect.addEventListener('change', actualizarGrafico);
+        
+        // Evento del botón de descarga de PDF
+        downloadPdfBtn.addEventListener('click', generarPDF);
     });
     </script>
 </body>

@@ -86,7 +86,7 @@ if ($isLoggedIn && is_array($userData)) {
                      <li class="active">
                         <a href="<?= base_url('dash') ?>"><i class="fa fa-dashboard yellow_color"></i> <span>Dashboard</span></a>
                      </li>
-                     <li><a href="<?= base_url('tab') ?>"><i class="fa fa-table purple_color2"></i> <span>Tables</span></a></li>
+                     <li><a href="<?= base_url('operador_user') ?>"><i class="fa fa-table purple_color2"></i> <span>Usuarios</span></a></li>
                      <li><a href="<?= base_url('estat') ?>"><i class="fa fa-bar-chart-o green_color"></i> <span>Charts</span></a></li>
                    </ul>
                </div>

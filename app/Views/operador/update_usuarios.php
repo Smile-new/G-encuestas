@@ -67,7 +67,7 @@ if ($isLoggedIn && is_array($userData)) {
                   <h4>General</h4>
                   <ul class="list-unstyled components">
                      <li><a href="<?= base_url('operador/dashboard') ?>"><i class="fa fa-dashboard yellow_color"></i> <span>Dashboard</span></a></li>
-                     <li class="active"><a href="<?= base_url('operador_user') ?>"><i class="fa fa-table purple_color2"></i> <span>Usuarios Encuestadores</span></a></li>
+                     <li class="active"><a href="<?= base_url('operador_user') ?>"><i class="fa fa-table purple_color2"></i> <span>Usuarios</span></a></li>
                      <li><a href="<?= base_url('operador/estadisticas') ?>"><i class="fa fa-bar-chart-o green_color"></i> <span>Estadísticas</span></a></li>
                   </ul>
                </div>
