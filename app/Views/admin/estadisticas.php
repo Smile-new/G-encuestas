@@ -1,96 +1,153 @@
-<?php
-// Obtener la instancia de la sesión al inicio del archivo
-$session = session();
-
-// Preparar los datos del usuario para mostrar en la plantilla
-$isLoggedIn = $session->get('isLoggedIn');
-$userData = $session->get('usuario'); // Obtener todo el array 'usuario' de la sesión
-
-// Definir valores por defecto si el usuario no está logueado o los datos no existen
-$nombreCompleto = "Invitado";
-$nombreUsuario = "invitado"; // Se usará el campo 'usuario' (username)
-$rolTexto = "Rol Desconocido";
-$rutaFotoPerfil = base_url(RECURSOS_ADMIN_IMAGES . '/faces/face15.jpg'); // Imagen por defecto de la plantilla
-
-if ($isLoggedIn && is_array($userData)) {
-    $nombreCompleto = esc($userData['nombre']) . ' ' .
-                      esc($userData['apellido_paterno']) . ' ' .
-                      esc($userData['apellido_materno']);
-    $nombreUsuario = esc($userData['usuario']); // Usamos el campo 'usuario' del array de sesión
-    
-    $id_rol = $userData['id_rol'] ?? null; // Usar id_rol para el rol
-    switch ($id_rol) {
-        case 1: $rolTexto = 'Administrador'; break;
-        case 2: $rolTexto = 'Operador'; break;
-        case 3: $rolTexto = 'Encuestador'; break;
-        default: $rolTexto = 'Miembro'; break;
-    }
-
-    // Si hay una foto de usuario cargada en la sesión, usarla; de lo contrario, usar la por defecto
-    if (!empty($userData['foto'])) {
-        // Asegúrate de que 'public/img_user/' sea la ruta correcta donde guardas las fotos de usuario
-        $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto']));
-    }
-}
-?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Estadísticas | Encuestas</title>
-    <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/mdi/css/materialdesignicons.min.css') ?>">
-    <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/css/vendor.bundle.base.css') ?>">
-    <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_CSS . '/style.css') ?>">
-    <link rel="shortcut icon" href="<?= base_url(RECURSOS_ADMIN_IMAGES . '/favicon.png') ?>" />
+
+    <link rel="stylesheet" href="<?= base_url('recursos_admin/vendors/mdi/css/materialdesignicons.min.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('recursos_admin/vendors/css/vendor.bundle.base.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('recursos_admin/css/style.css') ?>">
+    <link rel="shortcut icon" href="<?= base_url('recursos_admin/images/favicon.png') ?>" />
+
     <style>
-        /* Estilos personalizados para el tema oscuro */
         label {
             color: #ffffff;
         }
+
+        .form-group.checkbox-group {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            padding: 10px;
+            background-color: #2a2c3d;
+        }
+
+        .form-check {
+            padding-left: 0;
+            margin-bottom: 5px;
+        }
+
+        .form-check-input {
+            margin-left: 0;
+            margin-right: 10px;
+        }
+
+        .form-check-label {
+            color: #ffffff;
+        }
+
         select.form-control {
             color: #ffffff;
             background-color: #2a2c3d;
             border-color: #4a4a4a;
         }
+
         select.form-control option {
             background-color: #2a2c3d;
             color: #ffffff;
         }
-        canvas#chartCanvas {
-            background-color: #ffffff;
-        }
+
         .chart-container {
             position: relative;
             height: 400px;
+            margin-bottom: 20px;
         }
-        /* Estilos para el PDF */
-        #pdf-content {
+
+        #charts_container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 400px;
+        }
+
+        .chart-wrapper {
+            width: 100%;
+            max-width: 800px;
             background-color: #ffffff;
             padding: 20px;
-            font-family: Arial, sans-serif;
-            color: #000000;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            height: 400px;
+            position: relative;
         }
-        #pdf-content h1, #pdf-content h2, #pdf-content h3 {
-            color: #000000;
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
         }
-        #pdf-content table {
+
+        .chart-wrapper h4 {
+            color: #000000;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .chart-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
+            max-width: 800px;
+            margin-top: 20px;
         }
-        #pdf-content th, #pdf-content td {
-            border: 1px solid #000000;
-            padding: 8px;
-            text-align: left;
+
+        .chart-navigation .btn {
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .chart-navigation .btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
+    <?php
+    $isLoggedIn = session()->get('isLoggedIn');
+    $userData = session()->get('usuario');
+
+    $nombreCompleto = "Invitado";
+    $rolTexto = "Rol Desconocido";
+    $rutaFotoPerfil = base_url('recursos_admin/images/faces/face15.jpg');
+
+    if ($isLoggedIn && $userData) {
+        $nombreCompleto = trim(($userData['nombre'] ?? '') . ' ' . ($userData['apellido_paterno'] ?? '') . ' ' . ($userData['apellido_materno'] ?? ''));
+        $id_rol = $userData['id_rol'] ?? null;
+        switch ($id_rol) {
+            case 1:
+                $rolTexto = 'Administrador';
+                break;
+            case 2:
+                $rolTexto = 'Operador';
+                break;
+            case 3:
+                $rolTexto = 'Encuestador';
+                break;
+            default:
+                $rolTexto = 'Miembro';
+                break;
+        }
+
+        if (!empty($userData['foto'])) {
+            $rutaFotoPerfil = base_url('public/img_user/' . $userData['foto']);
+        }
+    }
+    $encuestas = $encuestas ?? [];
+    $municipios = $municipios ?? [];
+    ?>
+
     <div class="container-scroller">
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
             <div class="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top">
-                <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo.png') ?>" alt="logo" /></a>
+                <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url('recursos_admin/images/logo.png') ?>" alt="logo" /></a>
             </div>
             <ul class="nav">
                 <li class="nav-item profile">
@@ -101,14 +158,14 @@ if ($isLoggedIn && is_array($userData)) {
                                 <span class="count bg-success"></span>
                             </div>
                             <div class="profile-name">
-                                <h5 class="mb-0 font-weight-normal"><?= esc($nombreCompleto) ?></h5>
-                                <span><?= esc($rolTexto) ?></span>
+                                <h5 class="mb-0 font-weight-normal"><?= $nombreCompleto ?></h5>
+                                <span><?= $rolTexto ?></span>
                             </div>
                         </div>
                     </div>
                 </li>
                 <li class="nav-item nav-category">
-                    <span class="nav-link">Navigation</span>
+                    <span class="nav-link">Navegación</span>
                 </li>
                 <li class="nav-item menu-items">
                     <a class="nav-link" href="<?= base_url('dashboard') ?>">
@@ -129,7 +186,7 @@ if ($isLoggedIn && is_array($userData)) {
                     </a>
                 </li>
                 <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('estadistica') ?>">
+                    <a class="nav-link" href="<?= base_url('estadisticas') ?>">
                         <span class="menu-icon"><i class="mdi mdi-chart-bar"></i></span>
                         <span class="menu-title">Estadísticas</span>
                     </a>
@@ -142,10 +199,11 @@ if ($isLoggedIn && is_array($userData)) {
                 </li>
             </ul>
         </nav>
+
         <div class="container-fluid page-body-wrapper">
             <nav class="navbar p-0 fixed-top d-flex flex-row">
                 <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
-                    <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo.png') ?>" alt="logo" /></a>
+                    <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url('recursos_admin/images/logo.png') ?>" alt="logo" /></a>
                 </div>
                 <div class="navbar-menu-wrapper flex-grow d-flex align-items-stretch">
                     <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
@@ -156,7 +214,7 @@ if ($isLoggedIn && is_array($userData)) {
                             <a class="nav-link" id="profileDropdown" href="#" data-toggle="dropdown">
                                 <div class="navbar-profile">
                                     <img class="img-xs rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil">
-                                    <p class="mb-0 d-none d-sm-block navbar-profile-name"><?= esc($nombreCompleto) ?></p>
+                                    <p class="mb-0 d-none d-sm-block navbar-profile-name"><?= $nombreCompleto ?></p>
                                     <i class="mdi mdi-menu-down d-none d-sm-block"></i>
                                 </div>
                             </a>
@@ -179,12 +237,13 @@ if ($isLoggedIn && is_array($userData)) {
                     </button>
                 </div>
             </nav>
+
             <div class="main-panel">
                 <div class="content-wrapper">
                     <div class="page-header">
                         <h3 class="page-title">Estadísticas de Encuestas</h3>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-12 grid-margin stretch-card">
                             <div class="card">
@@ -196,16 +255,16 @@ if ($isLoggedIn && is_array($userData)) {
                                                 <label for="encuesta_select">Encuesta</label>
                                                 <select class="form-control" id="encuesta_select">
                                                     <option value="">Selecciona una encuesta</option>
-                                                    <?php foreach ($encuestas as $encuesta): ?>
-                                                        <option value="<?= esc($encuesta['id_encuesta']) ?>"><?= esc($encuesta['titulo']) ?></option>
+                                                    <?php foreach ($encuestas as $encuesta) : ?>
+                                                        <option value="<?= $encuesta['id_encuesta'] ?>"><?= $encuesta['titulo'] ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
                                             <div class="form-group col-md-3">
-                                                <label for="pregunta_select">Pregunta</label>
-                                                <select class="form-control" id="pregunta_select" disabled>
-                                                    <option value="">Selecciona una pregunta</option>
-                                                </select>
+                                                <label>Pregunta</label>
+                                                <div id="pregunta_checkbox_container" class="form-group checkbox-group">
+                                                    <p class="text-white-50">Selecciona una encuesta para cargar las preguntas.</p>
+                                                </div>
                                             </div>
                                             <div class="form-group col-md-3">
                                                 <label for="chart_type_select">Tipo de Gráfica</label>
@@ -217,51 +276,34 @@ if ($isLoggedIn && is_array($userData)) {
                                                     <option value="radar">Gráfica de Radar</option>
                                                 </select>
                                             </div>
-                                            <div class="form-group col-md-3 d-flex align-items-end">
-                                                <button type="button" class="btn btn-primary" id="download_pdf_btn">Descargar PDF</button>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="form-group col-md-4">
-                                                <label for="estado_select">Estado</label>
-                                                <select class="form-control" id="estado_select">
-                                                    <option value="">Selecciona un estado</option>
-                                                    <?php foreach ($estados as $estado): ?>
-                                                        <option value="<?= esc($estado['id_estado']) ?>"><?= esc($estado['nombre_estado']) ?></option>
+                                            <div class="form-group col-md-3">
+                                                <label for="municipio_select">Municipio</label>
+                                                <select class="form-control" id="municipio_select">
+                                                    <option value="">Selecciona un municipio</option>
+                                                    <?php foreach ($municipios as $municipio) : ?>
+                                                        <option value="<?= $municipio['id_municipio'] ?>"><?= $municipio['nombre_municipio'] ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
-                                            <div class="form-group col-md-4">
-                                                <label for="distrito_federal_select">Distrito Federal</label>
-                                                <select class="form-control" id="distrito_federal_select" disabled>
-                                                    <option value="">Selecciona un distrito federal</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group col-md-4">
-                                                <label for="distrito_local_select">Distrito Local</label>
-                                                <select class="form-control" id="distrito_local_select" disabled>
-                                                    <option value="">Selecciona un distrito local</option>
-                                                </select>
-                                            </div>
                                         </div>
                                         <div class="row">
-                                            <div class="form-group col-md-4">
-                                                <label for="municipio_select">Municipio</label>
-                                                <select class="form-control" id="municipio_select" disabled>
-                                                    <option value="">Selecciona un municipio</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group col-md-4">
+                                            <div class="form-group col-md-3">
                                                 <label for="seccion_select">Sección</label>
                                                 <select class="form-control" id="seccion_select" disabled>
                                                     <option value="">Selecciona una sección</option>
                                                 </select>
                                             </div>
-                                            <div class="form-group col-md-4">
+                                            <div class="form-group col-md-3">
                                                 <label for="comunidad_select">Comunidad</label>
                                                 <select class="form-control" id="comunidad_select" disabled>
                                                     <option value="">Selecciona una comunidad</option>
                                                 </select>
+                                            </div>
+                                            <div class="form-group col-md-3 d-flex align-items-end">
+                                                <button type="button" class="btn btn-success" id="generate_charts_btn" disabled>Generar Gráficos</button>
+                                            </div>
+                                            <div class="form-group col-md-3 d-flex align-items-end">
+                                                <button type="button" class="btn btn-primary" id="download_pdf_btn" style="display: none;">Descargar PDF</button>
                                             </div>
                                         </div>
                                     </form>
@@ -274,20 +316,23 @@ if ($isLoggedIn && is_array($userData)) {
                         <div class="col-md-12 grid-margin stretch-card">
                             <div class="card">
                                 <div class="card-body" id="chart-card-body">
-                                    <h4 class="card-title" id="titulo_grafico">Resultados de la pregunta</h4>
+                                    <h4 class="card-title" id="main_chart_title">Resultados de las preguntas seleccionadas</h4>
                                     <div id="no_data_message" class="text-center" style="display: block;">
-                                        <p>Selecciona una encuesta y una pregunta para ver los resultados.</p>
+                                        <p>Selecciona una encuesta y al menos una pregunta para ver los resultados.</p>
                                     </div>
-                                    <div class="chart-container">
-                                        <canvas id="chartCanvas" style="display: none;"></canvas>
+                                    <div id="charts_container">
                                     </div>
-                                    <div id="chart-data-summary" class="mt-4" style="display: none;"></div>
+                                    <div id="chart_navigation_container" class="chart-navigation" style="display: none;">
+                                        <button class="btn" id="prev_chart_btn" disabled>Anterior</button>
+                                        <span id="chart_counter" class="text-white"></span>
+                                        <button class="btn" id="next_chart_btn" disabled>Siguiente</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </div>
+
                 <footer class="footer">
                     <div class="d-sm-flex justify-content-center justify-content-sm-between">
                         <span class="text-muted d-block text-center text-sm-left d-sm-inline-block">Copyright © bootstrapdash.com 2020</span>
@@ -297,242 +342,481 @@ if ($isLoggedIn && is_array($userData)) {
             </div>
         </div>
     </div>
-    <script src="<?= base_url(RECURSOS_ADMIN_VENDORS . '/js/vendor.bundle.base.js') ?>"></script>
+
+    <script src="<?= base_url('recursos_admin/vendors/js/vendor.bundle.base.js') ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    
+
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const encuestaSelect = document.getElementById('encuesta_select');
-        const preguntaSelect = document.getElementById('pregunta_select');
-        const chartTypeSelect = document.getElementById('chart_type_select'); // Nuevo selector para el tipo de gráfica
-        const estadoSelect = document.getElementById('estado_select');
-        const distritoFederalSelect = document.getElementById('distrito_federal_select');
-        const distritoLocalSelect = document.getElementById('distrito_local_select');
-        const municipioSelect = document.getElementById('municipio_select');
-        const seccionSelect = document.getElementById('seccion_select');
-        const comunidadSelect = document.getElementById('comunidad_select');
-        const chartCanvas = document.getElementById('chartCanvas');
-        const noDataMessage = document.getElementById('no_data_message');
-        const tituloGrafico = document.getElementById('titulo_grafico');
-        const chartDataSummary = document.getElementById('chart-data-summary');
-        const downloadPdfBtn = document.getElementById('download_pdf_btn');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Referencias a elementos del DOM
+            const encuestaSelect = document.getElementById('encuesta_select');
+            const preguntaCheckboxContainer = document.getElementById('pregunta_checkbox_container');
+            const chartTypeSelect = document.getElementById('chart_type_select');
+            const municipioSelect = document.getElementById('municipio_select');
+            const seccionSelect = document.getElementById('seccion_select');
+            const comunidadSelect = document.getElementById('comunidad_select');
+            const chartsContainer = document.getElementById('charts_container');
+            const noDataMessage = document.getElementById('no_data_message');
+            const downloadPdfBtn = document.getElementById('download_pdf_btn');
+            const chartNavigationContainer = document.getElementById('chart_navigation_container');
+            const prevChartBtn = document.getElementById('prev_chart_btn');
+            const nextChartBtn = document.getElementById('next_chart_btn');
+            const chartCounter = document.getElementById('chart_counter');
+            const generateChartsBtn = document.getElementById('generate_charts_btn');
 
-        let myChart = null;
-        const baseUrl = '<?= base_url("estadistica") ?>';
-        
-        // Colores consistentes para todos los gráficos
-        const colores = ['#007bff', '#28a745', '#dc3545', '#ffc107', '#17a2b8', '#6610f2', '#fd7e14', '#e83e8c'];
-        
-        // Registramos el plugin de datalabels para que funcione en todos los gráficos
-        Chart.register(ChartDataLabels);
+            let chartDataSets = [];
+            let currentChartIndex = 0;
+            let chartInstance = null;
 
-        // Función genérica para limpiar y cargar selectores
-        function cargarSelect(selectElement, data, idKey, textKey, placeholder, disabled = false) {
-            selectElement.innerHTML = `<option value="">${placeholder}</option>`;
-            data.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item[idKey];
-                option.textContent = item[textKey];
-                selectElement.appendChild(option);
-            });
-            selectElement.disabled = disabled;
-        }
+            // Asegúrate de que las URL estén correctamente configuradas en tu archivo de rutas de CodeIgniter.
+            const baseUrl = '<?= base_url('estadisticascontroller') ?>';
+            const colores = ['#007bff', '#28a745', '#dc3545', '#ffc107', '#17a2b8', '#6610f2', '#fd7e14', '#e83e8c'];
+            const colorTextoSecundario = '#424242';
 
-        // Función principal para actualizar el gráfico y los filtros
-        async function actualizarGrafico() {
-            const idEncuesta = encuestaSelect.value;
-            const idPregunta = preguntaSelect.value;
-            const chartType = chartTypeSelect.value; // Obtenemos el tipo de gráfica seleccionado
+            Chart.register(ChartDataLabels);
 
-            if (!idEncuesta || !idPregunta) {
-                if (myChart) { myChart.destroy(); }
-                noDataMessage.style.display = 'block';
-                noDataMessage.textContent = "Selecciona una encuesta y una pregunta para ver los resultados.";
-                chartCanvas.style.display = 'none';
-                chartDataSummary.style.display = 'none';
-                downloadPdfBtn.style.display = 'none';
-                return;
+            /**
+             * Carga opciones en un selector y lo habilita o deshabilita.
+             */
+            function cargarSelect(selectElement, data, idKey, textKey, placeholder, disabled = false) {
+                selectElement.innerHTML = `<option value="">${placeholder}</option>`;
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item[idKey];
+                    option.textContent = item[textKey];
+                    selectElement.appendChild(option);
+                });
+                selectElement.disabled = disabled;
             }
 
-            tituloGrafico.textContent = `Resultados: ${preguntaSelect.options[preguntaSelect.selectedIndex].text}`;
-
-            const params = new URLSearchParams({
-                id_encuesta: idEncuesta,
-                id_pregunta: idPregunta,
-                id_estado: estadoSelect.value,
-                id_distrito_federal: distritoFederalSelect.value,
-                id_distrito_local: distritoLocalSelect.value,
-                id_municipio: municipioSelect.value,
-                id_seccion: seccionSelect.value,
-                id_comunidad: comunidadSelect.value,
-            });
-
-            try {
-                // Obtener todas las opciones de respuesta para la pregunta
-                const opcionesResponse = await fetch(`${baseUrl}/getOpcionesPregunta/${idPregunta}`);
-                if (!opcionesResponse.ok) {
-                    throw new Error(`Error HTTP! status: ${opcionesResponse.status}`);
-                }
-                const opcionesData = await opcionesResponse.json();
-
-                // Obtener las respuestas con los filtros aplicados
-                const respuestasResponse = await fetch(`${baseUrl}/getRespuestas?${params.toString()}`);
-                if (!respuestasResponse.ok) {
-                    throw new Error(`Error HTTP! status: ${respuestasResponse.status}`);
-                }
-                const respuestasData = await respuestasResponse.json();
-
-                if (myChart) { myChart.destroy(); }
-
-                if (opcionesData && opcionesData.length > 0) {
-                    const datosMapeados = {};
-                    opcionesData.forEach(opcion => {
-                        datosMapeados[opcion.texto_opcion] = 0;
+            /**
+             * Carga checkboxes de preguntas en el contenedor.
+             */
+            function cargarPreguntasCheckboxes(preguntasData) {
+                preguntaCheckboxContainer.innerHTML = '';
+                if (preguntasData.length > 0) {
+                    preguntasData.forEach(pregunta => {
+                        const div = document.createElement('div');
+                        div.classList.add('form-check');
+                        div.innerHTML = `
+                            <input class="form-check-input" type="checkbox" value="${pregunta.id_pregunta}" id="pregunta-${pregunta.id_pregunta}">
+                            <label class="form-check-label" for="pregunta-${pregunta.id_pregunta}">${pregunta.texto_pregunta}</label>
+                        `;
+                        preguntaCheckboxContainer.appendChild(div);
                     });
+                    preguntaCheckboxContainer.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                        checkbox.addEventListener('change', () => {
+                            const anyChecked = Array.from(preguntaCheckboxContainer.querySelectorAll('input[type="checkbox"]:checked')).length > 0;
+                            generateChartsBtn.disabled = !anyChecked;
+                        });
+                    });
+                } else {
+                    preguntaCheckboxContainer.innerHTML = `<p class="text-white-50">No hay preguntas disponibles para esta encuesta.</p>`;
+                }
+            }
 
-                    respuestasData.forEach(respuesta => {
-                        const opcionEncontrada = opcionesData.find(opcion => opcion.id_opcion == respuesta.id_opcion);
-                        if (opcionEncontrada) {
-                            datosMapeados[opcionEncontrada.texto_opcion] = parseInt(respuesta.total, 10);
+            /**
+             * Crea un conjunto de datos para un gráfico a partir de una pregunta y filtros.
+             */
+            async function crearDatosGrafico(idPregunta, nombrePregunta) {
+                const idEncuesta = encuestaSelect.value;
+                const chartType = chartTypeSelect.value;
+                const params = new URLSearchParams({
+                    id_encuesta: idEncuesta,
+                    id_pregunta: idPregunta,
+                    id_municipio: municipioSelect.value,
+                    id_seccion: seccionSelect.value,
+                    id_comunidad: comunidadSelect.value,
+                });
+
+                try {
+                    const opcionesResponse = await fetch(`${baseUrl}/getOpcionesPregunta/${idPregunta}`);
+                    const opcionesData = await opcionesResponse.json();
+                    const respuestasResponse = await fetch(`${baseUrl}/getRespuestas?${params.toString()}`);
+                    const respuestasData = await respuestasResponse.json();
+
+                    if (opcionesData && opcionesData.length > 0) {
+                        const datosMapeados = {};
+                        opcionesData.forEach(opcion => {
+                            datosMapeados[opcion.texto_opcion] = 0;
+                        });
+
+                        respuestasData.forEach(respuesta => {
+                            const opcionEncontrada = opcionesData.find(opcion => opcion.id_opcion == respuesta.id_opcion);
+                            if (opcionEncontrada) {
+                                datosMapeados[opcionEncontrada.texto_opcion] = parseInt(respuesta.total, 10);
+                            }
+                        });
+
+                        const labels = Object.keys(datosMapeados);
+                        const totals = Object.values(datosMapeados);
+
+                        const chartData = {
+                            id: idPregunta,
+                            title: nombrePregunta,
+                            labels: labels,
+                            datasets: [{
+                                label: 'Total de Respuestas',
+                                data: totals,
+                                backgroundColor: totals.map((_, index) => colores[index % colores.length]),
+                                borderColor: totals.map((_, index) => colores[index % colores.length]),
+                                borderWidth: 1,
+                                pointRadius: chartType === 'line' || chartType === 'radar' ? 5 : 0,
+                                fill: chartType === 'line' || chartType === 'radar' ? 'origin' : false,
+                            }]
+                        };
+                        chartDataSets.push(chartData);
+                    } else {
+                        console.warn(`No hay opciones de respuesta para la pregunta: ${nombrePregunta}`);
+                    }
+                } catch (error) {
+                    console.error('Error al obtener datos del gráfico para la pregunta ' + idPregunta + ':', error);
+                }
+            }
+
+            /**
+             * Renderiza un gráfico en el contenedor principal.
+             */
+            function renderizarGrafico(dataSet) {
+                chartsContainer.innerHTML = '';
+                if (chartInstance) {
+                    chartInstance.destroy();
+                    chartInstance = null;
+                }
+
+                if (!dataSet || dataSet.datasets[0].data.reduce((sum, current) => sum + current, 0) === 0) {
+                    noDataMessage.style.display = 'block';
+                    noDataMessage.textContent = "No hay datos de respuestas para la pregunta seleccionada.";
+                    chartNavigationContainer.style.display = 'none';
+                    downloadPdfBtn.style.display = 'none';
+                    return;
+                }
+
+                noDataMessage.style.display = 'none';
+
+                const chartWrapper = document.createElement('div');
+                chartWrapper.classList.add('chart-wrapper');
+
+                const chartTitle = document.createElement('h4');
+                chartTitle.textContent = dataSet.title;
+
+                const chartCanvas = document.createElement('canvas');
+                chartCanvas.id = `chart-${dataSet.id}`;
+
+                chartWrapper.appendChild(chartTitle);
+                chartWrapper.appendChild(chartCanvas);
+                chartsContainer.appendChild(chartWrapper);
+
+                const ctx = chartCanvas.getContext('2d');
+                const chartType = chartTypeSelect.value;
+
+                let chartOptions = {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: chartType === 'doughnut' || chartType === 'pie' ? 'bottom' : 'top',
+                            labels: {
+                                color: '#000000'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y !== undefined ? context.parsed.y : context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${context.label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            color: colorTextoSecundario,
+                            anchor: 'end',
+                            align: 'start',
+                            offset: -10,
+                            font: {
+                                weight: 'bold'
+                            },
+                            formatter: (value, context) => {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                return `${value} (${percentage})`;
+                            }
                         }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: Math.max(...dataSet.datasets[0].data) > 5 ? Math.max(...dataSet.datasets[0].data) + 1 : 5,
+                            ticks: {
+                                precision: 0,
+                                color: '#000000'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: colorTextoSecundario,
+                                autoSkip: false,
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        }
+                    },
+                    elements: {
+                        bar: {
+                            barPercentage: 0.8,
+                            categoryPercentage: 0.9
+                        }
+                    }
+                };
+
+                if (chartType === 'doughnut' || chartType === 'pie') {
+                    chartOptions.plugins.datalabels.offset = 0;
+                    chartOptions.plugins.datalabels.align = 'center';
+                    chartOptions.plugins.datalabels.formatter = (value, context) => {
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                        return percentage;
+                    };
+                    delete chartOptions.scales;
+                } else if (chartType === 'radar') {
+                    chartOptions.scales = {
+                        r: {
+                            angleLines: {
+                                color: '#000000'
+                            },
+                            grid: {
+                                color: '#000000'
+                            },
+                            pointLabels: {
+                                color: '#000000'
+                            },
+                            ticks: {
+                                color: '#000000',
+                                backdropColor: 'rgba(255, 255, 255, 0.8)'
+                            }
+                        }
+                    };
+                    delete chartOptions.scales.y;
+                    delete chartOptions.scales.x;
+                }
+
+                chartInstance = new Chart(ctx, {
+                    type: chartType,
+                    data: {
+                        labels: dataSet.labels,
+                        datasets: dataSet.datasets
+                    },
+                    options: chartOptions
+                });
+            }
+
+            /**
+             * Genera y muestra los gráficos para las preguntas seleccionadas.
+             */
+            async function generarGraficos() {
+                const selectedQuestions = Array.from(preguntaCheckboxContainer.querySelectorAll('input[type="checkbox"]:checked'));
+                const idEncuesta = encuestaSelect.value;
+
+                chartsContainer.innerHTML = '';
+                chartDataSets = [];
+                currentChartIndex = 0;
+                if (chartInstance) {
+                    chartInstance.destroy();
+                    chartInstance = null;
+                }
+                chartNavigationContainer.style.display = 'none';
+                downloadPdfBtn.style.display = 'none';
+
+                if (!idEncuesta || selectedQuestions.length === 0) {
+                    noDataMessage.style.display = 'block';
+                    noDataMessage.textContent = "Selecciona una encuesta y al menos una pregunta para ver los resultados.";
+                    return;
+                }
+
+                noDataMessage.style.display = 'none';
+
+                for (const checkbox of selectedQuestions) {
+                    const idPregunta = checkbox.value;
+                    const nombrePregunta = checkbox.nextElementSibling.textContent;
+                    await crearDatosGrafico(idPregunta, nombrePregunta);
+                }
+
+                if (chartDataSets.length > 0) {
+                    renderizarGrafico(chartDataSets[currentChartIndex]);
+                    if (chartDataSets.length > 1) {
+                        chartNavigationContainer.style.display = 'flex';
+                    }
+                    actualizarControlesNavegacion();
+                    downloadPdfBtn.style.display = 'block';
+                } else {
+                    noDataMessage.style.display = 'block';
+                    noDataMessage.textContent = "No hay datos de respuestas para las preguntas seleccionadas.";
+                }
+            }
+
+            /**
+             * Actualiza los controles de navegación de los gráficos.
+             */
+            function actualizarControlesNavegacion() {
+                chartCounter.textContent = `${currentChartIndex + 1} de ${chartDataSets.length}`;
+                prevChartBtn.disabled = currentChartIndex === 0;
+                nextChartBtn.disabled = currentChartIndex === chartDataSets.length - 1;
+            }
+
+            /**
+             * Muestra el siguiente gráfico en la secuencia.
+             */
+            function mostrarSiguienteGrafico() {
+                if (currentChartIndex < chartDataSets.length - 1) {
+                    currentChartIndex++;
+                    renderizarGrafico(chartDataSets[currentChartIndex]);
+                    actualizarControlesNavegacion();
+                }
+            }
+
+            /**
+             * Muestra el gráfico anterior en la secuencia.
+             */
+            function mostrarGraficoAnterior() {
+                if (currentChartIndex > 0) {
+                    currentChartIndex--;
+                    renderizarGrafico(chartDataSets[currentChartIndex]);
+                    actualizarControlesNavegacion();
+                }
+            }
+
+            /**
+             * Genera un PDF con todas las gráficas en formato horizontal,
+             * con un diseño profesional, fondos blancos y datos de filtro.
+             */
+            async function generarPDF() {
+                const {
+                    jsPDF
+                } = window.jspdf;
+
+                // Validar que haya datos para generar el reporte
+                if (!encuestaSelect.value || chartDataSets.length === 0) {
+                    alert("Por favor, selecciona una encuesta y al menos una pregunta para generar el reporte.");
+                    return;
+                }
+
+                // Configuración del documento PDF en modo horizontal
+                const doc = new jsPDF({
+                    orientation: "landscape",
+                    unit: "mm",
+                    format: "a4"
+                });
+
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const margin = 15;
+
+                // Colores
+                const colorPrimario = '#E53935';
+                const colorTextoPrimario = '#ffffff';
+                const colorTextoSecundario = '#424242';
+                const colorFondoGrafica = '#FFFFFF';
+
+                // Obtener datos de filtros
+                const encuestaTitle = encuestaSelect.options[encuestaSelect.selectedIndex].text;
+                const municipioName = municipioSelect.value ? municipioSelect.options[municipioSelect.selectedIndex].text : 'Todos';
+                const seccionName = seccionSelect.value ? seccionSelect.options[seccionSelect.selectedIndex].text : 'Todas';
+                const comunidadName = comunidadSelect.value ? comunidadSelect.options[comunidadSelect.selectedIndex].text : 'Todas';
+
+                for (let index = 0; index < chartDataSets.length; index++) {
+                    if (index > 0) doc.addPage();
+
+                    const dataSet = chartDataSets[index];
+                    const yPosition = 30;
+
+                    // Cabecera roja
+                    doc.setFillColor(colorPrimario);
+                    doc.rect(0, 0, pageWidth, 20, 'F');
+
+                    // Título del reporte
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(16);
+                    doc.setTextColor(colorTextoPrimario);
+                    doc.text("Reporte de Resultados de Encuesta", pageWidth / 2, 13, {
+                        align: "center"
                     });
 
-                    const labels = Object.keys(datosMapeados);
-                    const totals = Object.values(datosMapeados);
-                    const totalRespuestas = totals.reduce((sum, current) => sum + current, 0);
+                    // Info de la encuesta
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(12);
+                    doc.setTextColor(colorTextoSecundario);
+                    doc.text(`Encuesta: ${encuestaTitle}`, pageWidth / 2, yPosition, {
+                        align: "center"
+                    });
+                    doc.text(
+                        `Municipio: ${municipioName} | Sección: ${seccionName} | Comunidad: ${comunidadName}`,
+                        pageWidth / 2,
+                        yPosition + 7, {
+                            align: "center"
+                        }
+                    );
 
-                    const porcentajes = totals.map(total => totalRespuestas > 0 ? ((total / totalRespuestas) * 100).toFixed(1) : 0);
+                    // Título de la pregunta
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(14);
+                    doc.setTextColor(colorTextoSecundario);
+                    doc.text(dataSet.title, pageWidth / 2, yPosition + 20, {
+                        align: "center"
+                    });
 
-                    let summaryHtml = `
-                        <h6>Resumen de Respuestas</h6>
-                        <table class="table table-bordered mt-3">
-                            <thead>
-                                <tr>
-                                    <th>Opciónes</th>
-                                    <th>Total de votos</th>
-                                    <th>Porcentajes</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${labels.map((label, index) => `
-                                    <tr>
-                                        <td>${label}</td>
-                                        <td>${totals[index]}</td>
-                                        <td>${porcentajes[index]}%</td>
-                                    </tr>
-                                `).join('')}
-                                <tr>
-                                    <th>Total de respuestas:</th>
-                                    <th>${totalRespuestas}</th>
-                                    <th>100%</th>
-                                </tr>
-                            </tbody>
-                        </table>
-                    `;
-                    chartDataSummary.innerHTML = summaryHtml;
-                    chartDataSummary.style.display = 'block';
+                    // Canvas temporal
+                    const chartCanvas = document.createElement('canvas');
+                    chartCanvas.width = 1000;
+                    chartCanvas.height = 500;
+                    const ctx = chartCanvas.getContext('2d');
 
-                    const chartData = {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Total de Respuestas',
-                            data: totals,
-                            backgroundColor: totals.map((_, index) => colores[index % colores.length]),
-                            borderColor: totals.map((_, index) => colores[index % colores.length]),
-                            borderWidth: 1,
-                            pointRadius: chartType === 'line' || chartType === 'radar' ? 5 : 0,
-                            fill: chartType === 'line' || chartType === 'radar' ? 'origin' : false, // Relleno solo en la gráfica de líneas y radar
-                        }]
-                    };
-                    
-                    let chartOptions;
-                    if (chartType === 'doughnut' || chartType === 'pie') {
-                        chartOptions = {
-                            responsive: true,
+                    const chartType = chartTypeSelect.value;
+                    const totalRespuestas = dataSet.datasets[0].data.reduce((a, b) => a + b, 0);
+
+                    if (totalRespuestas === 0) continue;
+
+                    // Fondo blanco antes de la gráfica
+                    ctx.fillStyle = colorFondoGrafica;
+                    ctx.fillRect(0, 0, chartCanvas.width, chartCanvas.height);
+
+                    // Crear gráfica
+                    const tempChart = new Chart(ctx, {
+                        type: chartType,
+                        data: {
+                            labels: dataSet.labels,
+                            datasets: dataSet.datasets
+                        },
+                        options: {
+                            responsive: false,
                             maintainAspectRatio: false,
                             plugins: {
                                 legend: {
-                                    position: 'bottom',
+                                    display: true,
+                                    position: chartType === 'doughnut' || chartType === 'pie' ? 'bottom' : 'top',
                                     labels: {
-                                        color: '#000000'
-                                    }
-                                },
-                                datalabels: {
-                                    color: '#000000',
-                                    formatter: (value, context) => {
-                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
-                                        return percentage;
-                                    },
-                                    font: {
-                                        weight: 'bold',
-                                        size: 14
-                                    }
-                                }
-                            }
-                        };
-                    } else if (chartType === 'radar') {
-                        chartOptions = {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            elements: {
-                                line: {
-                                    borderWidth: 3
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    labels: {
-                                        color: '#000000'
-                                    }
-                                }
-                            },
-                            scales: {
-                                r: {
-                                    angleLines: {
-                                        color: '#000000'
-                                    },
-                                    grid: {
-                                        color: '#000000'
-                                    },
-                                    pointLabels: {
-                                        color: '#000000'
-                                    },
-                                    ticks: {
-                                        color: '#000000',
-                                        backdropColor: 'rgba(255, 255, 255, 0.8)' // Fondo blanco para ticks
-                                    }
-                                }
-                            }
-                        };
-                    } else { // 'bar', 'line', 'polarArea', 'bubble'
-                        chartOptions = {
-                            maintainAspectRatio: false,
-                            responsive: true,
-                            plugins: {
-                                legend: {
-                                    labels: {
-                                        color: '#000000'
+                                        color: colorTextoSecundario,
+                                        boxWidth: 20
                                     }
                                 },
                                 tooltip: {
                                     callbacks: {
                                         label: function(context) {
-                                            const value = context.parsed.y;
-                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                            const value = context.parsed.y !== undefined ? context.parsed.y : context.parsed;
+                                            const percentage = totalRespuestas > 0 ? ((value / totalRespuestas) * 100).toFixed(1) : 0;
                                             return `${context.label}: ${value} (${percentage}%)`;
                                         }
                                     }
                                 },
                                 datalabels: {
-                                    color: '#000000',
-                                    anchor: 'end',
-                                    align: 'start',
-                                    offset: -10,
+                                    color: colorTextoSecundario,
+                                    anchor: chartType === 'pie' || chartType === 'doughnut' ? 'center' : 'end',
+                                    align: chartType === 'pie' || chartType === 'doughnut' ? 'center' : 'top',
+                                    offset: chartType === 'pie' || chartType === 'doughnut' ? 0 : -10,
                                     font: {
                                         weight: 'bold'
                                     },
@@ -543,262 +827,120 @@ if ($isLoggedIn && is_array($userData)) {
                                     }
                                 }
                             },
-                            scales: {
+                            scales: chartType === 'doughnut' || chartType === 'pie' || chartType === 'radar' ? {} : {
                                 y: {
                                     beginAtZero: true,
-                                    suggestedMax: Math.max(...totals) > 5 ? Math.max(...totals) + 1 : 5,
+                                    suggestedMax: Math.max(...dataSet.datasets[0].data) > 5 ? Math.max(...dataSet.datasets[0].data) + 1 : 5,
                                     ticks: {
                                         precision: 0,
-                                        color: '#000000'
+                                        color: colorTextoSecundario
                                     }
                                 },
                                 x: {
                                     ticks: {
-                                        color: '#000000',
+                                        color: colorTextoSecundario,
                                         autoSkip: false,
                                         maxRotation: 45,
                                         minRotation: 45
                                     }
                                 }
-                            },
-                            elements: {
-                                bar: {
-                                    barPercentage: 0.8,
-                                    categoryPercentage: 0.9
-                                }
                             }
-                        };
-                    }
-
-
-                    const ctx = chartCanvas.getContext('2d');
-                    myChart = new Chart(ctx, {
-                        type: chartType,
-                        data: chartData,
-                        options: chartOptions
+                        },
+                        plugins: [{
+                            id: 'customBackground',
+                            beforeDraw: (chart) => {
+                                const ctx = chart.canvas.getContext('2d');
+                                ctx.save();
+                                ctx.globalCompositeOperation = 'destination-over';
+                                ctx.fillStyle = '#ffffff';
+                                ctx.fillRect(0, 0, chart.width, chart.height);
+                                ctx.restore();
+                            }
+                        }]
                     });
 
-                    noDataMessage.style.display = 'none';
-                    chartCanvas.style.display = 'block';
-                    chartDataSummary.style.display = 'block';
-                    downloadPdfBtn.style.display = 'block';
+                    tempChart.update();
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    const chartImage = tempChart.toBase64Image("image/jpeg", 1.0);
+                    tempChart.destroy();
+
+                    const imgWidth = pageWidth - margin * 2;
+                    const imgHeight = imgWidth * (chartCanvas.height / chartCanvas.width);
+                    const imgX = margin;
+                    const imgY = yPosition + 30;
+
+                    doc.addImage(chartImage, "JPEG", imgX, imgY, imgWidth, imgHeight);
+
+                }
+
+                doc.save("reporte-encuesta.pdf");
+            }
+
+
+            // Eventos para los selectores
+            encuestaSelect.addEventListener('change', async function() {
+                const idEncuesta = this.value;
+                preguntaCheckboxContainer.innerHTML = `<p class="text-white-50">Cargando preguntas...</p>`;
+                generateChartsBtn.disabled = true;
+
+                // Al cambiar la encuesta, limpiamos y deshabilitamos los selects de filtros geográficos
+                municipioSelect.value = '';
+                cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Selecciona una sección', true);
+                cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
+
+                if (idEncuesta) {
+                    try {
+                        const response = await fetch(`<?= base_url('estadisticascontroller/getPreguntas') ?>/${idEncuesta}`);
+                        const data = await response.json();
+                        cargarPreguntasCheckboxes(data);
+                    } catch (error) {
+                        console.error('Error al cargar preguntas:', error);
+                        preguntaCheckboxContainer.innerHTML = `<p class="text-white-50">Error al cargar preguntas.</p>`;
+                    }
                 } else {
-                    if (myChart) { myChart.destroy(); }
-                    noDataMessage.textContent = "No hay opciones de respuesta para esta pregunta.";
-                    noDataMessage.style.display = 'block';
-                    chartCanvas.style.display = 'none';
-                    chartDataSummary.style.display = 'none';
-                    downloadPdfBtn.style.display = 'none';
+                    preguntaCheckboxContainer.innerHTML = `<p class="text-white-50">Selecciona una encuesta para cargar las preguntas.</p>`;
                 }
-            } catch (error) {
-                console.error('Error al obtener datos del gráfico:', error);
-                if (myChart) { myChart.destroy(); }
-                noDataMessage.textContent = "Error al cargar los datos. Revisa la consola para más detalles.";
-                noDataMessage.style.display = 'block';
-                chartCanvas.style.display = 'none';
-                chartDataSummary.style.display = 'none';
-                downloadPdfBtn.style.display = 'none';
-            }
-        }
-
-        async function generarPDF() {
-            const { jsPDF } = window.jspdf;
-
-            if (!encuestaSelect.value || !preguntaSelect.value) {
-                alert("Por favor, selecciona una encuesta y una pregunta primero.");
-                return;
-            }
-
-            const doc = new jsPDF();
-            let y = 10;
-            const margin = 10;
-            const maxWidth = 190;
-
-            // Título
-            doc.setFontSize(20);
-            doc.text("Reporte de Estadísticas de Encuesta", margin, y);
-            y += 10;
-
-            // Datos de la encuesta y pregunta
-            doc.setFontSize(12);
-            doc.text(`Encuesta: ${encuestaSelect.options[encuestaSelect.selectedIndex].text}`, margin, y);
-            y += 7;
-            doc.text(`Pregunta: ${preguntaSelect.options[preguntaSelect.selectedIndex].text}`, margin, y);
-            y += 7;
-            doc.text(`Tipo de Gráfica: ${chartTypeSelect.options[chartTypeSelect.selectedIndex].text}`, margin, y);
-            y += 10;
-            
-            // Sección de filtros geográficos
-            let filtros = "Filtros Geográficos:";
-            doc.text(filtros, margin, y);
-            y += 7;
-            if (estadoSelect.value) doc.text(`Estado: ${estadoSelect.options[estadoSelect.selectedIndex].text}`, margin + 5, y);
-            if (estadoSelect.value) y += 5;
-            if (distritoFederalSelect.value) doc.text(`Distrito Federal: ${distritoFederalSelect.options[distritoFederalSelect.selectedIndex].text}`, margin + 5, y);
-            if (distritoFederalSelect.value) y += 5;
-            if (distritoLocalSelect.value) doc.text(`Distrito Local: ${distritoLocalSelect.options[distritoLocalSelect.selectedIndex].text}`, margin + 5, y);
-            if (distritoLocalSelect.value) y += 5;
-            if (municipioSelect.value) doc.text(`Municipio: ${municipioSelect.options[municipioSelect.selectedIndex].text}`, margin + 5, y);
-            if (municipioSelect.value) y += 5;
-            if (seccionSelect.value) doc.text(`Sección: ${seccionSelect.options[seccionSelect.selectedIndex].text}`, margin + 5, y);
-            if (seccionSelect.value) y += 5;
-            if (comunidadSelect.value) doc.text(`Comunidad: ${comunidadSelect.options[comunidadSelect.selectedIndex].text}`, margin + 5, y);
-            if (comunidadSelect.value) y += 5;
-            if (!estadoSelect.value && !distritoFederalSelect.value && !distritoLocalSelect.value && !municipioSelect.value && !seccionSelect.value && !comunidadSelect.value) {
-                doc.text("Ninguno", margin + 5, y);
-                y += 5;
-            }
-            y += 5;
-
-
-            // Agregar el gráfico y el resumen como una sola imagen
-            html2canvas(document.getElementById('chart-card-body'), { scale: 2, logging: false }).then(canvas => {
-                const chartImage = canvas.toDataURL('image/jpeg', 1.0);
-                const chartWidth = 180;
-                const chartHeight = (canvas.height / canvas.width) * chartWidth;
-                
-                doc.addImage(chartImage, 'JPEG', margin, y, chartWidth, chartHeight);
-                doc.save('reporte-estadisticas.pdf');
+                generarGraficos();
             });
-        }
 
-        // --- Eventos para los selectores ---
-        encuestaSelect.addEventListener('change', async function() {
-            const idEncuesta = this.value;
-            cargarSelect(preguntaSelect, [], 'id_pregunta', 'texto_pregunta', 'Cargando preguntas...', !idEncuesta);
-            
-            // Reestablecer los selectores geográficos a su estado inicial
-            cargarSelect(estadoSelect, <?= json_encode($estados) ?>, 'id_estado', 'nombre_estado', 'Selecciona un estado');
-            cargarSelect(distritoFederalSelect, [], 'id_distrito_federal', 'nombre_distrito_federal', 'Selecciona un distrito federal', true);
-            cargarSelect(distritoLocalSelect, [], 'id_distrito_local', 'nombre_distrito_local', 'Selecciona un distrito local', true);
-            cargarSelect(municipioSelect, [], 'id_municipio', 'nombre_municipio', 'Selecciona un municipio', true);
-            cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Selecciona una sección', true);
-            cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
+            municipioSelect.addEventListener('change', async function() {
+                const idMunicipio = this.value;
+                cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Cargando secciones...', !idMunicipio);
+                cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
 
-            if (idEncuesta) {
-                try {
-                    const response = await fetch(`${baseUrl}/getPreguntas/${idEncuesta}`);
-                    const data = await response.json();
-                    cargarSelect(preguntaSelect, data, 'id_pregunta', 'texto_pregunta', 'Selecciona una pregunta');
-                } catch (error) {
-                    console.error('Error al cargar preguntas:', error);
+                if (idMunicipio) {
+                    try {
+                        const response = await fetch(`<?= base_url('estadisticascontroller/getSecciones') ?>/${idMunicipio}`);
+                        const data = await response.json();
+                        cargarSelect(seccionSelect, data, 'id_seccion', 'nombre_seccion', 'Selecciona una sección');
+                    } catch (error) {
+                        console.error('Error al cargar secciones:', error);
+                    }
                 }
-            }
-            actualizarGrafico();
-        });
+            });
 
-        // Evento para el selector de Pregunta
-        preguntaSelect.addEventListener('change', actualizarGrafico);
-        
-        // Evento para el selector de Tipo de Gráfica
-        chartTypeSelect.addEventListener('change', actualizarGrafico);
+            seccionSelect.addEventListener('change', async function() {
+                const idSeccion = this.value;
+                cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
 
-        // Evento para el selector de Estado
-        estadoSelect.addEventListener('change', async function() {
-            const idEstado = this.value;
-            // Limpiar y deshabilitar los siguientes selectores
-            cargarSelect(distritoFederalSelect, [], 'id_distrito_federal', 'nombre_distrito_federal', 'Cargando distritos federales...', !idEstado);
-            cargarSelect(distritoLocalSelect, [], 'id_distrito_local', 'nombre_distrito_local', 'Selecciona un distrito local', true);
-            cargarSelect(municipioSelect, [], 'id_municipio', 'nombre_municipio', 'Selecciona un municipio', true);
-            cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Selecciona una sección', true);
-            cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
-            
-            if (idEstado) {
-                try {
-                    const response = await fetch(`${baseUrl}/getDistritosFederales/${idEstado}`);
-                    const data = await response.json();
-                    cargarSelect(distritoFederalSelect, data, 'id_distrito_federal', 'nombre_distrito_federal', 'Selecciona un distrito federal');
-                } catch (error) {
-                    console.error('Error al cargar distritos federales:', error);
+                if (idSeccion) {
+                    try {
+                        const response = await fetch(`<?= base_url('estadisticascontroller/getComunidades') ?>/${idSeccion}`);
+                        const data = await response.json();
+                        cargarSelect(comunidadSelect, data, 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad');
+                    } catch (error) {
+                        console.error('Error al cargar comunidades:', error);
+                    }
                 }
-            }
-            actualizarGrafico();
-        });
+            });
 
-        // Evento para el selector de Distrito Federal
-        distritoFederalSelect.addEventListener('change', async function() {
-            const idDistritoFederal = this.value;
-            // Limpiar y deshabilitar los siguientes selectores
-            cargarSelect(distritoLocalSelect, [], 'id_distrito_local', 'nombre_distrito_local', 'Cargando distritos locales...', !idDistritoFederal);
-            cargarSelect(municipioSelect, [], 'id_municipio', 'nombre_municipio', 'Selecciona un municipio', true);
-            cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Selecciona una sección', true);
-            cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
-
-            if (idDistritoFederal) {
-                try {
-                    const response = await fetch(`${baseUrl}/getDistritosLocales/${idDistritoFederal}`);
-                    const data = await response.json();
-                    cargarSelect(distritoLocalSelect, data, 'id_distrito_local', 'nombre_distrito_local', 'Selecciona un distrito local');
-                } catch (error) {
-                    console.error('Error al cargar distritos locales:', error);
-                }
-            }
-            actualizarGrafico();
+            // Eventos de botones
+            generateChartsBtn.addEventListener('click', generarGraficos);
+            prevChartBtn.addEventListener('click', mostrarGraficoAnterior);
+            nextChartBtn.addEventListener('click', mostrarSiguienteGrafico);
+            downloadPdfBtn.addEventListener('click', generarPDF);
         });
-
-        // Evento para el selector de Distrito Local
-        distritoLocalSelect.addEventListener('change', async function() {
-            const idDistritoLocal = this.value;
-            // Limpiar y deshabilitar los siguientes selectores
-            cargarSelect(municipioSelect, [], 'id_municipio', 'nombre_municipio', 'Cargando municipios...', !idDistritoLocal);
-            cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Selecciona una sección', true);
-            cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
-
-            if (idDistritoLocal) {
-                try {
-                    const response = await fetch(`${baseUrl}/getMunicipios/${idDistritoLocal}`);
-                    const data = await response.json();
-                    cargarSelect(municipioSelect, data, 'id_municipio', 'nombre_municipio', 'Selecciona un municipio');
-                } catch (error) {
-                    console.error('Error al cargar municipios:', error);
-                }
-            }
-            actualizarGrafico();
-        });
-
-        // Evento para el selector de Municipio
-        municipioSelect.addEventListener('change', async function() {
-            const idMunicipio = this.value;
-            // Limpiar y deshabilitar los siguientes selectores
-            cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Selecciona una sección', true);
-            cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
-            
-            if (idMunicipio) {
-                try {
-                    const response = await fetch(`${baseUrl}/getSecciones/${idMunicipio}`);
-                    const data = await response.json();
-                    cargarSelect(seccionSelect, data, 'id_seccion', 'nombre_seccion', 'Selecciona una sección');
-                } catch (error) {
-                    console.error('Error al cargar secciones:', error);
-                }
-            }
-            actualizarGrafico();
-        });
-        
-        // Evento para el selector de Sección
-        seccionSelect.addEventListener('change', async function() {
-            const idSeccion = this.value;
-            // Limpiar y deshabilitar el siguiente selector
-            cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Cargando comunidades...', !idSeccion);
-            
-            if (idSeccion) {
-                try {
-                    const response = await fetch(`${baseUrl}/getComunidades/${idSeccion}`);
-                    const data = await response.json();
-                    cargarSelect(comunidadSelect, data, 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad');
-                } catch (error) {
-                    console.error('Error al cargar comunidades:', error);
-                }
-            }
-            actualizarGrafico();
-        });
-        
-        // Evento para el selector de Comunidad
-        comunidadSelect.addEventListener('change', actualizarGrafico);
-        
-        // Evento del botón de descarga de PDF
-        downloadPdfBtn.addEventListener('click', generarPDF);
-    });
     </script>
 </body>
+
 </html>
