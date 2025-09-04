@@ -54,7 +54,8 @@ if ($isLoggedIn && is_array($userData)) {
     // Esta lógica idealmente estaría en el controlador, que pasaría las variables a la vista.
     // Aquí se simula la obtención de datos desde la sesión de CodeIgniter 4.
     $session = session();
-    $userData = $session->get('userData'); // Asumiendo que los datos del usuario (array) están en la sesión.
+    $userData = $session->get('usuario');
+
 
     // Valores por defecto para un invitado
     $nombreCompleto = "Invitado";
