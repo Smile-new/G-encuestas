@@ -480,6 +480,23 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <div class="form-group" style="margin-top: 20px;">
+                                                <h4 style="font-weight: bold;">
+                                                    <i class="material-icons" style="vertical-align: middle; margin-right: 5px;">my_location</i>
+                                                    Estado de la Ubicación
+                                                </h4>
+                                                <div id="ubicacion-status" class="font-italic col-grey p-l-5">
+                                                    Solicitando permiso de ubicación... Es necesario para continuar.
+                                                </div>
+                                                <!-- Campos ocultos para enviar latitud y longitud -->
+                                                <input type="hidden" name="latitud" id="latitud">
+                                                <input type="hidden" name="longitud" id="longitud">
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <?php if (isset($preguntas) && !empty($preguntas)): ?>
@@ -507,7 +524,7 @@
                                 <!-- Contenedor flexbox para los botones -->
                                 <div class="buttons-container">
                                     <a href="<?= base_url('formularios') ?>" class="btn-back waves-effect">Volver a Formularios</a>
-                                    <button type="submit" class="btn-back waves-effect">Enviar Respuestas</button>
+                                    <button type="submit" id="btnEnviarEncuesta" class="btn-back waves-effect" disabled>Enviar Respuestas</button>
                                 </div>
                             </form>
                         </div>
@@ -672,6 +689,66 @@
                 $('.form-control.show-tick').selectpicker('refresh');
             }
         }, 100);
+
+        //Ubicacion
+        const $ubicacionStatus = $('#ubicacion-status');
+        const $latitudInput = $('#latitud');
+        const $longitudInput = $('#longitud');
+        const $btnEnviarEncuesta = $('#btnEnviarEncuesta');
+
+        function solicitarUbicacion() {
+            if (!navigator.geolocation) {
+                $ubicacionStatus.text('Tu navegador no soporta geolocalización. No podrás enviar la encuesta.').removeClass('col-grey').addClass('col-red');
+                return;
+            }
+
+            $ubicacionStatus.text('Obteniendo ubicación, por favor espera...').removeClass('col-grey').addClass('col-orange');
+            
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
+            };
+
+            navigator.geolocation.getCurrentPosition(success, error, options);
+        }
+
+        function success(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            // Llenar los campos ocultos
+            $latitudInput.val(latitude);
+            $longitudInput.val(longitude);
+
+            $ubicacionStatus.html(`<strong>Ubicación obtenida con éxito. Ya puedes enviar la encuesta.</strong>`).removeClass('col-grey col-red col-orange').addClass('col-green');
+            
+            // Habilitar el botón de enviar
+            $btnEnviarEncuesta.prop('disabled', false);
+        }
+
+        function error(err) {
+            $ubicacionStatus.removeClass('col-grey col-green col-orange').addClass('col-red');
+            
+            switch (err.code) {
+                case err.PERMISSION_DENIED:
+                    $ubicacionStatus.text("Permiso de ubicación denegado. Debes permitir el acceso en tu navegador para poder enviar la encuesta.");
+                    break;
+                case err.POSITION_UNAVAILABLE:
+                    $ubicacionStatus.text("La información de la ubicación no está disponible. Revisa tu señal de GPS o conexión.");
+                    break;
+                case err.TIMEOUT:
+                    $ubicacionStatus.text("La solicitud para obtener la ubicación ha caducado. Intenta recargar la página.");
+                    break;
+                default:
+                    $ubicacionStatus.text("Ha ocurrido un error desconocido al obtener la ubicación.");
+                    break;
+            }
+        }
+
+        // Llamar a la función para solicitar la ubicación al cargar la página
+        solicitarUbicacion();
+
     });
 </script>
 </body>

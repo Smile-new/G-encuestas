@@ -78,8 +78,8 @@ class Encuestador extends Controller
 
         if ($session->get('isLoggedIn') && is_array($userData)) {
             $nombreCompleto = esc($userData['nombre'] ?? '') . ' ' .
-                             esc($userData['apellido_paterno'] ?? '') . ' ' .
-                             esc($userData['apellido_materno'] ?? '');
+                              esc($userData['apellido_paterno'] ?? '') . ' ' .
+                              esc($userData['apellido_materno'] ?? '');
             $nombreUsuario = esc($userData['usuario'] ?? '');
             if (!empty($userData['foto'])) {
                 $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto']));
@@ -128,8 +128,8 @@ class Encuestador extends Controller
 
         if ($session->get('isLoggedIn') && is_array($userData)) {
             $nombreCompleto = esc($userData['nombre'] ?? '') . ' ' .
-                             esc($userData['apellido_paterno'] ?? '') . ' ' .
-                             esc($userData['apellido_materno'] ?? '');
+                              esc($userData['apellido_paterno'] ?? '') . ' ' .
+                              esc($userData['apellido_materno'] ?? '');
             $nombreUsuario = esc($userData['usuario'] ?? '');
             if (!empty($userData['foto'])) {
                 $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto']));
@@ -190,9 +190,8 @@ class Encuestador extends Controller
 
     /**
      * Procesa la inserción de las respuestas de la encuesta.
-     * El formulario debe enviar los datos de las preguntas, la encuesta, el usuario y la ubicación.
+     * Incluye la dirección obtenida por geolocalización.
      */
-    // Método que coincide con la ruta 'encuestas/guardar'
     public function guardarRespuestas()
     {
         $session = session();
@@ -201,38 +200,39 @@ class Encuestador extends Controller
             return redirect()->to(base_url('formularios'))->with('error', 'Acceso no autorizado.');
         }
 
+        // --- 1. CAPTURAR DATOS DEL FORMULARIO ---
         $idUsuario = $session->get('usuario')['id_usuario'];
         $idEncuesta = $this->request->getPost('id_encuesta');
         $idComunidad = $this->request->getPost('id_comunidad');
+        
+        // ** NUEVO: Capturar las coordenadas enviadas desde la vista **
+        $latitud = $this->request->getPost('latitud');
+        $longitud = $this->request->getPost('longitud');
+        
+        // --- 2. OBTENER DIRECCIÓN DE TEXTO ---
+        $direccionTexto = null;
+        // Solo si se recibieron coordenadas válidas, llamamos al modelo
+        if (!empty($latitud) && !empty($longitud)) {
+            $direccionTexto = $this->respuestaModel->obtenerDireccion($latitud, $longitud);
+        }
 
-        // ** AÑADIDO: Lógica para obtener la jerarquía geográfica completa desde el ID de la comunidad **
-        // Se obtiene el objeto comunidad completo desde el modelo
+        // --- 3. OBTENER JERARQUÍA GEOGRÁFICA (esto se queda igual) ---
         $comunidad = $this->comunidadModel->find($idComunidad);
         if (!$comunidad) {
             return redirect()->to(base_url('encuestas/ver/' . $idEncuesta))->with('error', 'Error: La comunidad seleccionada no es válida.');
         }
 
-        // Se obtienen los IDs de los padres a partir del ID de la comunidad
         $seccion = $this->seccionModel->find($comunidad['id_seccion']);
         $municipio = $this->municipioModel->find($seccion['id_municipio']);
         $distritoLocal = $this->distritoLocalModel->find($municipio['id_distrito_local']);
         $distritoFederal = $this->distritoFederalModel->find($distritoLocal['id_distrito_federal']);
         $estado = $this->estadoModel->find($distritoFederal['id_estado']);
-
-        // Se asignan los IDs a las variables
-        $idEstado = $estado['id_estado'];
-        $idDistritoFederal = $distritoFederal['id_distrito_federal'];
-        $idDistritoLocal = $distritoLocal['id_distrito_local'];
-        $idMunicipio = $municipio['id_municipio'];
-        $idSeccion = $seccion['id_seccion'];
-        // El id_comunidad ya lo tenemos del formulario
         
+        // --- 4. GUARDAR CADA RESPUESTA EN LA BASE DE DATOS ---
         foreach ($this->request->getPost() as $key => $value) {
-            // Procesar solo los campos que corresponden a preguntas
+            // Procesar solo los campos que son respuestas a preguntas (name="respuesta_X")
             if (strpos($key, 'respuesta_') === 0) {
                 $idPregunta = str_replace('respuesta_', '', $key);
-
-                // El valor del campo 'respuesta_[id_pregunta]' es el 'id_opcion' seleccionado.
                 $idOpcion = $value;
 
                 $data = [
@@ -240,13 +240,14 @@ class Encuestador extends Controller
                     'id_encuesta' => $idEncuesta,
                     'id_pregunta' => $idPregunta,
                     'id_opcion' => $idOpcion,
-                    'respuesta_texto' => null, // No hay texto libre en tu formulario actual
-                    'id_estado' => $idEstado,
-                    'id_distritofederal' => $idDistritoFederal,
-                    'id_distritolocal' => $idDistritoLocal,
-                    'id_municipio' => $idMunicipio,
-                    'id_seccion' => $idSeccion,
+                    'respuesta_texto' => null, 
+                    'id_estado' => $estado['id_estado'],
+                    'id_distritofederal' => $distritoFederal['id_distrito_federal'],
+                    'id_distritolocal' => $distritoLocal['id_distrito_local'],
+                    'id_municipio' => $municipio['id_municipio'],
+                    'id_seccion' => $seccion['id_seccion'],
                     'id_comunidad' => $idComunidad,
+                    'direccion' => $direccionTexto, // ** NUEVO: Se añade la dirección de texto obtenida **
                 ];
                 
                 $this->respuestaModel->insert($data);
