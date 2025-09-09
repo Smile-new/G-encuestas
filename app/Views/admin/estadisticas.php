@@ -782,7 +782,7 @@
         const yPosition = 30;
 
         // Cabecera roja
-        doc.setFillColor(colorPrimario);
+      
         doc.rect(0, 0, pageWidth, 20, 'F');
 
         // Título
