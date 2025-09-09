@@ -110,3 +110,6 @@ define('RECURSOS_ENCUESTADOR_CSS',     'recursos_encuestador/css');
 define('RECURSOS_ENCUESTADOR_IMAGES',  'recursos_encuestador/images');
 define('RECURSOS_ENCUESTADOR_JS',      'recursos_encuestador/js');
 define('RECURSOS_ENCUESTADOR_PLUGINS', 'recursos_encuestador/plugins');
+
+// Ruta pública de imágenes globales
+define('RECURSOS_PUBLICOS_IMG', 'public/img');

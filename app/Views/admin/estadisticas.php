@@ -763,8 +763,7 @@
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 15;
 
-    const colorPrimario = '#E53935';
-    const colorTextoPrimario = '#ffffff';
+    const colorTextoPrimario = '#000000';
     const colorTextoSecundario = '#424242';
 
     const encuestaTitle = encuestaSelect.options[encuestaSelect.selectedIndex].text;
@@ -775,21 +774,40 @@
     const seccionName = seccionSelect.value ? seccionSelect.options[seccionSelect.selectedIndex].text : 'Todas';
     const comunidadName = comunidadSelect.value ? comunidadSelect.options[comunidadSelect.selectedIndex].text : 'Todas';
 
+    // Marca de agua (logo)
+    const watermarkImage = "/public/img/logo.png";
+    let imgData = null;
+    try {
+        const response = await fetch(watermarkImage);
+        if (response.ok) {
+            const blob = await response.blob();
+            const reader = new FileReader();
+            await new Promise(resolve => {
+                reader.onload = () => resolve();
+                reader.readAsDataURL(blob);
+            });
+            imgData = reader.result;
+        }
+    } catch (error) {
+        console.error("Error al cargar la imagen de marca de agua:", error);
+    }
+
     for (let index = 0; index < chartDataSets.length; index++) {
         if (index > 0) doc.addPage();
 
         const dataSet = chartDataSets[index];
         const yPosition = 30;
 
-        // Cabecera roja
-      
-        doc.rect(0, 0, pageWidth, 20, 'F');
+        // Marca de agua ocupando toda la hoja (100% tamaño y 100% visibilidad)
+        if (imgData) {
+            doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+        }
 
-        // Título
+        // Título del reporte
         doc.setFont("helvetica", "bold");
         doc.setFontSize(16);
         doc.setTextColor(colorTextoPrimario);
-        doc.text("Reporte de Resultados de Encuesta", pageWidth / 2, 13, { align: "center" });
+        doc.text("Reporte de Resultados de Encuesta", pageWidth / 2, 15, { align: "center" });
 
         // Info filtros
         doc.setFont("helvetica", "normal");
@@ -803,7 +821,7 @@
         doc.text(`Sección: ${seccionName}`, margin, yPosition + 25);
         doc.text(`Comunidad: ${comunidadName}`, margin, yPosition + 30);
 
-        // Título pregunta
+        // Título de la pregunta
         doc.setFont("helvetica", "bold");
         doc.setFontSize(14);
         doc.text(dataSet.title, pageWidth / 2, yPosition + 40, { align: "center" });
@@ -880,6 +898,7 @@
 
     doc.save("reporte-encuesta.pdf");
 }
+
 
 
 
