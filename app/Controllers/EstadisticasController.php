@@ -70,8 +70,8 @@ class EstadisticasController extends Controller
             }
         }
 
-        $encuestas = $this->encuestaModel->where('activa', 1)->findAll();
-        $municipios = $this->municipioModel->findAll();
+        $encuestas = $this->encuestaModel->where('activa', 1)->findAll() ?? [];
+        $municipios = $this->municipioModel->findAll() ?? [];
 
         $data = [
             'isLoggedIn'     => $session->get('isLoggedIn'),
@@ -145,7 +145,8 @@ class EstadisticasController extends Controller
         if (!is_numeric($idEncuesta)) {
             return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de encuesta inválido.']);
         }
-        $preguntas = $this->preguntaModel->where('id_encuesta', $idEncuesta)->findAll();
+        // Agregamos `?? []` para asegurar que siempre se devuelva un array válido.
+        $preguntas = $this->preguntaModel->where('id_encuesta', $idEncuesta)->findAll() ?? [];
         return $this->response->setJSON($preguntas);
     }
 
@@ -158,7 +159,8 @@ class EstadisticasController extends Controller
         if (!is_numeric($idPregunta)) {
             return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de pregunta inválido.']);
         }
-        $opciones = $this->opcionModel->where('id_pregunta', $idPregunta)->findAll();
+        // Agregamos `?? []` para asegurar que siempre se devuelva un array válido.
+        $opciones = $this->opcionModel->where('id_pregunta', $idPregunta)->findAll() ?? [];
         return $this->response->setJSON($opciones);
     }
 
@@ -172,6 +174,7 @@ class EstadisticasController extends Controller
         if (!is_numeric($idMunicipio)) {
             return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de municipio inválido.']);
         }
+        // Ya tienes `?? []`, lo cual es correcto.
         $secciones = $this->seccionModel->where('id_municipio', $idMunicipio)->findAll() ?? [];
         return $this->response->setJSON($secciones);
     }
@@ -186,6 +189,7 @@ class EstadisticasController extends Controller
         if (!is_numeric($idSeccion)) {
             return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de sección inválido.']);
         }
+        // Ya tienes `?? []`, lo cual es correcto.
         $comunidades = $this->comunidadModel->where('id_seccion', $idSeccion)->findAll() ?? [];
         return $this->response->setJSON($comunidades);
     }
@@ -229,6 +233,7 @@ class EstadisticasController extends Controller
                 $query->where('id_comunidad', $idComunidad);
             }
 
+            // Agregamos `?? []` para asegurar que siempre se devuelva un array válido.
             $resultados = $query->groupBy('id_opcion')
                 ->findAll() ?? [];
 
