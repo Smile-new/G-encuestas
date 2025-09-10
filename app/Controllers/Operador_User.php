@@ -64,11 +64,11 @@ class Operador_User extends BaseController
         
         // 1. Obtener el conteo de respuestas por usuario solo para encuestas activas.
         $conteoRespuestas = $this->respuestaModel
-                                ->select('respuestas.id_usuario, COUNT(respuestas.id_respuesta) as respuestas_contestadas')
-                                ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta')
-                                ->where('encuestas.activa', 1) // Condición para encuestas activas
-                                ->groupBy('respuestas.id_usuario')
-                                ->findAll();
+                                 ->select('respuestas.id_usuario, COUNT(respuestas.id_respuesta) as respuestas_contestadas')
+                                 ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta')
+                                 ->where('encuestas.activa', 1) // Condición para encuestas activas
+                                 ->groupBy('respuestas.id_usuario')
+                                 ->findAll();
         
         // 2. Convertir el resultado a un array asociativo para una búsqueda rápida.
         $conteoMap = [];
@@ -272,6 +272,42 @@ class Operador_User extends BaseController
             return redirect()->back()->with('error', 'No se pudo eliminar el usuario. Inténtalo de nuevo.');
         }
     }
+
+    // ====================================================================
+    //  NUEVO MÉTODO PARA MOSTRAR EL MAPA DEL ENCUESTADOR
+    // ====================================================================
+    /**
+     * Muestra un mapa con las ubicaciones de las respuestas de un encuestador.
+     * @param int $idEncuestador El ID del usuario encuestador.
+     */
+    public function verMapa($idEncuestador)
+    {
+        // Buscar al encuestador para obtener sus datos.
+        $encuestador = $this->usuarioModel->find($idEncuestador);
+
+        // Si no se encuentra el encuestador, redirigir con un error.
+        if (!$encuestador) {
+            return redirect()->to(base_url('operador_user'))->with('error', 'Encuestador no encontrado.');
+        }
+
+        // Usar el modelo de respuestas para obtener todas las respuestas con dirección de este usuario.
+        $respuestasConUbicacion = $this->respuestaModel->getRespuestasConDireccionPorUsuario($idEncuestador);
+
+        // Obtener la clave de API de Google desde la configuración para usarla en la vista.
+        $googleConfig = config(\Config\Google::class);
+        $googleApiKey = $googleConfig->apiKey;
+
+        // Preparar los datos para enviar a la vista.
+        $data = [
+            'encuestador'  => $encuestador,
+            'respuestas'   => $respuestasConUbicacion,
+            'googleApiKey' => $googleApiKey, // Se pasa la clave a la vista
+        ];
+
+        // Cargar la nueva vista del mapa y pasarle los datos.
+        return view('operador/ver_mapa_encuestador', $data);
+    }
+
 
     /**
      * Genera una contraseña aleatoria de 10 caracteres.

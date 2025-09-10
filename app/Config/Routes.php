@@ -115,6 +115,7 @@ $routes->get('operador_user/create', 'Operador_User::create');
 $routes->post('operador_user/store', 'Operador_User::store');
 $routes->get('operador_user/edit/(:num)', 'Operador_User::edit/$1');
 $routes->post('operador_user/update/(:num)', 'Operador_User::update/$1');
+$routes->get('operador_user/ver_mapa/(:num)', 'Operador_User::verMapa/$1');
 
 
     //pagina

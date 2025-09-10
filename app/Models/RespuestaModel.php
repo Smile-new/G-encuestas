@@ -94,4 +94,18 @@ class RespuestaModel extends Model
 
         return null;
     }
+
+    /**
+     * Obtiene todas las respuestas de un usuario que tienen una dirección registrada.
+     * @param int $idUsuario El ID del usuario encuestador.
+     * @return array
+     */
+    public function getRespuestasConDireccionPorUsuario($idUsuario)
+    {
+        return $this->where('id_usuario', $idUsuario)
+                    ->where('direccion IS NOT NULL')
+                    ->where('direccion !=', '')
+                    ->findAll();
+    }
 }
+
