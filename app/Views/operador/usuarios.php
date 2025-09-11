@@ -55,6 +55,32 @@ if ($isLoggedIn && is_array($userData)) {
       <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_CSS . '/custom.css') ?>" />
       <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_JS . '/semantic.min.css') ?>" />
       <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_CSS . '/jquery.fancybox.css') ?>" />
+    
+        <style>
+            /* Estilos para el botón de monitoreo */
+            .btn-monitoreo {
+                background: linear-gradient(45deg, #1e90ff, #ef3907ff); /* Gradiente de color */
+                border: none;
+                color: white;
+                font-weight: bold;
+                padding: 4px 4px;
+                border-radius: 5px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                transition: all 0.3s ease;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+        
+            .btn-monitoreo .fa {
+                transition: transform 0.3s ease-in-out;
+            }
+
+            .btn-monitoreo:hover .fa {
+                transform: rotate(360deg) scale(1.1);
+            }
+        </style>
     </head>
     <body class="inner_page tables_page">
       <div class="full_container">
@@ -70,14 +96,11 @@ if ($isLoggedIn && is_array($userData)) {
                      <div class="icon_setting"></div>
                      <div class="user_profle_side">
                          <div class="user_img">
-                            <!-- Foto de perfil dinámica en el sidebar -->
-                            <img class="img-responsive" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil" />
+                             <img class="img-responsive" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil" />
                          </div>
                          <div class="user_info">
-                            <!-- Nombre completo dinámico en el sidebar -->
-                            <h6><?= $nombreCompleto ?></h6>
-                            <!-- Rol dinámico en el sidebar -->
-                            <p><span class="online_animation"></span> <?= $rolTexto ?></p>
+                             <h6><?= $nombreCompleto ?></h6>
+                             <p><span class="online_animation"></span> <?= $rolTexto ?></p>
                          </div>
                      </div>
                   </div>
@@ -101,7 +124,6 @@ if ($isLoggedIn && is_array($userData)) {
                                 <div class="icon_info">
                                     <ul class="user_profile_dd">
                                         <li>
-                                            <!-- Foto de perfil dinámica en la navbar -->
                                             <a class="dropdown-toggle" data-toggle="dropdown"><img class="img-responsive rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil" /><span class="name_user"><?= $nombreCompleto ?></span></a>
                                             <div class="dropdown-menu">
                                                <a class="dropdown-item" href="<?= base_url('logout') ?>"><span>Log Out</span> <i class="fa fa-sign-out"></i></a>
@@ -113,7 +135,6 @@ if ($isLoggedIn && is_array($userData)) {
                         </div>
                     </nav>
                 </div>
-                <!-- Contenido principal de la página de tablas -->
                 <div class="midde_cont">
                     <div class="container-fluid">
                         <div class="row column_title">
@@ -124,7 +145,6 @@ if ($isLoggedIn && is_array($userData)) {
                             </div>
                         </div>
 
-                        <!-- Mostrar mensajes de éxito o error -->
                         <?php if (session()->getFlashdata('message')): ?>
                             <div class="alert alert-success alert-dismissible fade show" role="alert">
                                 <?= session()->getFlashdata('message') ?>
@@ -153,7 +173,6 @@ if ($isLoggedIn && is_array($userData)) {
                             </div>
                         <?php endif; ?>
 
-                        <!-- Botón para crear un nuevo usuario -->
                         <div class="row margin_bottom_30">
                             <div class="col-md-6">
                                 <a href="<?= base_url('operador_user/create') ?>" class="btn btn-success">
@@ -162,14 +181,13 @@ if ($isLoggedIn && is_array($userData)) {
                             </div>
                             <div class="col-md-6 text-right">
                                 <form action="<?= base_url('operador_user') ?>" method="get" class="form-inline float-right">
-                                     <input type="text" name="search_term" class="form-control mr-sm-2" placeholder="Buscar por nombre..." value="<?= esc($searchTerm ?? '') ?>">
-                                     <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Buscar</button>
-                                     <a href="<?= base_url('operador_user') ?>" class="btn btn-outline-secondary my-2 my-sm-0 ml-2">Limpiar</a>
+                                   <input type="text" name="search_term" class="form-control mr-sm-2" placeholder="Buscar por nombre..." value="<?= esc($searchTerm ?? '') ?>">
+                                   <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Buscar</button>
+                                   <a href="<?= base_url('operador_user') ?>" class="btn btn-outline-secondary my-2 my-sm-0 ml-2">Limpiar</a>
                                 </form>
                             </div>
                         </div>
 
-                        <!-- Tabla de usuarios -->
                         <div class="row column1">
                             <div class="col-md-12">
                                 <div class="white_shd full margin_bottom_30">
@@ -206,11 +224,11 @@ if ($isLoggedIn && is_array($userData)) {
                                                                     <td><?= esc($usuario['usuario']) ?></td>
                                                                     <td><?= esc($usuario['respuestas_contestadas']) ?></td>
                                                                     <td>
-                                                                        <a href="<?= base_url('operador_user/edit/' . esc($usuario['id_usuario'])) ?>" class="btn btn-warning btn-sm">
-                                                                            <i class="fa fa-pencil"></i> Editar
+                                                                        <a href="<?= base_url('operador_user/edit/' . esc($usuario['id_usuario'])) ?>" class="btn btn-warning btn-sm" title="Editar">
+                                                                            <i class="fa fa-pencil"></i>Editar
                                                                         </a>
-                                                                        <a href="<?= base_url('operador_user/ver_mapa/' . esc($usuario['id_usuario'])) ?>" class="btn btn-info btn-sm" title="Ver Mapa de Encuestas">
-                                                                            <i class="fa fa-map-marker"></i>
+                                                                        <a href="<?= base_url('operador_user/ver_mapa/' . esc($usuario['id_usuario'])) ?>" class="btn btn-monitoreo" title="Monitoreo en tiempo real">
+                                                                            <i class="fa fa-map-marker"></i> Ver Mapa
                                                                         </a>
                                                                     </td>
                                                                 </tr>
@@ -228,20 +246,16 @@ if ($isLoggedIn && is_array($userData)) {
                                 </div>
                             </div>
                         </div>
-                        <!-- Fin del contenido de tablas -->
-
-                    </div>
-                    <!-- footer -->
+                        </div>
                     <div class="container-fluid">
                         <div class="footer">
                             <p>Copyright © 2025 Vota y Opina. All rights reserved.<br><br>
-                                Distributed By: <a href="https://themewagon.com/">ThemeWagon</a>
+                              
                             </p>
                         </div>
                     </div>
                 </div>
-            </div> <!-- Cierre del div id="content" -->
-          </div>
+            </div> </div>
       </div>
 
       <script src="<?= base_url(RECURSOS_OPERADOR_JS . '/jquery.min.js') ?>"></script>

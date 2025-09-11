@@ -253,25 +253,7 @@ class Operador_User extends BaseController
     /**
      * Elimina un usuario.
      */
-    public function delete($id = null)
-    {
-        $usuarioExistente = $this->usuarioModel->find($id);
-
-        if (!$usuarioExistente) {
-            return redirect()->to(base_url('operador_user/index'))->with('error', 'Usuario no encontrado para eliminar.');
-        }
-
-        // Eliminar la foto si existe
-        if (!empty($usuarioExistente['foto']) && file_exists(FCPATH . 'public/img_user/' . $usuarioExistente['foto'])) {
-            unlink(FCPATH . 'public/img_user/' . $usuarioExistente['foto']);
-        }
-
-        if ($this->usuarioModel->delete($id)) {
-            return redirect()->to(base_url('operador_user/index'))->with('message', 'Usuario eliminado correctamente.');
-        } else {
-            return redirect()->back()->with('error', 'No se pudo eliminar el usuario. Inténtalo de nuevo.');
-        }
-    }
+    
 
     // ====================================================================
     //  NUEVO MÉTODO PARA MOSTRAR EL MAPA DEL ENCUESTADOR

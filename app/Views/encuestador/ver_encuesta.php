@@ -21,7 +21,7 @@
             --primary-red: #F44336;
             --primary-red-dark: #C62828;
             --primary-red-light: #FFCDD2;
-            --primary-accent: #FF3D00; /* Se usa para header y botón */
+            --primary-accent: #FF3D00;
             --text-dark: #212121;
             --text-medium: #616161;
             --bg-page: #FAFAFA;
@@ -46,7 +46,7 @@
         }
 
         .survey-detail-card .header {
-            background-color: var(--primary-red); /* Usar un color principal para el header */
+            background-color: var(--primary-red);
             color: white;
             padding: 20px 25px;
         }
@@ -77,7 +77,7 @@
         }
 
         .question-block:last-child {
-            border-bottom: none; /* No border for the last question */
+            border-bottom: none;
             margin-bottom: 0;
             padding-bottom: 0;
         }
@@ -114,38 +114,35 @@
             color: var(--primary-accent);
         }
 
-        /* ESTILOS MEJORADOS PARA EL BOTÓN "VOLVER A FORMULARIOS" */
         .btn-back {
-            background-color:rgb(237, 102, 6) !important; /* Fondo naranja */
+            background-color:rgb(237, 102, 6) !important;
             color: #fff;
             border: none;
-            padding: 14px 28px; /* Un poco más grande */
-            border-radius: 8px; /* Más redondeado */
+            padding: 14px 28px;
+            border-radius: 8px;
             font-weight: bold;
             letter-spacing: 1px;
             text-transform: uppercase;
-            text-decoration: none; /* Elimina la línea */
-            transition: all 0.3s ease-in-out; /* Transición más suave */
-            box-shadow: 0 6px 12px rgba(69, 1, 242, 0.8); /* Sombra más pronunciada para el negro */
+            text-decoration: none;
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 6px 12px rgba(69, 1, 242, 0.8);
             display: inline-block;
-            margin-top: 30px; /* Más espacio superior */
-            font-size: 1.05em; /* Ligeramente más grande */
+            margin-top: 30px;
+            font-size: 1.05em;
         }
         
         .btn-back:hover {
-            background-color:rgba(197, 5, 107, 0.78) !important; /* Fondo morado al pasar el ratón */
-            transform: translateY(-3px); /* Efecto de elevación al pasar el ratón */
-            box-shadow: 0 8px 16px rgba(128, 0, 128, 0.4); /* Sombra más grande y morada al pasar el ratón */
+            background-color:rgba(197, 5, 107, 0.78) !important;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(128, 0, 128, 0.4);
         }
         
-        /* ESTILOS PARA CAMPOS DESHABILITADOS */
         .form-line.disabled select {
-            background-color: #f5f5f5; /* Fondo gris para indicar que está deshabilitado */
+            background-color: #f5f5f5;
             cursor: not-allowed;
             border-bottom: 1px dashed #ccc;
         }
 
-        /* CONTENEDOR GENERAL */
         .location-select-container {
             margin-bottom: 25px;
             padding: 20px;
@@ -164,20 +161,23 @@
             padding-bottom: 10px;
         }
 
-        /* GRUPO DEL FORMULARIO */
         .form-group.form-float {
             margin-bottom: 25px;
         }
 
-        /* LÍNEA FLOTANTE */
         .form-line {
             position: relative;
-            padding-top: 20px; /* Espacio para el label */
+            padding-top: 20px;
             padding-bottom: 5px;
         }
+        
+        .form-line.focused label {
+            top: 0;
+            font-size: 12px;
+            color: var(--primary-red) !important;
+        }
 
-        /* SELECT */
-        .form-line select {
+        .form-line select, .form-line textarea {
             width: 100%;
             border: none;
             border-bottom: 1px solid #ddd;
@@ -187,13 +187,26 @@
             outline: none;
             transition: border-color 0.2s ease-in-out;
         }
+        
+        .form-line textarea {
+            min-height: 80px;
+            resize: vertical;
+            padding-top: 10px;
+            border: 5px solid #FF3D00; /* Borde naranja visible */
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        .form-line.focused textarea {
+            border-color: var(--primary-red);
+            box-shadow: 0 0 5px rgba(244, 67, 54, 0.5);
+        }
 
-        /* ESTADO ACTIVO DEL SELECT */
-        .form-line select:focus {
+        .form-line select:focus, .form-line textarea:focus {
             border-bottom-color: var(--primary-red);
         }
 
-        /* LABEL FLOTANTE */
         .form-line label {
             position: absolute;
             left: 0;
@@ -204,23 +217,30 @@
             transition: 0.2s ease all;
         }
 
-        /* CUANDO HAY FOCO O VALOR SELECCIONADO */
         .form-line select:focus ~ label,
         .form-line select:not(:placeholder-shown) ~ label,
-        .form-line select:valid ~ label {
+        .form-line select:valid ~ label,
+        .form-line textarea:focus ~ label,
+        .form-line textarea:not(:placeholder-shown) ~ label {
             top: 0;
             font-size: 12px;
             color: var(--primary-red);
         }
 
-        /* FEEDBACK INVÁLIDO */
         .form-line .invalid-feedback {
             color: red;
             font-size: 0.85em;
             margin-top: 5px;
         }
+        
+        .referencias-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: var(--text-dark);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
 
-        /* Responsive adjustments */
         @media screen and (max-width: 768px) {
             .survey-detail-card .header {
                 padding: 15px 20px;
@@ -243,10 +263,10 @@
             }
             .btn-back {
                 width: 100%;
-                padding: 12px 0; /* Ajuste para móviles */
+                padding: 12px 0;
                 font-size: 0.95em;
                 margin-top: 20px;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra más sutil en móviles */
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             }
             .location-select-container {
                 padding: 15px;
@@ -265,7 +285,7 @@
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            gap: 15px; /* Espacio entre los botones */
+            gap: 15px;
             margin-top: 30px;
         }
     </style>
@@ -293,7 +313,8 @@
             <div class="navbar-header">
                 <a href="javascript:void(0);" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false"></a>
                 <a href="javascript:void(0);" class="bars"></a>
-                <a class="navbar-brand" href="<?= base_url('home') ?>">VOTA Y OPINA</a> </div>
+                <a class="navbar-brand" href="<?= base_url('home') ?>">VOTA Y OPINA</a>
+            </div>
             <div class="collapse navbar-collapse" id="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
                     <li class="pull-right"><a href="javascript:void(0);" class="js-right-sidebar" data-close="true"><i class="material-icons">more_vert</i></a></li>
@@ -340,7 +361,7 @@
                             <i class="material-icons">camera_alt</i> <span>Cámara</span>
                         </a>
                     </li>
-                    </ul>
+                </ul>
             </div>
             <div class="legal">
                 <div class="copyright">
@@ -350,7 +371,7 @@
                     <b>Version: </b> 1.0.0
                 </div>
             </div>
-            </aside>
+        </aside>
         
     </section>
 
@@ -491,11 +512,16 @@
                                                 <div id="ubicacion-status" class="font-italic col-grey p-l-5">
                                                     Solicitando permiso de ubicación... Es necesario para continuar.
                                                 </div>
-                                                <!-- Campos ocultos para enviar latitud y longitud -->
                                                 <input type="hidden" name="latitud" id="latitud">
                                                 <input type="hidden" name="longitud" id="longitud">
                                             </div>
                                         </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <p class="referencias-title">Referencias (ej. color de casa, número, etc.)</p>
+                                        <textarea name="referencias_texto" id="referencias_texto" class="form-control" maxlength="100"></textarea>
+                                        <div class="help-info pull-right"><span id="referencias-counter">100</span> caracteres restantes</div>
                                     </div>
                                 </div>
 
@@ -521,7 +547,6 @@
                                     <p>Esta encuesta no tiene preguntas definidas.</p>
                                 <?php endif; ?>
 
-                                <!-- Contenedor flexbox para los botones -->
                                 <div class="buttons-container">
                                     <a href="<?= base_url('formularios') ?>" class="btn-back waves-effect">Volver a Formularios</a>
                                     <button type="submit" id="btnEnviarEncuesta" class="btn-back waves-effect" disabled>Enviar Respuestas</button>
@@ -558,40 +583,40 @@
         const $selectEstado = $('#selectEstado');
         const allSelects = [$selectEstado, $selectDistritoFederal, $selectDistritoLocal, $selectMunicipio, $selectSeccion, $selectComunidad];
         
-        // Función para manejar el "flotado" del label
-        function floatLabel($select) {
-            const formLine = $select.closest('.form-line');
-            if ($select.val() && $select.val() !== '') {
+        function floatLabel($element) {
+            const formLine = $element.closest('.form-line');
+            if ($element.val() && $element.val() !== '') {
                 formLine.find('label').addClass('active').css({ top: '0px', fontSize: '12px' });
             } else {
                 formLine.find('label').removeClass('active').css({ top: '24px', fontSize: '16px' });
             }
             if ($.fn.selectpicker) {
-                $select.selectpicker('refresh');
+                $element.selectpicker('refresh');
             }
         }
 
         const dataComunidades = <?= json_encode($comunidades) ?>;
 
-        // Función para filtrar y rellenar el select de comunidades
         function populateComunidades(seccionId) {
             $selectComunidad.empty().append('<option value="">-- Comunidad --</option>');
             const comunidadesFiltradas = dataComunidades.filter(c => c.seccion.id_seccion == seccionId);
             comunidadesFiltradas.forEach(c => {
                 const option = `<option 
+                    class="comunidad-option seccion-<?= esc($comunidad['seccion']['id_seccion']) ?>"
                     value="${c.id_comunidad}"
                     data-seccion-id="${c.seccion.id_seccion}"
                     data-municipio-id="${c.seccion.municipio.id_municipio}"
                     data-distrito-local-id="${c.seccion.municipio.distrito_local.id_distrito_local}"
                     data-distrito-federal-id="${c.seccion.municipio.distrito_local.distrito_federal.id_distrito_federal}"
                     data-estado-id="${c.seccion.municipio.distrito_local.distrito_federal.estado.id_estado}"
-                >${c.nombre_comunidad}</option>`;
+                >
+                    ${c.nombre_comunidad}
+                </option>`;
                 $selectComunidad.append(option);
             });
             floatLabel($selectComunidad);
         }
 
-        // Llenar los selectores de nivel superior al inicio
         function populateAllSelects() {
             const estadosSet = new Set();
             const dfSet = new Set();
@@ -631,12 +656,9 @@
             secciones.forEach(s => $selectSeccion.append(`<option value="${s.id_seccion}">${s.nombre_seccion}</option>`));
         }
 
-        // Evento para la selección de la Sección
         $selectSeccion.on('change', function () {
             const seccionId = $(this).val();
-            // Llenamos el select de comunidades con las opciones correctas
             populateComunidades(seccionId);
-            // Reseteamos el resto de los selectores superiores
             $selectComunidad.val('');
             allSelects.forEach($select => {
                 if ($select.attr('id') !== 'selectSeccion') {
@@ -644,7 +666,6 @@
                 }
             });
 
-            // Si se seleccionó una sección, rellenar los selects superiores
             if (seccionId) {
                 const seccionData = dataComunidades.find(c => c.seccion.id_seccion == seccionId).seccion;
                 $selectMunicipio.val(seccionData.municipio.id_municipio);
@@ -656,10 +677,8 @@
             allSelects.forEach($select => floatLabel($select));
         });
 
-        // Evento para la selección de la Comunidad
         $selectComunidad.on('change', function () {
             const selectedOption = $(this).find('option:selected');
-            // Resetear todos los selectores
             allSelects.forEach($select => {
                 $select.val('');
             });
@@ -682,74 +701,117 @@
             allSelects.forEach($select => floatLabel($select));
         });
 
-        // Inicialización
         populateAllSelects();
         setTimeout(function () {
             if ($.fn.selectpicker) {
                 $('.form-control.show-tick').selectpicker('refresh');
             }
+            floatLabel($('#referencias_texto'));
         }, 100);
 
-        //Ubicacion
         const $ubicacionStatus = $('#ubicacion-status');
         const $latitudInput = $('#latitud');
         const $longitudInput = $('#longitud');
         const $btnEnviarEncuesta = $('#btnEnviarEncuesta');
+        const $referenciasTexto = $('#referencias_texto');
+        const $referenciasCounter = $('#referencias-counter');
+        
+        $referenciasTexto.on('keyup', function() {
+            const maxLength = $(this).attr('maxlength');
+            const currentLength = $(this).val().length;
+            const remaining = maxLength - currentLength;
+            $referenciasCounter.text(remaining);
+        });
+        
+        $referenciasTexto.on('focus', function() {
+            $(this).closest('.form-group').addClass('focused');
+        }).on('blur', function() {
+            $(this).closest('.form-group').removeClass('focused');
+        });
 
-        function solicitarUbicacion() {
+        function enviarUbicacionAlServidor(latitud, longitud, idEncuestador) {
+            const data = {
+                latitud: latitud,
+                longitud: longitud,
+                id_encuestador: idEncuestador
+            };
+
+            fetch('<?= base_url('encuestador/guardar_ubicacion_monitoreo') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    console.log('Ubicación enviada al servidor con éxito para monitoreo.');
+                } else {
+                    console.error('Error al enviar ubicación para monitoreo:', result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error de red al enviar ubicación:', error);
+            });
+        }
+
+        function monitorearUbicacion() {
             if (!navigator.geolocation) {
-                $ubicacionStatus.text('Tu navegador no soporta geolocalización. No podrás enviar la encuesta.').removeClass('col-grey').addClass('col-red');
+                $ubicacionStatus.text('Tu navegador no soporta geolocalización. El monitoreo no está disponible.').removeClass('col-grey').addClass('col-red');
                 return;
             }
 
-            $ubicacionStatus.text('Obteniendo ubicación, por favor espera...').removeClass('col-grey').addClass('col-orange');
-            
+            const idEncuestador = '<?= esc($id_encuestador) ?>';
+
             const options = {
                 enableHighAccuracy: true,
                 timeout: 15000,
                 maximumAge: 0
             };
 
-            navigator.geolocation.getCurrentPosition(success, error, options);
+            const watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    
+                    if ($latitudInput.val() === '' || $longitudInput.val() === '') {
+                        $latitudInput.val(latitude);
+                        $longitudInput.val(longitude);
+                        $btnEnviarEncuesta.prop('disabled', false);
+                        $ubicacionStatus.html(`<strong>Ubicación obtenida con éxito. Ya puedes enviar la encuesta.</strong>`);
+                    }
+
+                    if (window.lastSentLocationTimestamp && (Date.now() - window.lastSentLocationTimestamp < 30000)) {
+                        return;
+                    }
+                    
+                    enviarUbicacionAlServidor(latitude, longitude, idEncuestador);
+                    window.lastSentLocationTimestamp = Date.now();
+                },
+                (err) => {
+                    $ubicacionStatus.removeClass('col-grey col-green col-orange').addClass('col-red');
+                    switch (err.code) {
+                        case err.PERMISSION_DENIED:
+                            $ubicacionStatus.text("Permiso de ubicación denegado. Debes permitir el acceso en tu navegador para poder enviar la encuesta.");
+                            $btnEnviarEncuesta.prop('disabled', true);
+                            break;
+                        case err.POSITION_UNAVAILABLE:
+                            $ubicacionStatus.text("La información de la ubicación no está disponible. Revisa tu señal de GPS o conexión.");
+                            break;
+                        case err.TIMEOUT:
+                            $ubicacionStatus.text("La solicitud para obtener la ubicación ha caducado. Intenta recargar la página.");
+                            break;
+                        default:
+                            $ubicacionStatus.text("Ha ocurrido un error desconocido al obtener la ubicación.");
+                            break;
+                    }
+                },
+                options
+            );
         }
 
-        function success(position) {
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
-
-            // Llenar los campos ocultos
-            $latitudInput.val(latitude);
-            $longitudInput.val(longitude);
-
-            $ubicacionStatus.html(`<strong>Ubicación obtenida con éxito. Ya puedes enviar la encuesta.</strong>`).removeClass('col-grey col-red col-orange').addClass('col-green');
-            
-            // Habilitar el botón de enviar
-            $btnEnviarEncuesta.prop('disabled', false);
-        }
-
-        function error(err) {
-            $ubicacionStatus.removeClass('col-grey col-green col-orange').addClass('col-red');
-            
-            switch (err.code) {
-                case err.PERMISSION_DENIED:
-                    $ubicacionStatus.text("Permiso de ubicación denegado. Debes permitir el acceso en tu navegador para poder enviar la encuesta.");
-                    break;
-                case err.POSITION_UNAVAILABLE:
-                    $ubicacionStatus.text("La información de la ubicación no está disponible. Revisa tu señal de GPS o conexión.");
-                    break;
-                case err.TIMEOUT:
-                    $ubicacionStatus.text("La solicitud para obtener la ubicación ha caducado. Intenta recargar la página.");
-                    break;
-                default:
-                    $ubicacionStatus.text("Ha ocurrido un error desconocido al obtener la ubicación.");
-                    break;
-            }
-        }
-
-        // Llamar a la función para solicitar la ubicación al cargar la página
-        solicitarUbicacion();
-
+        monitorearUbicacion();
     });
 </script>
-</body>
-</html>

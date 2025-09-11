@@ -190,7 +190,7 @@ class Encuestador extends Controller
 
     /**
      * Procesa la inserción de las respuestas de la encuesta.
-     * Incluye la dirección obtenida por geolocalización.
+     * Incluye la dirección obtenida por geolocalización y una descripción de texto.
      */
     public function guardarRespuestas()
     {
@@ -205,11 +205,14 @@ class Encuestador extends Controller
         $idEncuesta = $this->request->getPost('id_encuesta');
         $idComunidad = $this->request->getPost('id_comunidad');
         
-        // ** NUEVO: Capturar las coordenadas enviadas desde la vista **
+        // Capturar las coordenadas enviadas desde la vista
         $latitud = $this->request->getPost('latitud');
         $longitud = $this->request->getPost('longitud');
         
-        // --- 2. OBTENER DIRECCIÓN DE TEXTO ---
+        // ** NUEVO: Capturar el campo de texto de referencias del formulario **
+        $referenciasTexto = $this->request->getPost('referencias_texto');
+        
+        // --- 2. OBTENER DIRECCIÓN DE TEXTO DE GOOGLE MAPS ---
         $direccionTexto = null;
         // Solo si se recibieron coordenadas válidas, llamamos al modelo
         if (!empty($latitud) && !empty($longitud)) {
@@ -240,14 +243,16 @@ class Encuestador extends Controller
                     'id_encuesta' => $idEncuesta,
                     'id_pregunta' => $idPregunta,
                     'id_opcion' => $idOpcion,
-                    'respuesta_texto' => null, 
+                    // ** CAMBIO: Ahora se usa el campo 'referencias' para la descripción del encuestador **
+                    'referencias' => $referenciasTexto, 
                     'id_estado' => $estado['id_estado'],
                     'id_distritofederal' => $distritoFederal['id_distrito_federal'],
                     'id_distritolocal' => $distritoLocal['id_distrito_local'],
                     'id_municipio' => $municipio['id_municipio'],
                     'id_seccion' => $seccion['id_seccion'],
                     'id_comunidad' => $idComunidad,
-                    'direccion' => $direccionTexto, // ** NUEVO: Se añade la dirección de texto obtenida **
+                    // El campo 'direccion' se mantiene para la dirección obtenida de Google Maps
+                    'direccion' => $direccionTexto, 
                 ];
                 
                 $this->respuestaModel->insert($data);

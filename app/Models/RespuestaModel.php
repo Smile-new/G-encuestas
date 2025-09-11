@@ -18,7 +18,7 @@ class RespuestaModel extends Model
         'id_encuesta',
         'id_pregunta',
         'id_opcion',
-        'respuesta_texto',
+        'referencias',
         'id_estado',
         'id_distritofederal',
         'id_distritolocal',
