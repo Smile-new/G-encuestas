@@ -6,14 +6,18 @@ use App\Controllers\BaseController;
 use App\Models\UsuarioModel;
 use App\Models\RolModel;
 use App\Models\RespuestaModel;
-use App\Models\EncuestaModel; // Importamos el modelo de encuestas
+use App\Models\EncuestaModel;
+// --- NUEVO: Se importa el modelo para el monitoreo ---
+use App\Models\MonitoreoModel;
 
 class Operador_User extends BaseController
 {
     protected $usuarioModel;
     protected $rolModel;
     protected $respuestaModel;
-    protected $encuestaModel; // Propiedad para el modelo de encuestas
+    protected $encuestaModel;
+    // --- NUEVO: Propiedad para el nuevo modelo ---
+    protected $monitoreoModel;
     protected $idRolEncuestador;
 
     public function __construct()
@@ -21,14 +25,14 @@ class Operador_User extends BaseController
         $this->usuarioModel = new UsuarioModel();
         $this->rolModel     = new RolModel();
         $this->respuestaModel = new RespuestaModel();
-        $this->encuestaModel = new EncuestaModel(); // Inicializamos el modelo de encuestas
+        $this->encuestaModel = new EncuestaModel();
+        // --- NUEVO: Se inicializa el modelo de monitoreo ---
+        $this->monitoreoModel = new MonitoreoModel();
         
-        // Obtener el ID del rol 'Encuestador' al inicializar el controlador.
         $rolEncuestador = $this->rolModel->where('nombre_rol', 'Encuestador')->first();
         if ($rolEncuestador) {
             $this->idRolEncuestador = $rolEncuestador['id_rol'];
         } else {
-            // Manejar el caso en que el rol no existe.
             $this->idRolEncuestador = null; 
         }
     }
@@ -264,31 +268,40 @@ class Operador_User extends BaseController
      */
     public function verMapa($idEncuestador)
     {
-        // Buscar al encuestador para obtener sus datos.
         $encuestador = $this->usuarioModel->find($idEncuestador);
-
-        // Si no se encuentra el encuestador, redirigir con un error.
         if (!$encuestador) {
             return redirect()->to(base_url('operador_user'))->with('error', 'Encuestador no encontrado.');
         }
 
-        // Usar el modelo de respuestas para obtener todas las respuestas con dirección de este usuario.
-        $respuestasConUbicacion = $this->respuestaModel->getRespuestasConDireccionPorUsuario($idEncuestador);
-
-        // Obtener la clave de API de Google desde la configuración para usarla en la vista.
+        // --- CAMBIO IMPORTANTE: Carga la API Key desde tu archivo de configuración ---
         $googleConfig = config(\Config\Google::class);
-        $googleApiKey = $googleConfig->apiKey;
-
-        // Preparar los datos para enviar a la vista.
-        $data = [
-            'encuestador'  => $encuestador,
-            'respuestas'   => $respuestasConUbicacion,
-            'googleApiKey' => $googleApiKey, // Se pasa la clave a la vista
-        ];
-
-        // Cargar la nueva vista del mapa y pasarle los datos.
+        $data['google_maps_api_key'] = $googleConfig->apiKey;
+        // --- FIN DEL CAMBIO ---
+        
+        $data['encuestador'] = $encuestador;
+        
+        // Carga la vista del mapa.
         return view('operador/ver_mapa_encuestador', $data);
     }
+
+    /**
+     * Provee los datos de ubicación al mapa (vía AJAX).
+     */
+    public function obtener_ubicaciones()
+{
+    // Ya no necesitamos la comprobación isAJAX().
+    // La seguridad se mantiene porque solo los usuarios con sesión pueden acceder.
+
+    $builder = $this->monitoreoModel->builder('mu');
+    
+    $builder->select('mu.id_usuario, mu.latitud, mu.longitud, mu.ultima_actualizacion, u.nombre, u.apellido_paterno, u.foto');
+    $builder->join('usuarios u', 'u.id_usuario = mu.id_usuario');
+    $builder->where('mu.ultima_actualizacion >=', date('Y-m-d H:i:s', strtotime('-10 minutes')));
+    
+    $ubicaciones = $builder->get()->getResultArray();
+
+    return $this->response->setJSON($ubicaciones);
+}
 
 
     /**

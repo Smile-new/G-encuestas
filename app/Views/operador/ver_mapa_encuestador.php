@@ -1,25 +1,23 @@
 <?php
-// --- Lógica de la sesión para la plantilla (copiada de tu vista de usuarios) ---
+// --- Lógica de la sesión para la plantilla ---
 $session = session();
 $isLoggedIn = $session->get('isLoggedIn');
-$userData = $session->get('usuario'); 
+$userData = $session->get('usuario');
 $nombreCompleto = "Invitado";
 $rolTexto = "Rol Desconocido";
-$rutaFotoPerfil = base_url(RECURSOS_OPERADOR_IMAGES . '/layout_img/user_img.jpg'); 
+$rutaFotoPerfil = base_url(RECURSOS_OPERADOR_IMAGES . '/layout_img/user_img.jpg');
 if ($isLoggedIn && is_array($userData)) {
-    $nombreCompleto = esc($userData['nombre']) . ' ' . esc($userData['apellido_paterno']) . ' ' . esc($userData['apellido_materno']);
-    $id_rol = $userData['id_rol'] ?? null; 
+    $nombreCompleto = esc($userData['nombre']) . ' ' . esc($userData['apellido_paterno']);
+    $id_rol = $userData['id_rol'] ?? null;
     switch ($id_rol) {
         case 1: $rolTexto = 'Administrador'; break;
-        case 2: $rolTexto = 'Operador'; break; 
+        case 2: $rolTexto = 'Operador'; break;
         case 3: $rolTexto = 'Encuestador'; break;
-        default: $rolTexto = 'Miembro'; break;
     }
     if (!empty($userData['foto'])) {
         $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto']));
     }
 }
-// --- Fin de la lógica de sesión ---
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -27,8 +25,7 @@ if ($isLoggedIn && is_array($userData)) {
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pluto - Mapa de Encuestas</title>
-    <!-- Tus mismos estilos del panel de operador para consistencia -->
+    <title>Monitoreo en Tiempo Real</title>
     <link rel="icon" href="<?= base_url(RECURSOS_OPERADOR_IMAGES . '/fevicon.png') ?>" type="image/png" />
     <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_CSS . '/bootstrap.min.css') ?>" />
     <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_CSS . '/style.css') ?>" />
@@ -40,7 +37,6 @@ if ($isLoggedIn && is_array($userData)) {
 <body class="inner_page">
     <div class="full_container">
         <div class="inner_container">
-            <!-- Sidebar (Menú lateral) -->
             <nav id="sidebar">
                 <div class="sidebar_blog_1">
                     <div class="sidebar-header">
@@ -66,10 +62,7 @@ if ($isLoggedIn && is_array($userData)) {
                     </ul>
                 </div>
             </nav>
-            <!-- Fin del Sidebar -->
-
             <div id="content">
-                <!-- Topbar (Barra superior) -->
                 <div class="topbar">
                     <nav class="navbar navbar-expand-lg navbar-light">
                         <div class="full">
@@ -89,49 +82,41 @@ if ($isLoggedIn && is_array($userData)) {
                         </div>
                     </nav>
                 </div>
-                <!-- Fin del Topbar -->
-
-                <!-- Contenido Principal -->
                 <div class="midde_cont">
                     <div class="container-fluid">
                         <div class="row column_title">
                             <div class="col-md-12">
                                 <div class="page_title">
-                                    <h2>Mapa de Encuestas de: <?= esc($encuestador['nombre'] . ' ' . $encuestador['apellido_paterno']) ?></h2>
+                                    <h2>Monitoreo en Vivo: <?= esc($encuestador['nombre'] . ' ' . $encuestador['apellido_paterno']) ?></h2>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Fila para el mapa -->
                         <div class="row column1">
                             <div class="col-md-12">
                                 <div class="white_shd full margin_bottom_30">
                                     <div class="full graph_head">
                                         <div class="heading1 margin_0">
-                                            <h2>Ubicaciones Registradas</h2>
+                                            <h2>Ubicación Actual (se actualiza cada 15 segundos)</h2>
                                         </div>
                                     </div>
                                     <div class="full map_section">
-                                        <!-- El mapa se renderizará aquí -->
                                         <div id="map" style="height: 600px; width: 100%;"></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- Footer -->
                     <div class="container-fluid">
                         <div class="footer">
                             <p>Copyright © 2025 Vota y Opina. All rights reserved.</p>
                         </div>
                     </div>
                 </div>
-                <!-- Fin del Contenido Principal -->
             </div>
         </div>
     </div>
 
-    <!-- Scripts de tu plantilla -->
     <script src="<?= base_url(RECURSOS_OPERADOR_JS . '/jquery.min.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_OPERADOR_JS . '/popper.min.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_OPERADOR_JS . '/bootstrap.min.js') ?>"></script>
@@ -139,63 +124,69 @@ if ($isLoggedIn && is_array($userData)) {
     <script>var ps = new PerfectScrollbar('#sidebar');</script>
     <script src="<?= base_url(RECURSOS_OPERADOR_JS . '/custom.js') ?>"></script>
     
-    <!-- Script de Google Maps -->
     <script>
-        // Pasamos las respuestas desde PHP a JavaScript de forma segura
-        const respuestas = <?= json_encode($respuestas) ?>;
+        let map;
+        let marker; // Solo necesitaremos un marcador para este encuestador
+        let infoWindow;
+        const idEncuestadorMonitoreado = <?= $encuestador['id_usuario'] ?>;
 
         function initMap() {
-            // Centra el mapa en México
-            const map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 5, 
-                center: { lat: 23.6345, lng: -102.5528 },
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 16,
+                center: { lat: 19.4326, lng: -99.1332 }, // Centro inicial en CDMX
+                mapTypeId: 'satellite'
             });
-
-            const geocoder = new google.maps.Geocoder();
-            const infowindow = new google.maps.InfoWindow();
+            infoWindow = new google.maps.InfoWindow();
             
-            // Un pequeño retraso entre cada solicitud para evitar el error OVER_QUERY_LIMIT
-            const delay = 100; 
-
-            respuestas.forEach((respuesta, i) => {
-                setTimeout(() => {
-                    geocodeAddress(geocoder, map, infowindow, respuesta);
-                }, i * delay);
-            });
+            actualizarUbicacion();
+            setInterval(actualizarUbicacion, 15000); // Actualizar cada 15 segundos
         }
 
-        function geocodeAddress(geocoder, resultsMap, infowindow, respuesta) {
-            const address = respuesta.direccion;
-            geocoder.geocode({ address: address }, (results, status) => {
-                if (status === "OK") {
-                    const marker = new google.maps.Marker({
-                        map: resultsMap,
-                        position: results[0].geometry.location,
-                        title: `Respuesta del: ${respuesta.fecha_respuesta}`
-                    });
+        async function actualizarUbicacion() {
+            try {
+                const response = await fetch('<?= base_url('operador_user/obtener_ubicaciones') ?>');
+                const ubicaciones = await response.json();
 
-                    // Añadir un listener para mostrar información al hacer clic en el marcador
-                    marker.addListener('click', () => {
-                        const contentString = `<div><strong>Dirección:</strong> ${respuesta.direccion}<br><strong>Fecha:</strong> ${respuesta.fecha_respuesta}</div>`;
-                        infowindow.setContent(contentString);
-                        infowindow.open(resultsMap, marker);
-                    });
+                const dataEncuestador = ubicaciones.find(u => u.id_usuario == idEncuestadorMonitoreado);
 
-                } else if (status === "OVER_QUERY_LIMIT") {
-                    console.warn("Límite de geocodificación alcanzado. Reintentando para la dirección:", address);
-                    setTimeout(() => { 
-                        geocodeAddress(geocoder, resultsMap, infowindow, respuesta); 
-                    }, 2000); // Esperar 2 segundos antes de reintentar
+                if (dataEncuestador) {
+                    const latLng = new google.maps.LatLng(dataEncuestador.latitud, dataEncuestador.longitud);
+
+                    if (!marker) {
+                        const fotoUrl = dataEncuestador.foto 
+                            ? `<?= base_url('public/img_user/') ?>${dataEncuestador.foto}` 
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(dataEncuestador.nombre)}+${encodeURIComponent(dataEncuestador.apellido_paterno)}&background=random&color=fff&rounded=true`;
+
+                        marker = new google.maps.Marker({
+                            position: latLng,
+                            map: map,
+                            title: `${dataEncuestador.nombre} ${dataEncuestador.apellido_paterno}`,
+                            icon: {
+                                url: fotoUrl,
+                                scaledSize: new google.maps.Size(50, 50),
+                                anchor: new google.maps.Point(25, 25),
+                            }
+                        });
+                        
+                        marker.addListener('click', () => infoWindow.open(map, marker));
+                        map.setCenter(latLng); // Centrar el mapa la primera vez
+                    } else {
+                        marker.setPosition(latLng); // Mover el marcador existente
+                        map.panTo(latLng); // Mover suavemente el mapa al centro
+                    }
+                    
+                    const contenidoInfo = `<b>${dataEncuestador.nombre} ${dataEncuestador.apellido_paterno}</b><br>Última actualización: ${new Date(dataEncuestador.ultima_actualizacion).toLocaleTimeString()}`;
+                    infoWindow.setContent(contenidoInfo);
+
                 } else {
-                    console.error(`La geocodificación falló para la dirección "${address}" por la siguiente razón: ${status}`);
+                    console.log(`Esperando la ubicación del encuestador ID: ${idEncuestadorMonitoreado}... (Puede que esté inactivo)`);
                 }
-            });
+
+            } catch (error) {
+                console.error("Error al obtener la ubicación:", error);
+            }
         }
     </script>
-    <!-- El callback=initMap ejecuta la función initMap cuando la API de Google Maps está lista -->
-    <!-- La clave de API se obtiene desde el controlador -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=<?= esc($googleApiKey) ?>&callback=initMap"></script>
-
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=<?= esc($google_maps_api_key) ?>&callback=initMap"></script>
 </body>
 </html>
-

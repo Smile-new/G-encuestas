@@ -574,244 +574,215 @@
 <script src="<?= base_url(RECURSOS_ENCUESTADOR_JS . '/admin.js') ?>"></script>
 
 <script>
-    $(function () {
-        const $selectComunidad = $('#selectComunidad');
-        const $selectSeccion = $('#selectSeccion');
-        const $selectMunicipio = $('#selectMunicipio');
-        const $selectDistritoLocal = $('#selectDistritoLocal');
-        const $selectDistritoFederal = $('#selectDistritoFederal');
-        const $selectEstado = $('#selectEstado');
-        const allSelects = [$selectEstado, $selectDistritoFederal, $selectDistritoLocal, $selectMunicipio, $selectSeccion, $selectComunidad];
+$(function () {
+    // --- 1. DEFINICIÓN DE CONSTANTES DEL DOM ---
+    // Selectores para los menús desplegables de ubicación
+    const $selectComunidad = $('#selectComunidad');
+    const $selectSeccion = $('#selectSeccion');
+    const $selectMunicipio = $('#selectMunicipio');
+    const $selectDistritoLocal = $('#selectDistritoLocal');
+    const $selectDistritoFederal = $('#selectDistritoFederal');
+    const $selectEstado = $('#selectEstado');
+    const allSelects = [$selectEstado, $selectDistritoFederal, $selectDistritoLocal, $selectMunicipio, $selectSeccion, $selectComunidad];
+    
+    // Selectores para la geolocalización y el formulario
+    const $ubicacionStatus = $('#ubicacion-status');
+    const $latitudInput = $('#latitud');
+    const $longitudInput = $('#longitud');
+    const $btnEnviarEncuesta = $('#btnEnviarEncuesta');
+    const $referenciasTexto = $('#referencias_texto');
+    const $referenciasCounter = $('#referencias-counter');
+    
+    // --- 2. LÓGICA PARA LOS SELECTORES DE UBICACIÓN (CASCADA) ---
+    const dataComunidades = <?= json_encode($comunidades) ?>;
+
+    function floatLabel($element) {
+        const formLine = $element.closest('.form-line');
+        if ($element.val() && $element.val() !== '') {
+            formLine.find('label').addClass('active').css({ top: '0px', fontSize: '12px' });
+        } else {
+            formLine.find('label').removeClass('active').css({ top: '24px', fontSize: '16px' });
+        }
+        if ($.fn.selectpicker) {
+            $element.selectpicker('refresh');
+        }
+    }
+
+    function populateComunidades(seccionId) {
+        $selectComunidad.empty().append('<option value="">-- Seleccione Comunidad --</option>');
+        const comunidadesFiltradas = dataComunidades.filter(c => c.seccion && c.seccion.id_seccion == seccionId);
         
-        function floatLabel($element) {
-            const formLine = $element.closest('.form-line');
-            if ($element.val() && $element.val() !== '') {
-                formLine.find('label').addClass('active').css({ top: '0px', fontSize: '12px' });
-            } else {
-                formLine.find('label').removeClass('active').css({ top: '24px', fontSize: '16px' });
+        comunidadesFiltradas.forEach(c => {
+            // VERSIÓN CORREGIDA: Usa la variable de JS 'c' en lugar de la de PHP
+            const option = `<option 
+                class="comunidad-option seccion-${c.seccion.id_seccion}"
+                value="${c.id_comunidad}"
+                data-seccion-id="${c.seccion.id_seccion}"
+                data-municipio-id="${c.seccion.municipio.id_municipio}"
+                data-distrito-local-id="${c.seccion.municipio.distrito_local.id_distrito_local}"
+                data-distrito-federal-id="${c.seccion.municipio.distrito_local.distrito_federal.id_distrito_federal}"
+                data-estado-id="${c.seccion.municipio.distrito_local.distrito_federal.estado.id_estado}"
+            >
+                ${c.nombre_comunidad}
+            </option>`;
+            $selectComunidad.append(option);
+        });
+        floatLabel($selectComunidad);
+        if ($.fn.selectpicker) {
+            $selectComunidad.selectpicker('refresh');
+        }
+    }
+    
+    function populateAllSelects() {
+        // Esta función llena los selects deshabilitados la primera vez
+        const unicos = { estados: {}, distritosFederales: {}, distritosLocales: {}, municipios: {}, secciones: {} };
+
+        dataComunidades.forEach(comunidad => {
+            if (comunidad.seccion && comunidad.seccion.municipio && comunidad.seccion.municipio.distrito_local && comunidad.seccion.municipio.distrito_local.distrito_federal && comunidad.seccion.municipio.distrito_local.distrito_federal.estado) {
+                const estado = comunidad.seccion.municipio.distrito_local.distrito_federal.estado;
+                const df = comunidad.seccion.municipio.distrito_local.distrito_federal;
+                const dl = comunidad.seccion.municipio.distrito_local;
+                const mun = comunidad.seccion.municipio;
+                const sec = comunidad.seccion;
+
+                unicos.estados[estado.id_estado] = estado.nombre_estado;
+                unicos.distritosFederales[df.id_distrito_federal] = df.nombre_distrito_federal;
+                unicos.distritosLocales[dl.id_distrito_local] = dl.nombre_distrito_local;
+                unicos.municipios[mun.id_municipio] = mun.nombre_municipio;
+                unicos.secciones[sec.id_seccion] = sec.nombre_seccion;
             }
-            if ($.fn.selectpicker) {
-                $element.selectpicker('refresh');
-            }
-        }
+        });
 
-        const dataComunidades = <?= json_encode($comunidades) ?>;
+        // Llenar selects. Limpiamos primero por si acaso.
+        $selectEstado.empty().append('<option value="">-- Estado --</option>');
+        Object.entries(unicos.estados).forEach(([id, nombre]) => $selectEstado.append(`<option value="${id}">${nombre}</option>`));
+        
+        $selectDistritoFederal.empty().append('<option value="">-- Distrito Federal --</option>');
+        Object.entries(unicos.distritosFederales).forEach(([id, nombre]) => $selectDistritoFederal.append(`<option value="${id}">${nombre}</option>`));
 
-        function populateComunidades(seccionId) {
-            $selectComunidad.empty().append('<option value="">-- Comunidad --</option>');
-            const comunidadesFiltradas = dataComunidades.filter(c => c.seccion.id_seccion == seccionId);
-            comunidadesFiltradas.forEach(c => {
-                const option = `<option 
-                    class="comunidad-option seccion-<?= esc($comunidad['seccion']['id_seccion']) ?>"
-                    value="${c.id_comunidad}"
-                    data-seccion-id="${c.seccion.id_seccion}"
-                    data-municipio-id="${c.seccion.municipio.id_municipio}"
-                    data-distrito-local-id="${c.seccion.municipio.distrito_local.id_distrito_local}"
-                    data-distrito-federal-id="${c.seccion.municipio.distrito_local.distrito_federal.id_distrito_federal}"
-                    data-estado-id="${c.seccion.municipio.distrito_local.distrito_federal.estado.id_estado}"
-                >
-                    ${c.nombre_comunidad}
-                </option>`;
-                $selectComunidad.append(option);
-            });
-            floatLabel($selectComunidad);
-        }
+        $selectDistritoLocal.empty().append('<option value="">-- Distrito Local --</option>');
+        Object.entries(unicos.distritosLocales).forEach(([id, nombre]) => $selectDistritoLocal.append(`<option value="${id}">${nombre}</option>`));
+        
+        $selectMunicipio.empty().append('<option value="">-- Municipio --</option>');
+        Object.entries(unicos.municipios).forEach(([id, nombre]) => $selectMunicipio.append(`<option value="${id}">${nombre}</option>`));
 
-        function populateAllSelects() {
-            const estadosSet = new Set();
-            const dfSet = new Set();
-            const dlSet = new Set();
-            const municipioSet = new Set();
-            const seccionSet = new Set();
-            
-            dataComunidades.forEach(comunidad => {
-                if (comunidad.seccion && comunidad.seccion.municipio && comunidad.seccion.municipio.distrito_local && comunidad.seccion.municipio.distrito_local.distrito_federal && comunidad.seccion.municipio.distrito_local.distrito_federal.estado) {
-                    estadosSet.add(JSON.stringify(comunidad.seccion.municipio.distrito_local.distrito_federal.estado));
-                    dfSet.add(JSON.stringify(comunidad.seccion.municipio.distrito_local.distrito_federal));
-                    dlSet.add(JSON.stringify(comunidad.seccion.municipio.distrito_local));
-                    municipioSet.add(JSON.stringify(comunidad.seccion.municipio));
-                    seccionSet.add(JSON.stringify(comunidad.seccion));
-                }
-            });
+        $selectSeccion.empty().append('<option value="">-- Seleccione una Sección --</option>');
+        Object.entries(unicos.secciones).forEach(([id, nombre]) => $selectSeccion.append(`<option value="${id}">${nombre}</option>`));
+    }
 
-            const estados = Array.from(estadosSet).map(item => JSON.parse(item));
-            const dfs = Array.from(dfSet).map(item => JSON.parse(item));
-            const dls = Array.from(dlSet).map(item => JSON.parse(item));
-            const municipios = Array.from(municipioSet).map(item => JSON.parse(item));
-            const secciones = Array.from(seccionSet).map(item => JSON.parse(item));
-            
-            $selectEstado.empty().append('<option value="">-- Estado --</option>');
-            estados.forEach(e => $selectEstado.append(`<option value="${e.id_estado}">${e.nombre_estado}</option>`));
-
-            $selectDistritoFederal.empty().append('<option value="">-- Distrito Federal --</option>');
-            dfs.forEach(d => $selectDistritoFederal.append(`<option value="${d.id_distrito_federal}">${d.nombre_distrito_federal}</option>`));
-
-            $selectDistritoLocal.empty().append('<option value="">-- Distrito Local --</option>');
-            dls.forEach(d => $selectDistritoLocal.append(`<option value="${d.id_distrito_local}">${d.nombre_distrito_local}</option>`));
-
-            $selectMunicipio.empty().append('<option value="">-- Municipio --</option>');
-            municipios.forEach(m => $selectMunicipio.append(`<option value="${m.id_municipio}">${m.nombre_municipio}</option>`));
-
-            $selectSeccion.empty().append('<option value="">-- Sección --</option>');
-            secciones.forEach(s => $selectSeccion.append(`<option value="${s.id_seccion}">${s.nombre_seccion}</option>`));
-        }
-
-        $selectSeccion.on('change', function () {
-            const seccionId = $(this).val();
-            populateComunidades(seccionId);
-            $selectComunidad.val('');
-            allSelects.forEach($select => {
-                if ($select.attr('id') !== 'selectSeccion') {
-                    $select.val('');
-                }
-            });
-
-            if (seccionId) {
-                const seccionData = dataComunidades.find(c => c.seccion.id_seccion == seccionId).seccion;
+    $selectSeccion.on('change', function () {
+        const seccionId = $(this).val();
+        populateComunidades(seccionId);
+        
+        // Autocompletar los selects padres deshabilitados
+        if (seccionId) {
+            const comunidadDeReferencia = dataComunidades.find(c => c.seccion.id_seccion == seccionId);
+            if (comunidadDeReferencia) {
+                const seccionData = comunidadDeReferencia.seccion;
                 $selectMunicipio.val(seccionData.municipio.id_municipio);
                 $selectDistritoLocal.val(seccionData.municipio.distrito_local.id_distrito_local);
                 $selectDistritoFederal.val(seccionData.municipio.distrito_local.distrito_federal.id_distrito_federal);
                 $selectEstado.val(seccionData.municipio.distrito_local.distrito_federal.estado.id_estado);
             }
-            
-            allSelects.forEach($select => floatLabel($select));
-        });
+        } else {
+            // Si se deselecciona, limpiar todo
+            $selectMunicipio.val('');
+            $selectDistritoLocal.val('');
+            $selectDistritoFederal.val('');
+            $selectEstado.val('');
+        }
+        allSelects.forEach($select => floatLabel($select));
+    });
 
-        $selectComunidad.on('change', function () {
-            const selectedOption = $(this).find('option:selected');
-            allSelects.forEach($select => {
-                $select.val('');
-            });
+    $selectComunidad.on('change', function () {
+        const selectedOption = $(this).find('option:selected');
+        if (selectedOption.val()) {
+            // Autoseleccionar todos los padres basados en los data-attributes
+            $selectSeccion.val(selectedOption.data('seccion-id'));
+            $selectMunicipio.val(selectedOption.data('municipio-id'));
+            $selectDistritoLocal.val(selectedOption.data('distrito-local-id'));
+            $selectDistritoFederal.val(selectedOption.data('distrito-federal-id'));
+            $selectEstado.val(selectedOption.data('estado-id'));
+        }
+        allSelects.forEach($select => floatLabel($select));
+    });
 
-            if (selectedOption.val()) {
-                const estadoId = selectedOption.data('estado-id');
-                const distritoFederalId = selectedOption.data('distrito-federal-id');
-                const distritoLocalId = selectedOption.data('distrito-local-id');
-                const municipioId = selectedOption.data('municipio-id');
-                const seccionId = selectedOption.data('seccion-id');
+    // --- 3. LÓGICA PARA EL CAMPO DE TEXTO "REFERENCIAS" ---
+    $referenciasTexto.on('keyup', function() {
+        const maxLength = $(this).attr('maxlength');
+        const currentLength = $(this).val().length;
+        const remaining = maxLength - currentLength;
+        $referenciasCounter.text(remaining);
+    });
 
-                $selectEstado.val(estadoId);
-                $selectDistritoFederal.val(distritoFederalId);
-                $selectDistritoLocal.val(distritoLocalId);
-                $selectMunicipio.val(municipioId);
-                $selectSeccion.val(seccionId);
-                $selectComunidad.val(selectedOption.val());
-            }
-            
-            allSelects.forEach($select => floatLabel($select));
-        });
+    // --- 4. LÓGICA DE GEOLOCALIZACIÓN ---
+    
+    function obtenerUbicacionParaFormulario() {
+        if (!navigator.geolocation) {
+            $ubicacionStatus.text('Geolocalización no soportada.').addClass('col-red');
+            $btnEnviarEncuesta.prop('disabled', true);
+            return;
+        }
 
-        populateAllSelects();
-        setTimeout(function () {
-            if ($.fn.selectpicker) {
-                $('.form-control.show-tick').selectpicker('refresh');
-            }
-            floatLabel($('#referencias_texto'));
-        }, 100);
+        $ubicacionStatus.text('Obteniendo ubicación para el formulario...').addClass('col-orange');
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                $latitudInput.val(position.coords.latitude);
+                $longitudInput.val(position.coords.longitude);
+                $ubicacionStatus.html(`<strong><i class="material-icons" style="font-size: 1em; vertical-align: sub;">check_circle</i> Ubicación obtenida.</strong>`).removeClass('col-orange col-red').addClass('col-green');
+                $btnEnviarEncuesta.prop('disabled', false);
+            },
+            (err) => {
+                $btnEnviarEncuesta.prop('disabled', true);
+                let msg = "Error al obtener ubicación. Intente de nuevo.";
+                if (err.code === 1) msg = "Permiso de ubicación denegado.";
+                if (err.code === 2) msg = "Ubicación no disponible. Revise su GPS.";
+                if (err.code === 3) msg = "Tiempo de espera agotado.";
+                $ubicacionStatus.text(msg).removeClass('col-orange col-green').addClass('col-red');
+            },
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+        );
+    }
 
-        const $ubicacionStatus = $('#ubicacion-status');
-        const $latitudInput = $('#latitud');
-        const $longitudInput = $('#longitud');
-        const $btnEnviarEncuesta = $('#btnEnviarEncuesta');
-        const $referenciasTexto = $('#referencias_texto');
-        const $referenciasCounter = $('#referencias-counter');
+    function iniciarMonitoreoContinuo() {
+        if (!navigator.geolocation) {
+            console.warn('Monitoreo no disponible: geolocalización no soportada.');
+            return;
+        }
         
-        $referenciasTexto.on('keyup', function() {
-            const maxLength = $(this).attr('maxlength');
-            const currentLength = $(this).val().length;
-            const remaining = maxLength - currentLength;
-            $referenciasCounter.text(remaining);
-        });
-        
-        $referenciasTexto.on('focus', function() {
-            $(this).closest('.form-group').addClass('focused');
-        }).on('blur', function() {
-            $(this).closest('.form-group').removeClass('focused');
-        });
-
-        function enviarUbicacionAlServidor(latitud, longitud, idEncuestador) {
-            const data = {
-                latitud: latitud,
-                longitud: longitud,
-                id_encuestador: idEncuestador
-            };
-
+        const enviarUbicacion = (position) => {
             fetch('<?= base_url('encuestador/guardar_ubicacion_monitoreo') ?>', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(data)
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({
+                    latitud: position.coords.latitude,
+                    longitud: position.coords.longitude
+                })
             })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    console.log('Ubicación enviada al servidor con éxito para monitoreo.');
-                } else {
-                    console.error('Error al enviar ubicación para monitoreo:', result.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error de red al enviar ubicación:', error);
-            });
+            .then(res => res.json())
+            .then(data => data.success ? console.log('Monitoreo: Posición actualizada.') : console.error('Monitoreo:', data.message))
+            .catch(err => console.error('Monitoreo (Error de Red):', err));
+        };
+
+        navigator.geolocation.watchPosition(
+            enviarUbicacion,
+            (err) => console.warn(`Monitoreo (Error de GPS): ${err.message}`),
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+    }
+
+    // --- 5. EJECUCIÓN INICIAL AL CARGAR LA PÁGINA ---
+    populateAllSelects(); // Llama a la función para llenar los selectores
+    obtenerUbicacionParaFormulario();
+    iniciarMonitoreoContinuo();
+
+    // Inicializa plugins de estilo
+    setTimeout(() => {
+        if ($.fn.selectpicker) {
+            $('.form-control.show-tick').selectpicker('refresh');
         }
-
-        function monitorearUbicacion() {
-            if (!navigator.geolocation) {
-                $ubicacionStatus.text('Tu navegador no soporta geolocalización. El monitoreo no está disponible.').removeClass('col-grey').addClass('col-red');
-                return;
-            }
-
-            const idEncuestador = '<?= esc($id_encuestador) ?>';
-
-            const options = {
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 0
-            };
-
-            const watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const latitude = position.coords.latitude;
-                    const longitude = position.coords.longitude;
-                    
-                    if ($latitudInput.val() === '' || $longitudInput.val() === '') {
-                        $latitudInput.val(latitude);
-                        $longitudInput.val(longitude);
-                        $btnEnviarEncuesta.prop('disabled', false);
-                        $ubicacionStatus.html(`<strong>Ubicación obtenida con éxito. Ya puedes enviar la encuesta.</strong>`);
-                    }
-
-                    if (window.lastSentLocationTimestamp && (Date.now() - window.lastSentLocationTimestamp < 30000)) {
-                        return;
-                    }
-                    
-                    enviarUbicacionAlServidor(latitude, longitude, idEncuestador);
-                    window.lastSentLocationTimestamp = Date.now();
-                },
-                (err) => {
-                    $ubicacionStatus.removeClass('col-grey col-green col-orange').addClass('col-red');
-                    switch (err.code) {
-                        case err.PERMISSION_DENIED:
-                            $ubicacionStatus.text("Permiso de ubicación denegado. Debes permitir el acceso en tu navegador para poder enviar la encuesta.");
-                            $btnEnviarEncuesta.prop('disabled', true);
-                            break;
-                        case err.POSITION_UNAVAILABLE:
-                            $ubicacionStatus.text("La información de la ubicación no está disponible. Revisa tu señal de GPS o conexión.");
-                            break;
-                        case err.TIMEOUT:
-                            $ubicacionStatus.text("La solicitud para obtener la ubicación ha caducado. Intenta recargar la página.");
-                            break;
-                        default:
-                            $ubicacionStatus.text("Ha ocurrido un error desconocido al obtener la ubicación.");
-                            break;
-                    }
-                },
-                options
-            );
-        }
-
-        monitorearUbicacion();
-    });
+        floatLabel($('#referencias_texto'));
+    }, 200);
+});
 </script>
+

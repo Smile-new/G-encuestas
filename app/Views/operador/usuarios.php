@@ -227,9 +227,9 @@ if ($isLoggedIn && is_array($userData)) {
                                                                         <a href="<?= base_url('operador_user/edit/' . esc($usuario['id_usuario'])) ?>" class="btn btn-warning btn-sm" title="Editar">
                                                                             <i class="fa fa-pencil"></i>Editar
                                                                         </a>
-                                                                        <a href="<?= base_url('operador_user/ver_mapa/' . esc($usuario['id_usuario'])) ?>" class="btn btn-monitoreo" title="Monitoreo en tiempo real">
-                                                                            <i class="fa fa-map-marker"></i> Ver Mapa
-                                                                        </a>
+                                                                        <a href="<?= base_url('operador_user/verMapa/' . esc($usuario['id_usuario'])) ?>" class="btn btn-monitoreo" title="Monitoreo en tiempo real">
+    <i class="fa fa-map-marker"></i> Ver Mapa
+</a>
                                                                     </td>
                                                                 </tr>
                                                             <?php endforeach; ?>
