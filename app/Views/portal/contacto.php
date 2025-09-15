@@ -159,9 +159,7 @@
             <div class="footer__top">
                 <div class="row">
                     <div class="col-lg-6 col-md-6">
-                        <div class="footer__top__logo">
-                            <a href="#"><img src="img/logo.png" alt=""></a>
-                        </div>
+                        
                     </div>
                     <div class="col-lg-6 col-md-6">
                         <div class="footer__top__social">

@@ -68,7 +68,7 @@ $routes->get('cam', 'Encuestador::cam'); // Ruta para la vista de la cámara
 $routes->get('formularios', 'Encuestador::formularios'); // Ruta para la lista de formularios
 $routes->get('encuestas/ver/(:num)', 'Encuestador::verEncuesta/$1'); // Muestra una encuesta específica
 $routes->post('encuestas/guardar', 'Encuestador::guardarRespuestas'); // Guarda las respuestas de la encuesta
-
+$routes->post('encuestador/guardar_ubicacion_monitoreo', 'Encuestador::guardarUbicacionMonitoreo');
 
 
 //Rutas publicas  // Página de inicio
@@ -110,14 +110,15 @@ $routes->get('estadistica/getOpcionesPregunta/(:num)', 'EstadisticasController::
 
 
     //Opeador Usuarios
-    $routes->get('operador_user', 'Operador_User::index');
-$routes->get('operador_user/create', 'Operador_User::create');
-$routes->post('operador_user/store', 'Operador_User::store');
-$routes->get('operador_user/edit/(:num)', 'Operador_User::edit/$1');
-$routes->post('operador_user/update/(:num)', 'Operador_User::update/$1');
-$routes->get('operador_user/verMapa/(:num)', 'Operador_User::verMapa/$1');
-$routes->get('operador_user/obtener_ubicaciones', 'Operador_User::obtener_ubicaciones');
-
+    $routes->group('operador_user', ['filter' => 'auth'], static function ($routes) {
+    $routes->get('/', 'Operador_User::index');
+    $routes->get('index', 'Operador_User::index');
+    $routes->get('create', 'Operador_User::create');
+    $routes->post('store', 'Operador_User::store');
+    $routes->get('edit/(:num)', 'Operador_User::edit/$1');
+    $routes->post('update/(:num)', 'Operador_User::update/$1');
+    $routes->get('verMapa/(:num)', 'Operador_User::verMapa/$1');
+});
 
 
     //pagina

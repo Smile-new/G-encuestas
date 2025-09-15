@@ -273,36 +273,39 @@ class Operador_User extends BaseController
             return redirect()->to(base_url('operador_user'))->with('error', 'Encuestador no encontrado.');
         }
 
-        // --- CAMBIO IMPORTANTE: Carga la API Key desde tu archivo de configuración ---
         $googleConfig = config(\Config\Google::class);
         $data['google_maps_api_key'] = $googleConfig->apiKey;
-        // --- FIN DEL CAMBIO ---
-        
         $data['encuestador'] = $encuestador;
         
-        // Carga la vista del mapa.
         return view('operador/ver_mapa_encuestador', $data);
     }
 
-    /**
-     * Provee los datos de ubicación al mapa (vía AJAX).
-     */
     public function obtener_ubicaciones()
-{
-    // Ya no necesitamos la comprobación isAJAX().
-    // La seguridad se mantiene porque solo los usuarios con sesión pueden acceder.
+    {
+        // Medida de seguridad: solo usuarios con sesión pueden acceder
+        if (!session()->get('isLoggedIn')) {
+            return $this->response->setStatusCode(403, 'Acceso Prohibido');
+        }
 
-    $builder = $this->monitoreoModel->builder('mu');
-    
-    $builder->select('mu.id_usuario, mu.latitud, mu.longitud, mu.ultima_actualizacion, u.nombre, u.apellido_paterno, u.foto');
-    $builder->join('usuarios u', 'u.id_usuario = mu.id_usuario');
-    $builder->where('mu.ultima_actualizacion >=', date('Y-m-d H:i:s', strtotime('-10 minutes')));
-    
-    $ubicaciones = $builder->get()->getResultArray();
-
-    return $this->response->setJSON($ubicaciones);
-}
-
+        // Se reescribe la consulta para ser más explícita y evitar errores
+        $builder = $this->monitoreoModel
+            ->select('
+                monitoreo_ubicacion.id_usuario, 
+                monitoreo_ubicacion.latitud, 
+                monitoreo_ubicacion.longitud, 
+                monitoreo_ubicacion.ultima_actualizacion, 
+                usuarios.nombre, 
+                usuarios.apellido_paterno, 
+                usuarios.foto
+            ')
+            ->join('usuarios', 'usuarios.id_usuario = monitoreo_ubicacion.id_usuario');
+            
+          
+            
+        $ubicaciones = $builder->findAll(); // Usamos findAll() que es más directo en este caso
+        
+        return $this->response->setJSON($ubicaciones);
+    }
 
     /**
      * Genera una contraseña aleatoria de 10 caracteres.
