@@ -40,11 +40,62 @@ if ($isLoggedIn && is_array($userData)) {
         <div class="inner_container">
             <!-- Sidebar (Menú lateral) -->
             <nav id="sidebar">
-                 <!-- Tu código de sidebar aquí... -->
+               <div class="sidebar_blog_1">
+                  <div class="sidebar-header">
+                     <div class="logo_section">
+                        <a href="<?= base_url('operador/dashboard') ?>"><img class="logo_icon img-responsive" src="<?= base_url(RECURSOS_OPERADOR_IMAGES . '/logo/logo_icon.png') ?>" alt="Logo" /></a>
+                     </div>
+                  </div>
+                  <div class="sidebar_user_info">
+                     <div class="icon_setting"></div>
+                     <div class="user_profle_side">
+                        <div class="user_img">
+                           <!-- Foto de perfil dinámica en el sidebar -->
+                           <img class="img-responsive" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil" />
+                        </div>
+                        <div class="user_info">
+                           <!-- Nombre completo dinámico en el sidebar -->
+                           <h6><?= $nombreCompleto ?></h6>
+                           <!-- Rol dinámico en el sidebar -->
+                           <p><span class="online_animation"></span> <?= $rolTexto ?></p>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <div class="sidebar_blog_2">
+                  <h4>General</h4>
+                  <ul class="list-unstyled components">
+                        <li class="active">
+                            <a href="<?= base_url('operador/dashboard') ?>"><i class="fa fa-dashboard yellow_color"></i> <span>Home</span></a>
+                        </li>
+                        <li><a href="<?= base_url('operador_user') ?>"><i class="fa fa-table purple_color2"></i> <span>Encuestadores</span></a></li>
+                    </ul>
+               </div>
             </nav>
             <!-- Fin del Sidebar -->
 
             <div id="content">
+
+            <div class="topbar">
+                  <nav class="navbar navbar-expand-lg navbar-light">
+                     <div class="full">
+                        <button type="button" id="sidebarCollapse" class="sidebar_toggle"><i class="fa fa-bars"></i></button>
+                        <div class="right_topbar">
+                           <div class="icon_info">
+                              <ul class="user_profile_dd">
+                                 <li>
+                                    <!-- Foto de perfil dinámica en la navbar -->
+                                    <a class="dropdown-toggle" data-toggle="dropdown"><img class="img-responsive rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil" /><span class="name_user"><?= $nombreCompleto ?></span></a>
+                                    <div class="dropdown-menu">
+                                       <a class="dropdown-item" href="<?= base_url('logout') ?>"><span>Log Out</span> <i class="fa fa-sign-out"></i></a>
+                                    </div>
+                                 </li>
+                              </ul>
+                           </div>
+                        </div>
+                     </div>
+                  </nav>
+               </div>
                 <!-- Topbar (Barra superior) -->
                 <div class="topbar">
                     <!-- Tu código de topbar aquí... -->
