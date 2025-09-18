@@ -42,10 +42,8 @@ class Operador_User extends BaseController
      */
     public function index()
     {
-        // Obtener el término de búsqueda de la URL
         $searchTerm = $this->request->getGet('search_term');
         
-        // Si el rol 'Encuestador' no existe, no se pueden mostrar usuarios.
         if ($this->idRolEncuestador === null) {
             return view('operador/usuarios', [
                 'usuarios' => [],
@@ -53,49 +51,43 @@ class Operador_User extends BaseController
             ]);
         }
         
-        // Iniciar la consulta
-        $query = $this->usuarioModel->where('id_rol', $this->idRolEncuestador);
+        // --- MODIFICACIÓN 1: FILTRAR POR CREADOR ---
+        // Se obtiene el ID del operador que ha iniciado sesión.
+        $idOperadorActual = session()->get('usuario')['id_usuario'];
 
-        // Aplicar la búsqueda por nombre si se proporcionó un término
+        // La consulta ahora filtra por el rol Y por el ID del creador.
+        $query = $this->usuarioModel
+                        ->where('id_rol', $this->idRolEncuestador)
+                        ->where('creado_por_id', $idOperadorActual);
+
         if (!empty($searchTerm)) {
-            $query = $query->like('nombre', $searchTerm);
+            $query->like('nombre', $searchTerm);
         }
 
-        // Obtener los usuarios filtrados
         $usuariosEncuestadores = $query->findAll();
         
-        // --- INICIO DE LA LÓGICA MODIFICADA PARA EL CONTEO DE RESPUESTAS ACTIVAS ---
-        
-        // 1. Obtener el conteo de respuestas por usuario solo para encuestas activas.
-        $conteoRespuestas = $this->respuestaModel
-                                 ->select('respuestas.id_usuario, COUNT(respuestas.id_respuesta) as respuestas_contestadas')
-                                 ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta')
-                                 ->where('encuestas.activa', 1) // Condición para encuestas activas
-                                 ->groupBy('respuestas.id_usuario')
-                                 ->findAll();
-        
-        // 2. Convertir el resultado a un array asociativo para una búsqueda rápida.
-        $conteoMap = [];
-        foreach ($conteoRespuestas as $conteo) {
-            $conteoMap[$conteo['id_usuario']] = $conteo['respuestas_contestadas'];
+        // El resto de la lógica para el conteo de respuestas no cambia.
+        if (!empty($usuariosEncuestadores)) {
+            $conteoRespuestas = $this->respuestaModel
+                                    ->select('respuestas.id_usuario, COUNT(respuestas.id_respuesta) as respuestas_contestadas')
+                                    ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta')
+                                    ->where('encuestas.activa', 1)
+                                    ->groupBy('respuestas.id_usuario')
+                                    ->findAll();
+            
+            $conteoMap = array_column($conteoRespuestas, 'respuestas_contestadas', 'id_usuario');
+            
+            foreach ($usuariosEncuestadores as &$usuario) {
+                $usuario['respuestas_contestadas'] = $conteoMap[$usuario['id_usuario']] ?? 0;
+            }
+            unset($usuario);
         }
         
-        // 3. Añadir el conteo de respuestas a cada usuario en la lista.
-        foreach ($usuariosEncuestadores as &$usuario) {
-            // Asigna el conteo del mapa, si no existe el usuario, asigna 0.
-            $usuario['respuestas_contestadas'] = $conteoMap[$usuario['id_usuario']] ?? 0;
-        }
-        // Desactivamos la referencia para evitar efectos secundarios.
-        unset($usuario);
-        
-        // --- FIN DE LA LÓGICA MODIFICADA ---
-
         $data = [
             'usuarios' => $usuariosEncuestadores,
-            'searchTerm' => $searchTerm // Pasar el término de búsqueda a la vista para mantenerlo en el campo
+            'searchTerm' => $searchTerm
         ];
         
-        // Carga la vista principal (read) con la lista de usuarios.
         return view('operador/usuarios', $data);
     }
     
@@ -117,11 +109,8 @@ class Operador_User extends BaseController
      */
     public function store()
     {
-        if ($this->idRolEncuestador === null) {
-            return redirect()->back()->withInput()->with('error', 'No se puede crear el usuario porque el rol "Encuestador" no existe.');
-        }
-        
-        $rules = [
+        // ... (Tu código de validación, manejo de foto y generación de usuario/contraseña no cambia) ...
+         $rules = [
             'nombre'           => 'required|alpha_space|min_length[3]|max_length[100]',
             'apellido_paterno' => 'required|alpha_space|min_length[3]|max_length[100]',
             'apellido_materno' => 'permit_empty|alpha_space|max_length[100]',
@@ -140,11 +129,10 @@ class Operador_User extends BaseController
             $fotoFile->move(FCPATH . 'public/img_user', $fotoFileName);
         }
 
-        // Generar usuario y contraseña de forma aleatoria
-        $usuario = strtolower(substr($this->request->getPost('nombre'), 0, 1) . $this->request->getPost('apellido_paterno'));
+        $nombreLimpio = preg_replace('/[^a-zA-Z0-9]/', '', $this->request->getPost('apellido_paterno'));
+        $usuario = strtolower(substr($this->request->getPost('nombre'), 0, 1) . $nombreLimpio);
         $contrasena = $this->generateRandomPassword();
 
-        // Verificar si el nombre de usuario ya existe
         $i = 1;
         $usuarioOriginal = $usuario;
         while ($this->usuarioModel->where('usuario', $usuario)->first()) {
@@ -152,6 +140,10 @@ class Operador_User extends BaseController
             $i++;
         }
         
+        // --- MODIFICACIÓN 2: GUARDAR EL CREADOR ---
+        // Se obtiene el ID del operador que está creando al usuario.
+        $idOperadorCreador = session()->get('usuario')['id_usuario'];
+
         $data = [
             'nombre'           => $this->request->getPost('nombre'),
             'apellido_paterno' => $this->request->getPost('apellido_paterno'),
@@ -160,16 +152,17 @@ class Operador_User extends BaseController
             'usuario'          => $usuario,
             'contrasena'       => password_hash($contrasena, PASSWORD_BCRYPT),
             'foto'             => $fotoFileName,
-            'id_rol'           => $this->idRolEncuestador, // Asignación automática del rol 'Encuestador'
+            'id_rol'           => $this->idRolEncuestador,
+            'creado_por_id'    => $idOperadorCreador, // Se guarda el ID del creador.
         ];
 
         if ($this->usuarioModel->insert($data)) {
-            return redirect()->to(base_url('operador_user/index'))
+            return redirect()->to(base_url('operador_user'))
                              ->with('message', 'Encuestador creado correctamente.')
                              ->with('usuario_creado', $usuario)
                              ->with('contrasena_creada', $contrasena);
         } else {
-            return redirect()->back()->withInput()->with('error', 'No se pudo crear el encuestador. Inténtalo de nuevo.');
+            return redirect()->back()->withInput()->with('error', 'No se pudo crear el encuestador.');
         }
     }
 

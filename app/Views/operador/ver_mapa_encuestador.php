@@ -161,7 +161,7 @@ if ($isLoggedIn && is_array($userData)) {
             infoWindow = new google.maps.InfoWindow();
             
             actualizarUbicacion();
-            setInterval(actualizarUbicacion, 15000);
+            setInterval(actualizarUbicacion, 5000);
         }
 
         async function actualizarUbicacion() {

@@ -11,17 +11,16 @@ class UsuarioModel extends Model
     // Clave primaria de la tabla
     protected $primaryKey = 'id_usuario';
     
-    // Campos permitidos para ser manipulados por el modelo (insertar/actualizar)
+    
     protected $allowedFields = [
         'nombre',
         'apellido_paterno',
         'apellido_materno',
         'telefono',
-        'usuario', // Campo 'usuario' que reemplaza a 'correo'
+        'usuario',
         'contrasena',
         'foto',
-        'id_rol'   // Clave foránea al rol, basándonos en tu tabla SQL 'usuarios'
+        'id_rol',
+        'creado_por_id' 
     ];
-
-    
 }
