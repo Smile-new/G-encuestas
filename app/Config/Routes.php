@@ -69,6 +69,7 @@ $routes->get('formularios', 'Encuestador::formularios'); // Ruta para la lista d
 $routes->get('encuestas/ver/(:num)', 'Encuestador::verEncuesta/$1'); // Muestra una encuesta específica
 $routes->post('encuestas/guardar', 'Encuestador::guardarRespuestas'); // Guarda las respuestas de la encuesta
 $routes->post('encuestador/guardar_ubicacion_monitoreo', 'Encuestador::guardarUbicacionMonitoreo');
+$routes->get('/logout', 'Encuestador::logout');
 
 
 //Rutas publicas  // Página de inicio

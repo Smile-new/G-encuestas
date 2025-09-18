@@ -267,4 +267,19 @@ class Encuestador extends Controller
             ]);
         }
     }
+
+    /**
+     * Destruye la sesión del usuario y lo redirige al login.
+     */
+    public function logout()
+    {
+        // Carga el servicio de sesión
+        $session = session();
+
+        // Elimina todos los datos de la sesión (isLoggedIn, usuario, etc.)
+        $session->destroy();
+
+        // Redirige al usuario a la página de inicio (o de login) con un mensaje
+        return redirect()->to(base_url('/login'))->with('message', 'Has cerrado sesión correctamente.');
+    }
 }
