@@ -579,13 +579,13 @@
                                     
                                     <div class="referencias-container">
     <p class="referencias-title">
-        <i class="material-icons">edit_note</i> Referencias (ej. color de casa, número, etc.)
+        <i class="material-icons">edit_note</i>
+        Referencias (ej. color de casa, número, etc.) <span class="required-field">*</span>
     </p>
     
     <div class="form-group" style="margin-bottom: 0;">
         <div class="form-line">
-            <textarea name="referencias_texto" id="referencias_texto" class="form-control" maxlength="100" placeholder="Escribe aquí las referencias..."></textarea>
-        </div>
+            <textarea name="referencias_texto" id="referencias_texto" class="form-control" maxlength="100" placeholder="Escribe aquí las referencias..." required></textarea> </div>
         <div class="help-info">
             <span id="referencias-counter">100</span> caracteres restantes
         </div>
