@@ -288,6 +288,65 @@
             gap: 15px;
             margin-top: 30px;
         }
+
+
+        /* --- NUEVOS ESTILOS PARA EL ÁREA DE REFERENCIAS --- */
+
+/* 1. El contenedor principal */
+.referencias-container {
+    background-color: #f9f9f9; /* Un fondo muy sutil */
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px; /* Bordes redondeados */
+    padding: 20px 25px;
+    margin-top: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); /* Sombra suave */
+    position: relative;
+}
+
+/* 2. El título con un ícono */
+.referencias-container .referencias-title {
+    display: flex;
+    align-items: center;
+    font-size: 1.1em; /* Un poco más pequeño */
+    font-weight: 600;
+    color: #eb4b40ff ; /* Color del tema */
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.referencias-container .referencias-title .material-icons {
+    margin-right: 10px;
+    font-size: 26px; /* Tamaño del ícono */
+    color: var(--primary-accent);
+}
+
+/* 3. El nuevo estilo del textarea */
+.referencias-container textarea.form-control {
+    border: 2px solid #e0e0e0; /* Borde más suave */
+    border-radius: 6px;
+    background-color: #fff;
+    padding: 12px;
+    min-height: 100px;
+    transition: all 0.2s ease-in-out; /* Transición suave */
+    box-shadow: none; /* Quitar sombra inicial si la hubiera */
+}
+
+/* 4. Efecto al hacer clic (focus) en el textarea */
+.referencias-container textarea.form-control:focus {
+    border-color: var(--primary-accent); /* Borde de color al seleccionar */
+    box-shadow: 0 0 8px rgba(255, 61, 0, 0.25); /* Sombra de color */
+    background-color: #fff;
+}
+
+/* 5. El contador de caracteres */
+.referencias-container .help-info {
+    text-align: right;
+    width: 100%;
+    margin-top: 8px;
+    font-size: 0.85em;
+    color: #999;
+}
     </style>
 
 </head>
@@ -518,11 +577,20 @@
                                         </div>
                                     </div>
                                     
-                                    <div class="form-group">
-                                        <p class="referencias-title">Referencias (ej. color de casa, número, etc.)</p>
-                                        <textarea name="referencias_texto" id="referencias_texto" class="form-control" maxlength="100"></textarea>
-                                        <div class="help-info pull-right"><span id="referencias-counter">100</span> caracteres restantes</div>
-                                    </div>
+                                    <div class="referencias-container">
+    <p class="referencias-title">
+        <i class="material-icons">edit_note</i> Referencias (ej. color de casa, número, etc.)
+    </p>
+    
+    <div class="form-group" style="margin-bottom: 0;">
+        <div class="form-line">
+            <textarea name="referencias_texto" id="referencias_texto" class="form-control" maxlength="100" placeholder="Escribe aquí las referencias..."></textarea>
+        </div>
+        <div class="help-info">
+            <span id="referencias-counter">100</span> caracteres restantes
+        </div>
+    </div>
+</div>
                                 </div>
 
                                 <?php if (isset($preguntas) && !empty($preguntas)): ?>

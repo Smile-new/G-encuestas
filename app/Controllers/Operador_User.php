@@ -153,7 +153,7 @@ class Operador_User extends BaseController
             'contrasena'       => password_hash($contrasena, PASSWORD_BCRYPT),
             'foto'             => $fotoFileName,
             'id_rol'           => $this->idRolEncuestador,
-            'creado_por_id'    => $idOperadorCreador, // Se guarda el ID del creador.
+            'creado_por_id'    => $idOperadorCreador, 
         ];
 
         if ($this->usuarioModel->insert($data)) {
@@ -181,7 +181,7 @@ class Operador_User extends BaseController
             'usuario' => $usuario,
         ];
 
-        // Carga la vista para el formulario de edición.
+     
         return view('operador/update_usuarios', $data);
     }
     
