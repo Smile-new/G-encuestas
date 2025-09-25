@@ -379,6 +379,16 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
     <script>
+         // Plugin para ajustar padding inferior dinámicamente según la altura de la leyenda
+        const dynamicBottomPadding = {
+            id: 'dynamicBottomPadding',
+            beforeLayout: (chart) => {
+                if (chart.options.plugins.legend && chart.options.plugins.legend.display) {
+                    const legendHeight = chart.legend?.height || 0;
+                    chart.options.layout.padding.bottom = legendHeight + 30; // 30px extra
+                }
+            }
+        };
     document.addEventListener('DOMContentLoaded', function() {
         // Referencias a elementos del DOM
         const encuestaSelect = document.getElementById('encuesta_select');
@@ -525,7 +535,11 @@
                 chartInstance = null;
             }
 
-            if (!dataSet || dataSet.datasets[0].data.reduce((a, b) => a + b, 0) === 0) {
+            const chartType = chartTypeSelect.value;
+
+            // Revisar si hay datos válidos
+            const totalDatos = dataSet.datasets[0].data.reduce((a, b) => a + b, 0);
+            if (!dataSet || totalDatos === 0) {
                 noDataMessage.style.display = 'block';
                 noDataMessage.textContent = "No hay datos de respuestas para la pregunta seleccionada.";
                 chartNavigationContainer.style.display = 'none';
@@ -545,13 +559,14 @@
             chartsContainer.appendChild(chartWrapper);
 
             const ctx = chartCanvas.getContext('2d');
-            const chartType = chartTypeSelect.value;
+
+            let processedData = { ...dataSet };
             let chartOptions = {
                 maintainAspectRatio: false,
                 responsive: true,
                 plugins: {
                     legend: {
-                        position: ['doughnut', 'pie'].includes(chartType) ? 'bottom' : 'top',
+                        position: ['doughnut', 'pie','polarArea'].includes(chartType) ? 'bottom' : 'top',
                         labels: { color: '#000' }
                     },
                     datalabels: {
@@ -577,27 +592,69 @@
                     }
                 }
             };
-            
-            if (['doughnut', 'pie'].includes(chartType)) {
+
+            // Configuraciones especiales
+            if (['doughnut', 'pie','polarArea'].includes(chartType)) {
                 chartOptions.plugins.datalabels.align = 'center';
                 chartOptions.plugins.datalabels.offset = 0;
                 chartOptions.plugins.datalabels.formatter = (value, context) => {
-                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                     return total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%';
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    return total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%';
                 };
                 delete chartOptions.scales;
+            } else if (chartType === 'radar') {
+                delete chartOptions.scales;
             }
-             if (chartType === 'radar'){
-                 delete chartOptions.scales;
-             }
+        
+        // Ajustes especiales para scatter y spline
+        let finalType = chartType;
+        let finalData = processedData;
 
-            chartInstance = new Chart(ctx, {
-                type: chartType,
-                data: dataSet,
-                options: chartOptions
-            });
+        // Scatter necesita datos en {x,y}, no solo en array
+        if (chartType === 'scatter') {
+            chartOptions.plugins.datalabels.display = true; // ✅ mostrar etiquetas
+            chartOptions.plugins.datalabels.formatter = (value, context) => {
+                const total = context.dataset.data.reduce((a, b) => a + b.y, 0);
+                const porcentaje = total > 0 
+                    ? ((value.y / total) * 100).toFixed(1) + "%" 
+                    : "0%";
+                return `${value.y} (${porcentaje})`; 
+            };
+            chartOptions.plugins.datalabels.anchor = 'end'; // ✅ opcional: posición
+            chartOptions.plugins.datalabels.align = 'top';
+
+            finalData = {
+                datasets: [{
+                    label: processedData.datasets[0].label,
+                    data: processedData.labels.map((label, i) => ({
+                        x: i + 1, // posición en X
+                        y: processedData.datasets[0].data[i] // total de respuestas
+                    })),
+                    backgroundColor: processedData.datasets[0].backgroundColor,
+                    borderColor: processedData.datasets[0].borderColor,
+                    pointRadius: 6,
+                    showLine: false
+                }]
+            };
         }
 
+        // Spline es en realidad una línea con tension
+        if (chartType === 'spline') {
+            finalType = 'line';
+            finalData.datasets = finalData.datasets.map(ds => ({
+                ...ds,
+                fill: false,
+                tension: 0.4 // suavizado de curva
+            }));
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: finalType,
+            data: finalData,
+            options: chartOptions,
+            plugins: [ChartDataLabels]
+        });
+        }
 
         // --- FUNCIONES PRINCIPALES (con manejo de errores mejorado) ---
 
@@ -755,7 +812,6 @@
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 15;
-
     const colorTextoPrimario = '#000000';
     const colorTextoSecundario = '#424242';
 
@@ -767,7 +823,7 @@
     const seccionName = seccionSelect.value ? seccionSelect.options[seccionSelect.selectedIndex].text : 'Todas';
     const comunidadName = comunidadSelect.value ? comunidadSelect.options[comunidadSelect.selectedIndex].text : 'Todas';
 
-    // Marca de agua (logo)
+    // Cargar marca de agua
     const watermarkImage = "/public/img/logo.png";
     let imgData = null;
     try {
@@ -791,10 +847,8 @@
         const dataSet = chartDataSets[index];
         const yPosition = 30;
 
-        // Marca de agua ocupando toda la hoja (100% tamaño y 100% visibilidad)
-        if (imgData) {
-            doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
-        }
+        // Marca de agua
+        if (imgData) doc.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
 
         // Título del reporte
         doc.setFont("helvetica", "bold");
@@ -824,75 +878,116 @@
         chartCanvas.width = 800;
         chartCanvas.height = 400;
         const ctx = chartCanvas.getContext('2d');
-
-        // Fondo blanco en el canvas
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, chartCanvas.width, chartCanvas.height);
 
-        const chartType = chartTypeSelect.value;
+        // Configuración para Scatter y Spline
+        let tempChartData = { ...dataSet };
+        let tempChartType = chartTypeSelect.value;
+
+        if(tempChartType === 'scatter') {
+            tempChartData = {
+                datasets: [{
+                    label: dataSet.datasets[0].label,
+                    data: dataSet.labels.map((label, i) => ({ x: i + 1, y: dataSet.datasets[0].data[i] })),
+                    backgroundColor: dataSet.datasets[0].backgroundColor,
+                    borderColor: dataSet.datasets[0].borderColor,
+                    pointRadius: 6,
+                    showLine: false
+                }]
+            };
+        }
+
+        if(tempChartType === 'spline') {
+            tempChartType = 'line';
+            tempChartData.datasets = tempChartData.datasets.map(ds => ({
+                ...ds,
+                fill: false,
+                tension: 0.4
+            }));
+        }
+
         const totalRespuestas = dataSet.datasets[0].data.reduce((a, b) => a + b, 0);
         if (totalRespuestas === 0) continue;
 
+        // Configuración de datalabels según tipo
+        let datalabelsConfig = {};
+        if (tempChartType === 'scatter') {
+            datalabelsConfig = {
+                color: "#000",
+                anchor: 'end',
+                align: 'top',
+                font: { weight: 'bold' },
+                formatter: (value, context) => {
+                    const total = context.dataset.data.reduce((a, b) => a + b.y, 0);
+                    const porcentaje = total > 0 ? ((value.y / total) * 100).toFixed(1) + "%" : "0%";
+                    return `${value.y} (${porcentaje})`; 
+                }
+            };
+        } else if (['pie', 'doughnut', 'polarArea'].includes(tempChartType)) {
+            datalabelsConfig = {
+                color: "#000",
+                anchor: 'center',
+                align: 'center',
+                font: { weight: 'bold' },
+                formatter: (value, context) => {
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    return total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%';
+                }
+            };
+        } else {
+            datalabelsConfig = {
+                color: "#000",
+                anchor: 'end',
+                align: 'top',
+                font: { weight: 'bold' },
+                formatter: (value, context) => {
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    return total > 0 ? `${value} (${((value / total) * 100).toFixed(1)}%)` : '0%';
+                }
+            };
+        }
+
+
         const tempChart = new Chart(ctx, {
-            type: chartType,
-            data: {
-                labels: dataSet.labels,
-                datasets: dataSet.datasets
-            },
+            type: tempChartType,
+            data: tempChartData,
             options: {
                 responsive: false,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: true,
-                        position: chartType === 'doughnut' || chartType === 'pie' ? 'bottom' : 'top',
-                        labels: { color: colorTextoSecundario }
-                    },
-                    datalabels: {
-                        color: "#000",
-                        anchor: 'end',
-                        align: 'top',
-                        font: { weight: 'bold' },
-                        formatter: (value, context) => {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
-                            return `${value} (${percentage})`;
-                        }
-                    }
+                    legend: { display: true, position: ['pie','doughnut','polarArea'].includes(tempChartType) ? 'bottom' : 'top', labels: { color: colorTextoSecundario } },
+                    datalabels: datalabelsConfig
                 },
-                scales: chartType === 'pie' || chartType === 'doughnut' ? {} : {
+                scales: ['pie','doughnut','polarArea'].includes(tempChartType) ? {} : {
                     y: { beginAtZero: true, ticks: { precision: 0, color: colorTextoSecundario } },
                     x: { ticks: { color: colorTextoSecundario, maxRotation: 45, minRotation: 45 } }
                 }
-            }
+            },
+            plugins: [ChartDataLabels]
         });
 
         tempChart.update();
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 1000)); // renderizar bien
         const chartImage = tempChart.toBase64Image("image/png", 1.0);
         tempChart.destroy();
 
-        // Ajustar imagen dentro de la página
+        // Ajustar imagen en la página
         const maxImgWidth = pageWidth - margin * 2;
         const maxImgHeight = pageHeight - (yPosition + 60) - margin;
         let imgWidth = maxImgWidth;
         let imgHeight = (chartCanvas.height / chartCanvas.width) * imgWidth;
-
         if (imgHeight > maxImgHeight) {
             imgHeight = maxImgHeight;
             imgWidth = (chartCanvas.width / chartCanvas.height) * imgHeight;
         }
-
         const imgX = (pageWidth - imgWidth) / 2;
         const imgY = yPosition + 50;
-
         doc.addImage(chartImage, "PNG", imgX, imgY, imgWidth, imgHeight);
     }
 
     doc.save("reporte-encuesta.pdf");
 }
-
-
 
         // Eventos de botones
         generateChartsBtn.addEventListener('click', generarGraficos);
@@ -902,5 +997,4 @@
     });
 </script>
 </body>
-
 </html>

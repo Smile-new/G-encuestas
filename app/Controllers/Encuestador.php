@@ -16,6 +16,7 @@ use App\Models\SeccionModel;
 use App\Models\ComunidadModel;
 // --- NUEVO: Modelo para el monitoreo ---
 use App\Models\MonitoreoModel;
+use App\Models\UsuarioModel;
 
 class Encuestador extends Controller
 {
@@ -31,6 +32,7 @@ class Encuestador extends Controller
     protected $comunidadModel;
     // --- NUEVO: Propiedad para el nuevo modelo ---
     protected $monitoreoModel;
+    protected $usuarioModel;
 
     public function __construct()
     {
@@ -47,6 +49,7 @@ class Encuestador extends Controller
         $this->comunidadModel = new ComunidadModel();
         // --- NUEVO: Inicialización del modelo de monitoreo ---
         $this->monitoreoModel = new MonitoreoModel();
+        $this->usuarioModel = new UsuarioModel();
     }
 
     /**
@@ -84,11 +87,51 @@ class Encuestador extends Controller
         return view('encuestador/home', $data);
     }
 
-    public function cam()
+public function perfil()
     {
         $data = $this->_prepareUserData();
         return view('encuestador/cam', $data);
     }
+
+    public function actualizarPerfil()
+{
+    $session = session();
+    $user = $session->get('usuario');
+
+    $rules = [
+        'usuario' => 'required|string|max_length[50]',
+        'foto'    => 'permit_empty|is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]'
+    ];
+
+    if (!$this->validate($rules)) {
+        return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+    }
+
+    $nuevoUsuario = $this->request->getPost('usuario');
+    $user['usuario'] = $nuevoUsuario;
+
+    $fotoFile = $this->request->getFile('foto');
+    if ($fotoFile && $fotoFile->isValid() && !$fotoFile->hasMoved()) {
+        $nombreFoto = time() . '_' . $fotoFile->getName();
+        $fotoFile->move(FCPATH . 'public/img_user', $nombreFoto);
+        $user['foto'] = $nombreFoto;
+    }
+
+    // Preparar datos para actualizar en DB
+    $updateData = ['usuario' => $nuevoUsuario];
+    if (!empty($user['foto'])) {
+        $updateData['foto'] = $user['foto'];
+    }
+
+    // Actualizar en la base de datos
+    $this->usuarioModel->update($user['id_usuario'], $updateData);
+
+    // **Actualizar la sesión con los mismos datos actualizados**
+    $session->set('usuario', $user);
+
+    $session->setFlashdata('success', 'Perfil actualizado correctamente');
+    return redirect()->back();
+}
 
     public function formularios()
     {

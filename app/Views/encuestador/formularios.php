@@ -224,6 +224,25 @@ body {
         font-size: 1em;
     }
 }
+    .logout_sidebar {
+    position: absolute;
+    bottom: 80px; /* queda justo arriba del bloque .legal */
+    width: 100%;
+    text-align: center;
+}
+
+.logout_sidebar a {
+    display: block;
+    padding: 12px;
+    color: #fff; /* texto blanco */
+    background-color: #f44336; /* rojo estilo Material */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.logout_sidebar a:hover {
+    background-color: #d32f2f;
+}
 </style>
 
 </head>
@@ -310,15 +329,22 @@ body {
                             <span>Formularios</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="<?= base_url('cam') ?>">
-                            <i class="material-icons">camera_alt</i> <!-- Icono sugerido para 'cam' -->
-                            <span>Cámara</span>
-                        </a>
-                    </li>
-                    <!-- Puedes añadir más elementos de navegación aquí si es necesario -->
-                </ul>
-            </div>
+                        <li>
+                            <a href="<?= site_url('perfil') ?>">
+                                <i class="material-icons">account_circle</i>
+                                <span>Perfil</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Botón fijo abajo -->
+                <div class="logout_sidebar">
+                    <a href="<?= site_url('logout') ?>">
+                        <i class="material-icons">input</i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                </div>
             <!-- #Menu -->
             <!-- Footer -->
             <div class="legal">

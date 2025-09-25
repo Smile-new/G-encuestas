@@ -64,7 +64,8 @@ $routes->get('preguntas', 'Preguntas::index');
 
 //Encuestador
    $routes->get('home', 'Encuestador::index'); // Ruta base para el encuestador
-$routes->get('cam', 'Encuestador::cam'); // Ruta para la vista de la cámara
+$routes->get('perfil', 'Encuestador::perfil');
+$routes->post('perfil/actualizar', 'Encuestador::actualizarPerfil');
 $routes->get('formularios', 'Encuestador::formularios'); // Ruta para la lista de formularios
 $routes->get('encuestas/ver/(:num)', 'Encuestador::verEncuesta/$1'); // Muestra una encuesta específica
 $routes->post('encuestas/guardar', 'Encuestador::guardarRespuestas'); // Guarda las respuestas de la encuesta
@@ -107,8 +108,8 @@ $routes->get('estadistica/getOpcionesPregunta/(:num)', 'EstadisticasController::
 //Operador
     $routes->get('dash', 'Operador::dashboard'); 
     $routes->get('estat', 'Operador::estadisticas');
-    
-
+    $routes->get('operador/perfil', 'Operador::perfil');
+	$routes->post('operador/perfil/update', 'Operador::updateProfile');
 
     //Opeador Usuarios
     $routes->get('operador_user', 'Operador_User::index');

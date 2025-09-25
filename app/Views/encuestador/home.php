@@ -47,6 +47,28 @@ if ($isLoggedIn && is_array($userData)) {
     <link href="<?= base_url(RECURSOS_ENCUESTADOR_CSS . '/style.css') ?>" rel="stylesheet">
 
     <link href="<?= base_url(RECURSOS_ENCUESTADOR_CSS . '/themes/all-themes.css') ?>" rel="stylesheet" />
+
+      <style>
+    .logout_sidebar {
+    position: absolute;
+    bottom: 80px; /* queda justo arriba del bloque .legal */
+    width: 100%;
+    text-align: center;
+}
+
+.logout_sidebar a {
+    display: block;
+    padding: 12px;
+    color: #fff; /* texto blanco */
+    background-color: #f44336; /* rojo estilo Material */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.logout_sidebar a:hover {
+    background-color: #d32f2f;
+}
+  </style>
 </head>
 
 <body class="theme-red">
@@ -144,14 +166,22 @@ if ($isLoggedIn && is_array($userData)) {
                             <span>Formularios</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="<?= site_url('cam') ?>">
-                            <i class="material-icons">camera_alt</i>
-                            <span>Cámara</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
+                            <li>
+            <a href="<?= site_url('perfil') ?>">
+                <i class="material-icons">account_circle</i>
+                <span>Perfil</span>
+            </a>
+        </li>
+    </ul>
+</div>
+
+<!-- Botón fijo abajo -->
+<div class="logout_sidebar">
+    <a href="<?= site_url('logout') ?>">
+        <i class="material-icons">input</i>
+        <span>Cerrar Sesión</span>
+    </a>
+</div>
             <div class="legal">
                 <div class="copyright">
                     &copy; <?= date('Y') ?> <a href="javascript:void(0);">Vota y Opina</a>.

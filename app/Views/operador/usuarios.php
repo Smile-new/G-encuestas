@@ -80,6 +80,29 @@ if ($isLoggedIn && is_array($userData)) {
             .btn-monitoreo:hover .fa {
                 transform: rotate(360deg) scale(1.1);
             }
+
+       .logout_sidebar {
+    position: absolute;
+    bottom: 20px; /* distancia desde abajo */
+    width: 100%;
+    text-align: center;
+}
+
+.logout_sidebar .btn_logout {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: #f5f5f5; /* color de fondo opcional */
+    border-radius: 5px;
+    color: #333;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.logout_sidebar .btn_logout:hover {
+    background-color: #e74c3c;
+    color: #fff;
+}
         </style>
     </head>
     <body class="inner_page tables_page">
@@ -112,9 +135,19 @@ if ($isLoggedIn && is_array($userData)) {
                             <a href="<?= base_url('operador/dashboard') ?>"><i class="fa fa-dashboard yellow_color"></i> <span>Home</span></a>
                         </li>
                         <li><a href="<?= base_url('operador_user') ?>"><i class="fa fa-table purple_color2"></i> <span>Encuestadores</span></a></li>
-                    </ul>
-                </div>
-            </nav>
+                    <li>
+                        <a href="<?= base_url('operador/perfil') ?>">
+                            <i class="fa fa-user purple_color2"></i> <span>Perfil</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="logout_sidebar">
+                <a href="<?= base_url('logout') ?>" class="btn_logout">
+                    <i class="fa fa-sign-out purple_color2"></i> Cerrar Sesión
+                </a>
+            </div>
+        </nav>
             <div id="content">
                 <div class="topbar">
                     <nav class="navbar navbar-expand-lg navbar-light">
