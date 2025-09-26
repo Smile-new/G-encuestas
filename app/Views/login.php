@@ -6,16 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vota y Opina | Iniciar Sesión</title>
 
+    <!-- Preloads: primero -->
+    <link rel="preload" as="style" href="<?= base_url(RECURSOS_PUBLICOS_CSS . '/bootstrap.min.css') ?>">
+    <link rel="preload" as="style" href="<?= base_url(RECURSOS_PUBLICOS_CSS . '/style.css') ?>">
+    <link rel="preload" as="image" href="<?= base_url('recursos_publicos/img/carrucel/fondo.webp') ?>">
+
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Nunito+Sans:400,600,700,800,900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Oswald:300,400,500,600,700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="<?= base_url(RECURSOS_PUBLICOS_CSS . '/bootstrap.min.css') ?>">
+    <!-- CSS final: se aplican cuando ya están listos -->
+    <link rel="stylesheet" href="<?= base_url(RECURSOS_PUBLICOS_CSS . '/bootstrap.min.css') ?>" media="all">
+    <link rel="stylesheet" href="<?= base_url(RECURSOS_PUBLICOS_CSS . '/style.css') ?>" media="all">
     <link rel="stylesheet" href="<?= base_url(RECURSOS_PUBLICOS_CSS . '/font-awesome.min.css') ?>">
-    <link rel="stylesheet" href="<?= base_url(RECURSOS_PUBLICOS_CSS . '/style.css') ?>">
-
     <style>
         body {
-            background-image: url('<?= base_url('recursos_publicos/img/carrucel/fondo.jpg') ?>');
+            background-color: #000; /* fallback */
+            background-image: url('<?= base_url('recursos_publicos/img/carrucel/fondo.webp') ?>');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -29,6 +36,12 @@
             margin: 0;
             padding: 20px;
             box-sizing: border-box;
+            opacity: 0;
+   			transition: opacity 0.8s ease;
+        }
+      
+      	body.loaded {
+          opacity: 1;
         }
 
         .login-container {
@@ -196,5 +209,10 @@
 
     <script src="<?= base_url(RECURSOS_PUBLICOS_JS . '/jquery-3.3.1.min.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_PUBLICOS_JS . '/bootstrap.min.js') ?>"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+        document.body.classList.add("loaded");
+      });
+    </script>
 </body>
 </html>
