@@ -25,6 +25,29 @@
   </head>
   <body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-gradient-x-purple-blue" data-col="2-columns">
 
+  <?php
+// Preparar datos del usuario (debe pasarse desde el controlador preferiblemente)
+$isLoggedIn = session()->get('isLoggedIn') ?? false;
+$userData = session()->get('usuario') ?? null;
+
+$nombreCompleto = "Invitado";
+$rolTexto = "Rol Desconocido";
+$rutaFotoPerfil = base_url('recursos_operador/images/layout_img/user_img.jpg');
+
+if ($isLoggedIn && $userData) {
+    $nombreCompleto = $userData['nombre'] . ' ' . $userData['apellido_paterno'] . ' ' . $userData['apellido_materno'];
+    $id_rol = $userData['id_rol'] ?? null;
+    switch ($id_rol) {
+        case 1: $rolTexto = 'Administrador'; break;
+        case 2: $rolTexto = 'Operador'; break;
+        case 3: $rolTexto = 'Encuestador'; break;
+        default: $rolTexto = 'Miembro'; break;
+    }
+    if (!empty($userData['foto'])) {
+        $rutaFotoPerfil = base_url('public/img_user/' . $userData['foto']);
+    }
+}
+?>
     <!-- fixed-top-->
     <nav class="header-navbar navbar-expand-md navbar navbar-with-menu navbar-without-dd-arrow fixed-top navbar-semi-light">
       <div class="navbar-wrapper">
@@ -35,11 +58,11 @@
               <li class="nav-item d-none d-md-block"><a class="nav-link nav-link-expand" href="#"><i class="ficon ft-maximize"></i></a></li>
             </ul>
             <ul class="nav navbar-nav float-right">
-              <li class="dropdown dropdown-user nav-item"><a class="dropdown-toggle nav-link dropdown-user-link" href="#" data-toggle="dropdown"> <span class="avatar avatar-online"><img src="<?= base_url(RECURSOS_CONTROLADOR_IMAGES . 'portrait/small/avatar-s-19.png') ?>" alt="avatar"><i></i></span></a>
+              <li class="dropdown dropdown-user nav-item"><a class="dropdown-toggle nav-link dropdown-user-link" href="#" data-toggle="dropdown"> <span class="avatar avatar-online"><img src="<?= $rutaFotoPerfil ?>" alt="avatar"><i></i></span></a>
                 <div class="dropdown-menu dropdown-menu-right">
-                  <div class="arrow_box_right"><a class="dropdown-item" href="#"><span class="avatar avatar-online"><img src="<?= base_url(RECURSOS_CONTROLADOR_IMAGES . 'portrait/small/avatar-s-19.png') ?>" alt="avatar"><span class="user-name text-bold-700 ml-1">John Doe</span></span></a>
-                    <div class="dropdown-divider"></div><a class="dropdown-item" href="#"><i class="ft-user"></i> Editar Perfil</a>
-                    <div class="dropdown-divider"></div><a class="dropdown-item" href="#"><i class="ft-power"></i> Cerrar Sesión</a>
+                  <div class="arrow_box_right"><a class="dropdown-item" href="#"><span class="avatar avatar-online"><img src="<?= $rutaFotoPerfil ?>" alt="avatar"><span class="user-name text-bold-700 ml-1"><?= esc($nombreCompleto) ?></span></span></a>
+                    <div class="dropdown-divider"></div><a class="dropdown-item" href="/controlador/perfil"><i class="ft-user"></i> Editar Perfil</a>
+                    <div class="dropdown-divider"></div><a class="dropdown-item" href="/logout"><i class="ft-power"></i> Cerrar Sesión</a>
                   </div>
                 </div>
               </li>
@@ -54,7 +77,7 @@
     <div class="main-menu menu-fixed menu-light menu-accordion menu-shadow" data-scroll-to-active="true" data-img="<?= base_url(RECURSOS_CONTROLADOR_IMAGES . 'backgrounds/02.jpg') ?>">
       <div class="navbar-header">
         <ul class="nav navbar-nav flex-row">
-          <li class="nav-item mr-auto"><a class="navbar-brand" href="<?= base_url('controlador/panel') ?>"><img class="brand-logo" alt="Chameleon admin logo" src="<?= base_url(RECURSOS_CONTROLADOR_IMAGES . 'logo/logo.png') ?>"/>
+          <li class="nav-item mr-auto"><a class="navbar-brand" href="<?= base_url('controlador/panel') ?>">
               <h3 class="brand-text">Vota y Opina</h3></a></li>
           <li class="nav-item d-md-none"><a class="nav-link close-navbar"><i class="ft-x"></i></a></li>
         </ul>
@@ -66,6 +89,7 @@
           <li class="nav-item"><a href="<?= base_url('controlador/usuarios') ?>"><i class="la la-users"></i><span class="menu-title">Usuarios</span></a></li>
           <li class="nav-item"><a href="<?= base_url('controlador/encuestas') ?>"><i class="la la-list-alt"></i><span class="menu-title">Encuestas</span></a></li>
           <li class="nav-item"><a href="<?= base_url('controlador/respuestas') ?>"><i class="la la-check-square"></i><span class="menu-title">Respuestas</span></a></li>
+          <li class=" nav-item"><a href="<?= base_url('controlador/perfil') ?>"><i class="la la-user"></i><span class="menu-title">Perfil</span></a></li>     
         </ul>
       </div>
       <div class="navigation-background"></div>

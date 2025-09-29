@@ -127,6 +127,8 @@ $routes->get('controlador/encuestas', 'Propietario::encuestas');
 $routes->get('controlador/graficas', 'Propietario::graficas');
 $routes->get('controlador/respuestas', 'Propietario::respuestas');
 $routes->get('controlador/usuarios', 'Propietario::usuarios');
+$routes->get('controlador/perfil', 'Propietario::perfil');
+$routes->POST('controlador/perfil/actualizar', 'Propietario::actualizarPerfil');
 
 // Rutas para las funciones AJAX y de auditoría
 $routes->get('controlador/actividadPorEncuesta', 'Propietario::actividadPorEncuesta');

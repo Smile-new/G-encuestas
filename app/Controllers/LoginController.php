@@ -77,16 +77,17 @@ class LoginController extends Controller
 
                 // Redirigir según el rol del usuario (usando 'id_rol' de la DB)
                 switch ($usuario['id_rol']) {
-                    case 1: // Administrador (ID de rol 1)
-                        return redirect()->to('/dashboard'); // Ruta para el administrador
-                    case 2: // Operador (ID de rol 2)
-                        return redirect()->to('/dash');      // Ruta para el operador
-                    case 3: // Encuestador (ID de rol 3)
-                        return redirect()->to('/home');      // Ruta para el encuestador
+                    case 1: // Operador
+                        return redirect()->to('/dash');
+                    case 2: // Supervisor
+                        return redirect()->to('/controlador/panel');
+                    case 3: // Encuestador
+                        return redirect()->to('/home');
+                    case 4: // Administrador
+                        return redirect()->to('/dashboard');
                     default:
-                        // Rol desconocido o no mapeado
                         $session->setFlashdata('error', 'Tu rol no está definido correctamente. Contacta al administrador.');
-                        session()->destroy(); // Cerrar sesión por seguridad
+                        session()->destroy();
                         return redirect()->to('/login');
                 }
             } else {
