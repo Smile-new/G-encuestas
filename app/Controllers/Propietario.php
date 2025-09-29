@@ -308,21 +308,24 @@ class Propietario extends BaseController
     }
 
     // ----------------------------------------------------------------
-    // FUNCIONES PARA RESPUESTAS (SUPERVISIÓN ESPACIAL)
+    // FUNCIONES PARA RESPUESTAS (SUPERVISIÓN ESPACIAL CON PAGINACIÓN)
     // ----------------------------------------------------------------
 
     /**
      * [FUNCIÓN PRINCIPAL]
-     * Muestra la interfaz de supervisión de respuestas.
+     * Muestra la interfaz de supervisión de respuestas con PAGINACIÓN.
      */
     public function respuestas()
     {
         $respuestaModel = new RespuestaModel();
         $usuarioModel = new UsuarioModel();
         $encuestaModel = new EncuestaModel();
+
+        // --- Lógica de Paginación ---
+        $perPage = 50; // Definimos el límite de 50 respuestas por página
         
-        // Obtiene la lista de respuestas con JOINs necesarios para la tabla
-        $listaRespuestas = $respuestaModel
+        // Configuramos la consulta base con los JOINs necesarios
+        $query = $respuestaModel
             ->select('
                 respuestas.id_respuesta,
                 respuestas.fecha_respuesta,
@@ -333,17 +336,21 @@ class Propietario extends BaseController
             ')
             ->join('usuarios', 'usuarios.id_usuario = respuestas.id_usuario', 'left')
             ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta', 'left')
-            ->orderBy('respuestas.fecha_respuesta', 'DESC')
-            ->findAll();
+            ->orderBy('respuestas.fecha_respuesta', 'DESC');
+        
+        // Obtenemos las respuestas paginadas
+        $listaRespuestas = $query->paginate($perPage);
+        $pager = $respuestaModel->pager; // Obtenemos la instancia de Pager
 
-        // Obtener la clave de API de Google Maps
+        // Obtenemos la clave de API de Google Maps
         $googleConfig = config(\Config\Google::class);
         $google_maps_api_key = $googleConfig->apiKey;
 
         $data = [
             'listaRespuestas' => $listaRespuestas,
-            'google_maps_api_key' => $google_maps_api_key, // Pasar la clave a la vista
-            // Lista de encuestadores y encuestas para filtros/mapas (si se implementan)
+            'pager' => $pager, // Pasamos el objeto Pager a la vista
+            'perPage' => $perPage, // Pasamos el límite para referencia en la vista
+            'google_maps_api_key' => $google_maps_api_key, 
             'listaEncuestadores' => $usuarioModel->select('id_usuario, nombre, usuario')->findAll(),
             'listaEncuestas' => $encuestaModel->select('id_encuesta, titulo')->findAll(),
         ];
@@ -388,6 +395,7 @@ class Propietario extends BaseController
         
         // OBTENER COORDENADAS DE MONITOREO DEL USUARIO
         $monitoreoModel = new MonitoreoModel();
+        // Nota: Asegúrate de que MonitoreoModel esté importado y declarado con use
         $ubicacionMonitoreo = $monitoreoModel->find($detalle['id_usuario']);
         
         return $this->response->setJSON([
@@ -406,6 +414,4 @@ class Propietario extends BaseController
     {
         return view('Controlador/graficas');
     }
-
-    
 }

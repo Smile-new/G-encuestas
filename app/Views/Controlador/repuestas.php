@@ -53,11 +53,58 @@
             height: 100%;
             background-color: #f8f9fa;
         }
+
+        /* INICIO: ESTILOS DE PAGINACIÓN MEJORADOS */
+        .pager ul.pagination {
+            display: flex;
+            padding-left: 0;
+            list-style: none;
+            border-radius: .25rem;
+            margin-top: 1rem;
+        }
+        .pager ul.pagination li {
+            margin: 0 2px;
+        }
+        .pager ul.pagination li a,
+        .pager ul.pagination li span {
+            position: relative;
+            display: block;
+            padding: .5rem .75rem;
+            line-height: 1.25;
+            color: #555;
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: .25rem;
+            text-decoration: none;
+            transition: all .2s;
+        }
+        .pager ul.pagination li a:hover {
+            z-index: 2;
+            color: #333;
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+        }
+        .pager ul.pagination li.active a,
+        .pager ul.pagination li.active span {
+            z-index: 3;
+            color: #fff;
+            background-color: #007bff; /* Color primario de Bootstrap */
+            border-color: #007bff;
+        }
+        .pager ul.pagination li.disabled a,
+        .pager ul.pagination li.disabled span {
+            color: #6c757d;
+            pointer-events: none;
+            background-color: #fff;
+            border-color: #dee2e6;
+        }
+        /* FIN: ESTILOS DE PAGINACIÓN MEJORADOS */
     </style>
     <!-- [INICIO CORRECCIÓN] Definición global de initMap -->
     <script>
-        let mapInstance;
-        let mapMarker;
+        // Declaración global única de las instancias del mapa
+        var mapInstance;
+        var mapMarker;
         
         // Función global requerida por Google Maps API: Se define antes del script de carga
         window.initMap = function() {
@@ -84,7 +131,6 @@
         
         /**
          * Inicializa o actualiza el mapa de Google Maps con datos dinámicos.
-         * Esta función se llama al hacer clic en "Ver Detalle".
          */
         function initMapData(direccion, lat, lng) {
             const mapDiv = document.getElementById('mapaUbicacion');
@@ -92,7 +138,7 @@
             if (!window.google || !window.google.maps || !mapInstance) {
                  mapDiv.innerHTML = `<div class="map-placeholder-content"><p class="text-danger">
                     <i class="la la-close font-large-2 mb-2"></i><br>
-                    Error: La API de Google Maps no se cargó o la clave no es válida.
+                    Error: La API de Google Maps no se cargó correctamente.
                 </p></div>`;
                 return;
             }
@@ -106,25 +152,20 @@
                 return;
             }
             
-            // Coordenadas válidas: Inicializar o actualizar
             const latFloat = parseFloat(lat);
             const lngFloat = parseFloat(lng);
             const coords = { lat: latFloat, lng: lngFloat };
             
-            // Limpiamos el placeholder y aseguramos que el div esté listo para el mapa
-            mapDiv.innerHTML = ''; 
+            mapDiv.innerHTML = '';
             
-            // Actualizar la posición y centrar el mapa
             mapInstance.setCenter(coords);
-            mapInstance.setZoom(14); // Zoom detallado
+            mapInstance.setZoom(14);
             mapMarker.setPosition(coords);
             mapMarker.setTitle(direccion);
-            mapMarker.setMap(mapInstance); // Mostrar el marcador
-            
-            // Forzamos el evento de redimensionar al abrir el modal (solución a mapa gris)
+            mapMarker.setMap(mapInstance); 
+
             google.maps.event.trigger(mapInstance, 'resize');
 
-            // Mostrar info del marcador
             const infowindow = new google.maps.InfoWindow({
                 content: `<b>Última Ubicación GPS:</b><br>Lat: ${lat}, Lng: ${lng}`
             });
@@ -217,7 +258,7 @@
                         </div>
                         <div class="card-content collapse show">
                             <div class="card-body">
-                                <p>Supervise las respuestas, incluyendo la ubicación de captura para control de calidad.</p>
+                                <p>Supervise las respuestas, incluyendo la ubicación de captura para control de calidad. Mostrando **<?= count($listaRespuestas) ?> de <?= $pager->getTotal() ?>** respuestas en total.</p>
                                 <div class="table-responsive">
                                     <table class="table table-striped table-bordered">
                                         <thead class="thead-dark">
@@ -262,6 +303,11 @@
                                         </tbody>
                                     </table>
                                 </div>
+                                <!-- Links de Paginación -->
+                                <div class="mt-3 pager">
+                                    <?= $pager->links() ?>
+                                </div>
+                                <!-- Fin Paginación -->
                             </div>
                         </div>
                     </div>
@@ -296,7 +342,7 @@
                             <p class="text-bold-600">Pregunta:</p>
                             <p class="text-primary font-large-1" id="detallePregunta"></p>
                             <p class="text-bold-600">Opción Seleccionada:</p>
-                            <p class="font-large-1 text-color: red" id="detalleOpcion"></p>
+                            <p class="font-large-1 text-success" id="detalleOpcion"></p>
                             <hr>
                             <p><strong>Referencias Adicionales:</strong> <span id="detalleReferencias"></span></p>
                         </div>
@@ -308,7 +354,7 @@
                             <div id="mapaUbicacion">
                                 <div class="map-placeholder-content">Cargando mapa...</div>
                             </div>
-                           
+                            <p class="text-muted mt-2"><small>El mapa muestra la **última ubicación** registrada del encuestador según el Monitoreo GPS.</small></p>
                         </div>
                     </div>
                 </div>
@@ -319,149 +365,91 @@
         </div>
     </div>
 
+    <!-- JQUERY (necesario para $ y modales de Bootstrap) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- BOOTSTRAP JS (necesario para $('#modalDetalleRespuesta').modal) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
     <!-- CARGA DE GOOGLE MAPS API -->
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=<?= $google_maps_api_key ?>&callback=initMap">
     </script>
     
     <script>
-        let mapInstance;
-        let mapMarker;
-        
-        // Función global requerida por Google Maps API
-        window.initMap = function() {
-            // Inicializamos una instancia base del mapa que será actualizada después
-            const defaultCoords = { lat: 19.35, lng: -99.05 }; // Coordenadas de México Central como default
-            const mapDiv = document.getElementById('mapaUbicacion');
-            
-            // Verificamos si el div ya está en el DOM antes de inicializar
-            if (mapDiv) {
-                mapInstance = new google.maps.Map(mapDiv, {
-                    center: defaultCoords,
-                    zoom: 10,
-                    mapTypeId: google.maps.MapTypeId.ROADMAP
+    const detalleRespuestaUrl = "<?= site_url('controlador/detalleRespuesta') ?>";
+
+    function mostrarDetalleRespuesta(idRespuesta) {
+        fetch(`${detalleRespuestaUrl}?id=${idRespuesta}`)
+            .then(response => response.json())
+            .then(data => {
+                const detalle = data.detalle;
+                const ubicacion = data.ubicacion_mapa;
+
+                // Rellenar datos en el modal
+                document.getElementById('detalleIdRespuesta').textContent = detalle.id_respuesta;
+                document.getElementById('detalleTituloEncuesta').textContent = detalle.titulo_encuesta;
+                document.getElementById('detalleNombreEncuestador').textContent = `${detalle.nombre_usuario} ${detalle.apellido_paterno}`;
+                document.getElementById('detalleAliasEncuestador').textContent = detalle.alias_usuario;
+                document.getElementById('detalleFechaRespuesta').textContent = detalle.fecha_respuesta;
+                document.getElementById('detalleReferencias').textContent = detalle.referencias || 'Ninguna';
+                document.getElementById('detallePregunta').textContent = detalle.texto_pregunta;
+                document.getElementById('detalleOpcion').textContent = detalle.texto_opcion || 'No aplica';
+                document.getElementById('detalleDireccion').textContent = ubicacion.direccion || 'No registrada';
+
+                // Mostrar modal con Bootstrap 4
+                $('#modalDetalleRespuesta').modal('show');
+
+                // Cuando el modal esté visible, inicializamos el mapa
+                $('#modalDetalleRespuesta').on('shown.bs.modal', function () {
+                    initMapData(ubicacion.latitud, ubicacion.longitud, ubicacion.direccion);
                 });
-                
-                mapMarker = new google.maps.Marker({
-                    map: mapInstance,
-                    position: defaultCoords,
-                    title: 'Ubicación'
-                });
-                mapMarker.setMap(null); // Ocultar marcador por defecto
-            }
-        };
-        
-       
-        function initMapData(direccion, lat, lng) {
-            const mapDiv = document.getElementById('mapaUbicacion');
-            
-            // 1. Verificar si la API y la instancia están disponibles
-            if (!window.google || !window.google.maps || !mapInstance) {
-                 mapDiv.innerHTML = `<div class="map-placeholder-content"><p class="text-danger">
-                    <i class="la la-close font-large-2 mb-2"></i><br>
-                    Error: La API de Google Maps no se cargó correctamente.
-                </p></div>`;
-                return;
-            }
+            })
+            .catch(err => console.error("Error cargando detalle:", err));
+    }
 
-            // 2. Verificar coordenadas válidas
-            if (!lat || !lng) {
-                 mapDiv.innerHTML = `<div class="map-placeholder-content"><p class="text-danger">
-                    <i class="la la-close font-large-2 mb-2"></i><br>
-                    Ubicación GPS de monitoreo no registrada para el encuestador.
-                </p></div>`;
-                mapMarker.setMap(null); // Oculta el marcador si no hay datos
-                return;
-            }
-            
-            // 3. Coordenadas válidas: Inicializar o actualizar
-            const latFloat = parseFloat(lat);
-            const lngFloat = parseFloat(lng);
-            const coords = { lat: latFloat, lng: lngFloat };
-            
-            // Revertir el div para el mapa si estaba en modo placeholder
-            mapDiv.innerHTML = '';
-            
-            // Actualizar la posición y centrar el mapa
-            mapInstance.setCenter(coords);
-            mapInstance.setZoom(14); // Zoom detallado
-            mapMarker.setPosition(coords);
-            mapMarker.setTitle(direccion);
-            mapMarker.setMap(mapInstance); // Mostrar el marcador
+    // Inicialización del mapa base
+    function initMap() {
+        const defaultCoords = { lat: 19.35, lng: -99.05 }; // Default México central
+        const mapDiv = document.getElementById('mapaUbicacion');
 
-            // Forzamos el evento de redimensionar
-            google.maps.event.trigger(mapInstance, 'resize');
+        window.mapInstance = new google.maps.Map(mapDiv, {
+            center: defaultCoords,
+            zoom: 10
+        });
 
-            // Mostrar info del marcador
-            const infowindow = new google.maps.InfoWindow({
-                content: `<b>Última Ubicación GPS:</b><br>Lat: ${lat}, Lng: ${lng}`
-            });
-            infowindow.open(mapInstance, mapMarker);
+        window.mapMarker = new google.maps.Marker({
+            map: mapInstance,
+            position: defaultCoords
+        });
+
+        mapMarker.setMap(null); // Ocultamos por defecto
+    }
+
+    // Función para actualizar el mapa con lat/lng
+    function initMapData(lat, lng, direccion) {
+        const mapDiv = document.getElementById("mapaUbicacion");
+
+        if (!lat || !lng) {
+            mapDiv.innerHTML = "<p class='text-muted text-center'>Ubicación no disponible</p>";
+            return;
         }
-    </script>
-    
-    <footer class="footer footer-static footer-light navbar-border navbar-shadow">
-      <div class="clearfix blue-grey lighten-2 text-sm-center mb-0 px-2"><span class="float-md-left d-block d-md-inline-block"><?= date('Y') ?> &copy; Copyright <a class="text-bold-800 grey darken-2" href="#">Vota y Opina</a></span>
-      </div>
-    </footer>
 
-    <!-- BEGIN VENDOR JS-->
-    <script src="<?= base_url(RECURSOS_CONTROLADOR_VENDORS . 'js/vendors.min.js') ?>" type="text/javascript"></script>
-    <!-- END VENDOR JS-->
-    
-    <!-- BEGIN CHAMELEON JS-->
-    <script src="<?= base_url(RECURSOS_CONTROLADOR_JS . 'core/app-menu-lite.js') ?>" type="text/javascript"></script>
-    <script src="<?= base_url(RECURSOS_CONTROLADOR_JS . 'core/app-lite.js') ?>" type="text/javascript"></script>
-    <!-- END CHAMELEON JS-->
-    
-    <!-- Lógica de JavaScript para el Modal de Respuestas -->
-    <script type="text/javascript">
-        const detalleRespuestaUrl = "<?= site_url('controlador/detalleRespuesta') ?>";
+        const ubicacion = { lat: parseFloat(lat), lng: parseFloat(lng) };
+        mapInstance.setCenter(ubicacion);
+        mapInstance.setZoom(16);
+        mapMarker.setPosition(ubicacion);
+        mapMarker.setTitle(direccion || "Ubicación registrada");
+        mapMarker.setMap(mapInstance);
 
-        function mostrarDetalleRespuesta(idRespuesta) {
-            fetch(`${detalleRespuestaUrl}?id=${idRespuesta}`)
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => { throw new Error(`Server Error: ${err.error || response.statusText}`); });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const detalle = data.detalle;
-                    const ubicacion = data.ubicacion_mapa;
-                    
-                    // Rellenar la sección de Trazabilidad
-                    document.getElementById('detalleIdRespuesta').textContent = detalle.id_respuesta;
-                    document.getElementById('detalleTituloEncuesta').textContent = detalle.titulo_encuesta;
-                    document.getElementById('detalleNombreEncuestador').textContent = `${detalle.nombre_usuario} ${detalle.apellido_paterno}`;
-                    document.getElementById('detalleAliasEncuestador').textContent = detalle.alias_usuario;
-                    document.getElementById('detalleFechaRespuesta').textContent = detalle.fecha_respuesta;
-                    document.getElementById('detalleReferencias').textContent = detalle.referencias || 'Ninguna';
-                    
-                    // Rellenar la sección de Contenido
-                    document.getElementById('detallePregunta').textContent = detalle.texto_pregunta;
-                    document.getElementById('detalleOpcion').textContent = detalle.texto_opcion || 'No aplica (Respuesta abierta, etc.)';
+        const infowindow = new google.maps.InfoWindow({
+            content: `<b>Última Ubicación GPS:</b><br>Lat: ${lat}, Lng: ${lng}`
+        });
+        infowindow.open(mapInstance, mapMarker);
+    }
+</script>
 
-                    // Rellenar la sección de Ubicación
-                    document.getElementById('detalleDireccion').textContent = ubicacion.direccion || 'No registrada';
-                    
-                    // Aseguramos que el div del mapa tenga contenido de placeholder mientras se espera el modal
-                    document.getElementById('mapaUbicacion').innerHTML = `<div class="map-placeholder-content">Cargando mapa...</div>`;
 
-                    // Mostrar el modal
-                    $('#modalDetalleRespuesta').modal('show');
-                    
-                    // Listener para inicializar el mapa DESPUÉS de que el modal se muestre completamente
-                    $('#modalDetalleRespuesta').one('shown.bs.modal', function () {
-                         initMapData(ubicacion.direccion, ubicacion.latitud, ubicacion.longitud); 
-                    });
-
-                })
-                .catch(error => {
-                    console.error('Error al obtener detalles de la respuesta:', error);
-                    alert(`Error al cargar la auditoría de respuesta. Detalle: ${error.message || 'Verifique la ruta del servidor y el ID.'}`);
-                });
-        }
-    </script>
   </body>
 </html>
