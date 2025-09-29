@@ -113,3 +113,8 @@ define('RECURSOS_ENCUESTADOR_PLUGINS', 'recursos_encuestador/plugins');
 
 // Ruta pública de imágenes globales
 define('RECURSOS_PUBLICOS_IMG', 'public/img');
+
+define('RECURSOS_CONTROLADOR_CSS',     'recursos_controlador/css/');
+define('RECURSOS_CONTROLADOR_IMAGES',  'recursos_controlador/images/');
+define('RECURSOS_CONTROLADOR_JS',      'recursos_controlador/js/');
+define('RECURSOS_CONTROLADOR_VENDORS', 'recursos_controlador/vendors/');

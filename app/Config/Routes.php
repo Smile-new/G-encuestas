@@ -121,6 +121,21 @@ $routes->get('estadistica/getOpcionesPregunta/(:num)', 'EstadisticasController::
     $routes->get('operador_user/obtener_ubicaciones', 'Operador_User::obtener_ubicaciones');
 
 
+   $routes->get('controlador', 'Propietario::index');
+$routes->get('controlador/panel', 'Propietario::index');
+$routes->get('controlador/encuestas', 'Propietario::encuestas');
+$routes->get('controlador/graficas', 'Propietario::graficas');
+$routes->get('controlador/respuestas', 'Propietario::respuestas');
+$routes->get('controlador/usuarios', 'Propietario::usuarios');
+
+// Rutas para las funciones AJAX y de auditoría
+$routes->get('controlador/actividadPorEncuesta', 'Propietario::actividadPorEncuesta');
+$routes->get('controlador/detalleUsuario', 'Propietario::detalleUsuario');
+$routes->get('controlador/auditoriaPorCreador/(:num)', 'Propietario::auditoriaPorCreador/$1');
+$routes->get('controlador/detalleEncuesta', 'Propietario::detalleEncuesta');
+$routes->get('controlador/detalleRespuesta', 'Propietario::detalleRespuesta');
+
+
 
     //pagina
     $routes->get('/acerca', 'Home::acerca');
