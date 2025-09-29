@@ -85,7 +85,7 @@ if ($isLoggedIn && $userData) {
           <li class=" nav-item"><a href="<?= base_url('controlador/usuarios') ?>"><i class="la la-users"></i><span class="menu-title">Usuarios</span></a></li>
           <li class=" nav-item"><a href="<?= base_url('controlador/encuestas') ?>"><i class="la la-list-alt"></i><span class="menu-title">Encuestas</span></a></li>
           <li class=" nav-item"><a href="<?= base_url('controlador/respuestas') ?>"><i class="la la-check-square"></i><span class="menu-title">Respuestas</span></a></li>
-          <li class=" nav-item"><a href="<?= base_url('controlador/perfil') ?>"><i class="la la-check-square"></i><span class="menu-title">Perfil</span></a></li>
+          <li class=" nav-item"><a href="<?= base_url('controlador/perfil') ?>"><i class="la la-user"></i><span class="menu-title">Perfil</span></a></li>
         </ul>
       </div>
       <div class="navigation-background"></div>
