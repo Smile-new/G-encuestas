@@ -105,54 +105,80 @@ if ($isLoggedIn && $userData) {
                 <div class="card-header bg-primary text-white">
                   <h4 class="card-title">Información del Usuario</h4>
                 </div>
-                <div class="card-body">
-                  <div class="row">
-                    
-                    <!-- Imagen de perfil -->
-                    <div class="col-md-4 text-center">
-                      <div class="mb-2">
-                        <?php if(!empty($userData['foto'])): ?>
-                                                    <img src="<?= base_url('public/img_user/' . $userData['foto']) ?>" 
-                                                        alt="Foto actual" class="rounded-circle img-thumbnail"  
-                                                        style="width: 150px; height: 150px; object-fit: cover;">
-                                                <?php else: ?>
-                                                    <p>No hay foto de perfil actual.</p>
-                                                <?php endif; ?>
-                      </div>
-                      <form action="<?= base_url('controlador/perfil/actualizar') ?>" method="post" enctype="multipart/form-data">
-                        <?= csrf_field() ?>
-                        <div class="form-group">
-                          <label for="foto">Cambiar Foto</label>
-                          <input type="file" name="foto" id="foto" class="form-control">
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-sm mt-1">
-                          <i class="la la-upload"></i> Subir
-                        </button>
-                      </form>
-                    </div>
+              <div class="card-body">
+  <form action="<?= base_url('controlador/perfil/actualizar') ?>" method="post" enctype="multipart/form-data">
+    <?= csrf_field() ?>
+    <div class="row">
+      
+      <!-- Imagen de perfil -->
+      <div class="col-md-4 text-center">
+        <div class="mb-2">
+          <?php if(!empty($userData['foto'])): ?>
+            <img src="<?= base_url('public/img_user/' . $userData['foto']) ?>" 
+                 alt="Foto actual" class="rounded-circle img-thumbnail"  
+                 style="width: 150px; height: 150px; object-fit: cover;">
+          <?php else: ?>
+            <p>No hay foto de perfil actual.</p>
+          <?php endif; ?>
+        </div>
+        <div class="form-group">
+          <label for="foto">Cambiar Foto</label>
+          <input type="file" name="foto" id="foto" class="form-control">
+        </div>
+      </div>
 
-                    <!-- Datos del usuario -->
-                    <div class="col-md-8">
-                      <dl class="row">
-                        <dt class="col-sm-4">Nombre:</dt>
-                        <dd class="col-sm-8"><?= esc($userData['nombre']) ?></dd>
+      <!-- Datos del usuario -->
+      <div class="col-md-8">
+        <div class="form-group row">
+          <label for="nombre" class="col-sm-4 col-form-label">Nombre:</label>
+          <div class="col-sm-8">
+            <input type="text" name="nombre" id="nombre" class="form-control" 
+                   value="<?= esc($userData['nombre']) ?>" required>
+          </div>
+        </div>
 
-                        <dt class="col-sm-4">Apellido Paterno:</dt>
-                        <dd class="col-sm-8"><?= esc($userData['apellido_paterno']) ?></dd>
+        <div class="form-group row">
+          <label for="apellido_paterno" class="col-sm-4 col-form-label">Apellido Paterno:</label>
+          <div class="col-sm-8">
+            <input type="text" name="apellido_paterno" id="apellido_paterno" class="form-control" 
+                   value="<?= esc($userData['apellido_paterno']) ?>" required>
+          </div>
+        </div>
 
-                        <dt class="col-sm-4">Apellido Materno:</dt>
-                        <dd class="col-sm-8"><?= esc($userData['apellido_materno']) ?></dd>
+        <div class="form-group row">
+          <label for="apellido_materno" class="col-sm-4 col-form-label">Apellido Materno:</label>
+          <div class="col-sm-8">
+            <input type="text" name="apellido_materno" id="apellido_materno" class="form-control" 
+                   value="<?= esc($userData['apellido_materno']) ?>">
+          </div>
+        </div>
 
-                        <dt class="col-sm-4">Teléfono:</dt>
-                        <dd class="col-sm-8"><?= esc($userData['telefono']) ?></dd>
+        <div class="form-group row">
+          <label for="telefono" class="col-sm-4 col-form-label">Teléfono:</label>
+          <div class="col-sm-8">
+            <input type="tel" name="telefono" id="telefono" class="form-control" 
+                   value="<?= esc($userData['telefono']) ?>">
+          </div>
+        </div>
 
-                        <dt class="col-sm-4">Usuario:</dt>
-                        <dd class="col-sm-8"><?= esc($userData['usuario']) ?></dd>
-                      </dl>
-                    </div>
+        <div class="form-group row">
+          <label for="usuario" class="col-sm-4 col-form-label">Usuario:</label>
+          <div class="col-sm-8">
+            <input type="text" name="usuario" id="usuario" class="form-control" 
+                   value="<?= esc($userData['usuario']) ?>" required>
+          </div>
+        </div>
 
-                  </div>
-                </div>
+        <div class="text-right mt-2">
+          <button type="submit" class="btn btn-success">
+            <i class="la la-save"></i> Guardar Cambios
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </form>
+</div>
               </div>
             </div>
           </div>
