@@ -9,19 +9,19 @@ use App\Models\EncuestaModel;
 use App\Models\RespuestaModel;
 use App\Models\PreguntaModel;
 use App\Models\OpcionModel;
-use App\Models\MonitoreoModel; // Necesario para obtener lat/lng de auditoría
-use Config\Google; // Necesario para la clave de API de Google Maps
+use App\Models\MonitoreoModel;
+use Config\Google; 
 
 class Propietario extends BaseController
 {
     protected $usuarioModel; 
 
-     public function __construct()
-      {
-          $this->usuarioModel = new UsuarioModel();
-      }
-  
-  private function _prepareUserData(): array
+    public function __construct()
+    {
+        $this->usuarioModel = new UsuarioModel();
+    }
+
+    private function _prepareUserData(): array
     {
         $session = session();
         $userData = $session->get('usuario');
@@ -32,7 +32,7 @@ class Propietario extends BaseController
         $data['id_encuestador'] = $userData['id_usuario'] ?? null;
         $data['nombreCompleto'] = "Invitado";
         $data['nombreUsuario'] = "invitado";
-        $data['rutaFotoPerfil'] = base_url(RECURSOS_ENCUESTADOR_IMAGES . '/user.png');
+        $data['rutaFotoPerfil'] = base_url('recursos_encuestador_images/user.png'); 
 
         if ($data['isLoggedIn'] && is_array($userData)) {
             $data['nombreCompleto'] = trim(esc($userData['nombre'] ?? '') . ' ' .
@@ -45,10 +45,20 @@ class Propietario extends BaseController
         }
         return $data;
     }
+    
     /**
-     * Muestra el panel principal con estadísticas y gráficas.
+     * [NUEVO INDEX] Muestra la vista principal del panel (Controlador/panel).
      */
     public function index()
+    {
+        // El index ahora solo carga la vista base del panel.
+        return view('Controlador/panel');
+    }
+
+    /**
+     * [NUEVA GRÁFICAS] Contiene la lógica completa de obtención y preparación de datos para las gráficas y KPIs.
+     */
+    public function graficas()
     {
         // 1. Instanciamos los modelos
         $usuarioModel   = new UsuarioModel();
@@ -60,7 +70,7 @@ class Propietario extends BaseController
         $totalEncuestas  = $encuestaModel->countAllResults();
         $totalRespuestas = $respuestaModel->countAllResults();
 
-        // 3. GRÁFICA DE BARRAS VERTICALES: Usuarios por Rol (Sin cambios)
+        // 3. GRÁFICA DE BARRAS VERTICALES: Usuarios por Rol 
         $usuariosPorRol = $usuarioModel
             ->select('roles.nombre_rol, COUNT(usuarios.id_usuario) as total')
             ->join('roles', 'roles.id_rol = usuarios.id_rol', 'left')
@@ -80,7 +90,7 @@ class Propietario extends BaseController
         $graficaEncuestasStatusLabels = array_column($estadoEncuestas, 'estado');
         $graficaEncuestasStatusData   = array_column($estadoEncuestas, 'total');
 
-        // 5. GRÁFICA DE LÍNEA DE PICOS: Actividad general de los últimos 30 días (Sin cambios)
+        // 5. GRÁFICA DE LÍNEA DE PICOS: Actividad general de los últimos 30 días 
         $actividad30Dias = $respuestaModel
             ->select('DATE(fecha_respuesta) as fecha, COUNT(id_respuesta) as total')
             ->where('fecha_respuesta >=', date('Y-m-d H:i:s', strtotime('-30 days')))
@@ -97,7 +107,7 @@ class Propietario extends BaseController
             $graficaActividadData[]   = $actividadMap[$currentDate] ?? 0;
         }
 
-        // 6. Pasamos todos los datos a la vista (Sin cambios)
+        // 6. Pasamos todos los datos a la vista 
         $data = [
             'totalUsuarios'                => $totalUsuarios,
             'totalEncuestas'               => $totalEncuestas,
@@ -110,7 +120,7 @@ class Propietario extends BaseController
             'graficaActividadData'         => json_encode($graficaActividadData),
         ];
 
-        return view('Controlador/panel', $data);
+        return view('Controlador/graficas', $data);
     }
     
     /**
@@ -188,7 +198,6 @@ class Propietario extends BaseController
     /**
      * [FUNCIÓN AJAX ESPECIAL]
      * Devuelve todos los datos de perfil de un usuario específico en JSON.
-     * Incluye datos del creador y del rol.
      */
     public function detalleUsuario()
     {
@@ -209,7 +218,6 @@ class Propietario extends BaseController
                 creador.id_usuario AS id_creador
             ')
             ->join('roles', 'roles.id_rol = usuarios.id_rol', 'left')
-            // Self-Join
             ->join('usuarios AS creador', 'creador.id_usuario = usuarios.creado_por_id', 'left')
             ->where('usuarios.id_usuario', $usuarioId)
             ->first();
@@ -238,20 +246,17 @@ class Propietario extends BaseController
     /**
      * [FUNCIÓN ESPECIAL]
      * Muestra la vista de auditoría para ver los usuarios creados por un usuario específico.
-     * @param int $creadorId ID del usuario a auditar.
      */
     public function auditoriaPorCreador(int $creadorId)
     {
         $usuarioModel = new UsuarioModel();
         
-        // Obtener la información del creador para el encabezado
         $creador = $usuarioModel->select('nombre, apellido_paterno, usuario')->find($creadorId);
 
         if (!$creador) {
              return redirect()->back()->with('error', 'Creador no encontrado.');
         }
 
-        // Obtener la lista de usuarios creados por el ID dado
         $usuariosCreados = $usuarioModel
             ->select('
                 usuarios.id_usuario, 
@@ -282,10 +287,8 @@ class Propietario extends BaseController
     {
         $encuestaModel = new EncuestaModel();
 
-        // Obtener todas las encuestas
         $listaEncuestas = $encuestaModel->orderBy('fecha_creacion', 'DESC')->findAll();
 
-        // Limitar la descripción para no saturar la tabla
         foreach ($listaEncuestas as &$encuesta) {
             $encuesta['descripcion_corta'] = strlen($encuesta['descripcion']) > 100 
                 ? substr($encuesta['descripcion'], 0, 100) . '...' 
@@ -315,17 +318,14 @@ class Propietario extends BaseController
         $preguntaModel = new PreguntaModel();
         $opcionModel = new OpcionModel();
 
-        // Obtener los detalles de la encuesta
         $encuesta = $encuestaModel->find($encuestaId);
 
         if (!$encuesta) {
             return $this->response->setStatusCode(404)->setJSON(['error' => 'Encuesta no encontrada.']);
         }
 
-        // Obtener las preguntas de la encuesta
         $preguntas = $preguntaModel->where('id_encuesta', $encuestaId)->findAll();
         
-        // Obtener las opciones para cada pregunta
         foreach ($preguntas as $key => $pregunta) {
             $preguntas[$key]['opciones'] = $opcionModel->where('id_pregunta', $pregunta['id_pregunta'])->findAll();
         }
@@ -426,7 +426,6 @@ class Propietario extends BaseController
         
         // OBTENER COORDENADAS DE MONITOREO DEL USUARIO
         $monitoreoModel = new MonitoreoModel();
-        // Nota: Asegúrate de que MonitoreoModel esté importado y declarado con use
         $ubicacionMonitoreo = $monitoreoModel->find($detalle['id_usuario']);
         
         return $this->response->setJSON([
@@ -441,9 +440,10 @@ class Propietario extends BaseController
         ]);
     }
 
-    public function graficas()
+    // Esta función ya no es necesaria, la lógica se movió a graficas()
+    public function respuestas_original()
     {
-        return view('Controlador/graficas');
+        // Función vacía
     }
 
     /**
@@ -451,62 +451,40 @@ class Propietario extends BaseController
      */
     public function perfil()
     {
-    	$data = $this->_prepareUserData();
+        $data = $this->_prepareUserData();
         return view('Controlador/perfil', $data);
     }
 
-/**
- * Actualizar datos del perfil del operador
- */
-public function actualizarPerfil()
-{
-    $session = session();
-    $user = $session->get('usuario');
+    /**
+     * Actualizar foto de perfil del operador
+     */
+    public function actualizarPerfil()
+    {
+        $session = session();
+        $user = $session->get('usuario');
 
-    // ✅ Reglas de validación
-    $rules = [
-        'nombre'            => 'required|min_length[3]|max_length[50]',
-        'apellido_paterno'  => 'required|min_length[3]|max_length[50]',
-        'apellido_materno'  => 'permit_empty|max_length[50]',
-        'telefono'          => 'permit_empty|min_length[7]|max_length[15]',
-        'usuario'           => 'required|min_length[4]|max_length[30]',
-        'foto'              => 'permit_empty|is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]',
-    ];
+        $rules = [
+            'foto' => 'permit_empty|is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]'
+        ];
 
-    if (!$this->validate($rules)) {
-        return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        $fotoFile = $this->request->getFile('foto');
+        if ($fotoFile && $fotoFile->isValid() && !$fotoFile->hasMoved()) {
+            $nombreFoto = time() . '_' . $fotoFile->getName();
+            $fotoFile->move(FCPATH . 'public/img_user', $nombreFoto);
+            $user['foto'] = $nombreFoto;
+
+            // Actualizar solo la foto en la base de datos
+            $this->usuarioModel->update($user['id_usuario'], ['foto' => $nombreFoto]);
+
+            // Actualizar la sesión
+            $session->set('usuario', $user);
+        }
+
+        $session->setFlashdata('success', 'Foto de perfil actualizada correctamente');
+        return redirect()->back();
     }
-
-    // ✅ Preparar datos a actualizar
-    $dataUpdate = [
-        'nombre'           => $this->request->getPost('nombre'),
-        'apellido_paterno' => $this->request->getPost('apellido_paterno'),
-        'apellido_materno' => $this->request->getPost('apellido_materno'),
-        'telefono'         => $this->request->getPost('telefono'),
-        'usuario'          => $this->request->getPost('usuario'),
-    ];
-
-    // ✅ Procesar la foto si fue subida
-    $fotoFile = $this->request->getFile('foto');
-    if ($fotoFile && $fotoFile->isValid() && !$fotoFile->hasMoved()) {
-        $nombreFoto = time() . '_' . $fotoFile->getName();
-        $fotoFile->move(FCPATH . 'public/img_user', $nombreFoto);
-
-        $dataUpdate['foto'] = $nombreFoto;
-
-        // Actualizar la sesión con nueva foto
-        $user['foto'] = $nombreFoto;
-    }
-
-    // ✅ Actualizar base de datos
-    $this->usuarioModel->update($user['id_usuario'], $dataUpdate);
-
-    // ✅ Refrescar sesión con los datos nuevos
-    $user = array_merge($user, $dataUpdate);
-    $session->set('usuario', $user);
-
-    $session->setFlashdata('success', 'Perfil actualizado correctamente');
-    return redirect()->back();
-}
-
 }
