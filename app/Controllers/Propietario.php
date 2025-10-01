@@ -455,36 +455,50 @@ class Propietario extends BaseController
         return view('Controlador/perfil', $data);
     }
 
-    /**
-     * Actualizar foto de perfil del operador
-     */
-    public function actualizarPerfil()
-    {
-        $session = session();
-        $user = $session->get('usuario');
-
-        $rules = [
-            'foto' => 'permit_empty|is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]'
-        ];
-
-        if (!$this->validate($rules)) {
-            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
-        }
-
-        $fotoFile = $this->request->getFile('foto');
-        if ($fotoFile && $fotoFile->isValid() && !$fotoFile->hasMoved()) {
-            $nombreFoto = time() . '_' . $fotoFile->getName();
-            $fotoFile->move(FCPATH . 'public/img_user', $nombreFoto);
-            $user['foto'] = $nombreFoto;
-
-            // Actualizar solo la foto en la base de datos
-            $this->usuarioModel->update($user['id_usuario'], ['foto' => $nombreFoto]);
-
-            // Actualizar la sesión
-            $session->set('usuario', $user);
-        }
-
-        $session->setFlashdata('success', 'Foto de perfil actualizada correctamente');
-        return redirect()->back();
+/** * Actualizar datos del perfil del operador */ 
+public function actualizarPerfil() { 
+    $session = session(); 
+    $user = $session->get('usuario'); 
+    // ✅ Reglas de validación 
+    $rules = [ 
+        'nombre' => 'required|min_length[3]|max_length[50]', 
+        'apellido_paterno' => 'required|min_length[3]|max_length[50]', 
+        'apellido_materno' => 'permit_empty|max_length[50]', 
+        'telefono' => 'permit_empty|min_length[7]|max_length[15]', 
+        'usuario' => 'required|min_length[4]|max_length[30]', 
+        'foto' => 'permit_empty|is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]', 
+    ]; 
+    
+    if (!$this->validate($rules)) { 
+        return redirect()->back()->withInput()->with('errors', $this->validator->getErrors()); 
+    } 
+    
+    // ✅ Preparar datos a actualizar 
+    $dataUpdate = [ 
+        'nombre' => $this->request->getPost('nombre'), 
+        'apellido_paterno' => $this->request->getPost('apellido_paterno'), 
+        'apellido_materno' => $this->request->getPost('apellido_materno'), 
+        'telefono' => $this->request->getPost('telefono'), 
+        'usuario' => $this->request->getPost('usuario'), 
+    ]; 
+    
+    // ✅ Procesar la foto si fue subida 
+    $fotoFile = $this->request->getFile('foto');
+    if ($fotoFile && $fotoFile->isValid() && !$fotoFile->hasMoved()) { 
+        $nombreFoto = time() . '_' . $fotoFile->getName(); 
+        $fotoFile->move(FCPATH . 'public/img_user', $nombreFoto); 
+        $dataUpdate['foto'] = $nombreFoto; 
+        
+        // Actualizar la sesión con nueva foto 
+        $user['foto'] = $nombreFoto; } 
+        
+        // ✅ Actualizar base de datos 
+        $this->usuarioModel->update($user['id_usuario'], $dataUpdate); 
+        
+        // ✅ Refrescar sesión con los datos nuevos 
+        $user = array_merge($user, $dataUpdate); 
+        $session->set('usuario', $user); 
+        $session->setFlashdata('success', 'Perfil actualizado correctamente'); 
+        return redirect()->back(); 
     }
 }
