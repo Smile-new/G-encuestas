@@ -21,6 +21,14 @@
         .kpi-card .card-body { flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 1rem; }
         .kpi-card h5 { margin: 0; font-size: 1.1rem; }
         .kpi-card i { font-size: 2.5rem !important; opacity: 0.7; }
+
+          .dropdown-menu-right .user-name {
+    display: inline-block;
+    max-width: 180px; /* ajusta según tu diseño */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
     </style>
   </head>
   <body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-chartbg" data-col="2-columns">
@@ -58,7 +66,14 @@ if ($isLoggedIn && $userData) {
             <ul class="nav navbar-nav float-right">
               <li class="dropdown dropdown-user nav-item"><a class="dropdown-toggle nav-link dropdown-user-link" href="#" data-toggle="dropdown"> <span class="avatar avatar-online"><img src="<?= $rutaFotoPerfil ?>" alt="avatar"><i></i></span></a>
                 <div class="dropdown-menu dropdown-menu-right">
-                  <div class="arrow_box_right"><a class="dropdown-item" href="#"><span class="avatar avatar-online"><img src="<?= $rutaFotoPerfil ?>" alt="avatar"><span class="user-name text-bold-700 ml-1"><?= esc($nombreCompleto) ?></span></span></a>
+                    <div class="arrow_box_right">
+                      <a class="dropdown-item" href="#">
+                        <span class="avatar avatar-online">
+                          <img src="<?= $rutaFotoPerfil ?>" alt="avatar">
+                        </span>
+                        <span class="user-name text-bold-700 ml-1"><?= esc($nombreCompleto) ?></span>
+                      </a>
+                    </div>                    
                     <div class="dropdown-divider"></div><a class="dropdown-item" href="/controlador/perfil"><i class="ft-user"></i> Editar Perfil</a>
                     <div class="dropdown-divider"></div><a class="dropdown-item" href="/logout"><i class="ft-power"></i> Cerrar Sesión</a>
                   </div>

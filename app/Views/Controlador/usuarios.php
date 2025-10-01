@@ -23,6 +23,15 @@
     <link rel="stylesheet" type="text/css" href="<?= base_url(RECURSOS_CONTROLADOR_CSS . 'core/colors/palette-gradient.css') ?>">
     <!-- END Page Level CSS-->
   </head>
+  <style>
+      .dropdown-menu-right .user-name {
+    display: inline-block;
+    max-width: 180px; /* ajusta según tu diseño */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+    </style>
   <body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-gradient-x-purple-blue" data-col="2-columns">
 <?php
 // Preparar datos del usuario (debe pasarse desde el controlador preferiblemente)
@@ -60,7 +69,14 @@ if ($isLoggedIn && $userData) {
             <ul class="nav navbar-nav float-right">
               <li class="dropdown dropdown-user nav-item"><a class="dropdown-toggle nav-link dropdown-user-link" href="#" data-toggle="dropdown"> <span class="avatar avatar-online"><img src="<?= $rutaFotoPerfil ?>" alt="avatar"><i></i></span></a>
                 <div class="dropdown-menu dropdown-menu-right">
-                  <div class="arrow_box_right"><a class="dropdown-item" href="#"><span class="avatar avatar-online"><img src="<?= $rutaFotoPerfil ?>" alt="avatar"><span class="user-name text-bold-700 ml-1"><?= esc($nombreCompleto) ?></span></span></a>
+                    <div class="arrow_box_right">
+                      <a class="dropdown-item" href="#">
+                        <span class="avatar avatar-online">
+                          <img src="<?= $rutaFotoPerfil ?>" alt="avatar">
+                        </span>
+                        <span class="user-name text-bold-700 ml-1"><?= esc($nombreCompleto) ?></span>
+                      </a>
+                    </div>                    
                     <div class="dropdown-divider"></div><a class="dropdown-item" href="/controlador/perfil"><i class="ft-user"></i> Editar Perfil</a>
                     <div class="dropdown-divider"></div><a class="dropdown-item" href="/logout"><i class="ft-power"></i> Cerrar Sesión</a>
                   </div>
