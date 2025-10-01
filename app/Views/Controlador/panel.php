@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html class="loading" lang="es" data-textdirection="ltr">
-  <head>
+
+<head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
     <title>Panel de Control - Vota y Opina</title>
     <link rel="apple-touch-icon" href="<?= base_url(RECURSOS_CONTROLADOR_IMAGES . 'ico/apple-icon-120.png') ?>">
-    <link rel="shortcut icon" type="image/x-icon" href="<?= base_url(RECURSOS_CONTROLADOR_IMAGES . 'ico/favicon.ico') ?>">
+   
     <link href="https://fonts.googleapis.com/css?family=Muli:300,300i,400,400i,600,600i,700,700i%7CComfortaa:300,400,700" rel="stylesheet">
     <link href="https://maxcdn.icons8.com/fonts/line-awesome/1.1/css/line-awesome.min.css" rel="stylesheet">
-    
+
     <link rel="stylesheet" type="text/css" href="<?= base_url(RECURSOS_CONTROLADOR_CSS . 'vendors.css') ?>">
     <link rel="stylesheet" type="text/css" href="<?= base_url(RECURSOS_CONTROLADOR_CSS . 'app-lite.css') ?>">
     <link rel="stylesheet" type="text/css" href="<?= base_url(RECURSOS_CONTROLADOR_CSS . 'core/menu/menu-types/vertical-menu.css') ?>">
@@ -29,32 +30,82 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+        /* Animacion de tecleo y cursor */
+        @keyframes typing { from { width: 0 } to { width: 100% } }
+        @keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: #4a90e2; } }
+
+        .ai-message-container { min-height: 2.5em; }
+        .ai-message {
+            overflow: hidden;
+            border-right: .15em solid #4a90e2;
+            white-space: nowrap;
+            margin: 0 auto;
+            letter-spacing: .05em;
+            display: inline-block;
+        }
+        .typing-animation {
+            animation: typing 2.5s steps(40, end), blink-caret .75s step-end infinite;
+        }
+
+        /* Tarjeta principal del asistente */
+        .ai-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .ai-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); }
+
+        /* Icono del asistente y su animacion */
+        .assistant-avatar {
+            font-size: 8rem;
+            color: #626FE6;
+            animation: floatAnimation 3s ease-in-out infinite;
+        }
+        @keyframes floatAnimation {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0); }
+        }
+
+        /* Estilos para los pasos de la guia */
+        .guidance-step {
+            margin-top: 15px;
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+            transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+            padding: 15px;
+            border-radius: 10px;
+            background-color: transparent;
+        }
+        .guidance-step.visible { opacity: 1; transform: translateY(0) scale(1); }
+        .guidance-step.highlight {
+            background-color: rgba(255, 255, 255, 0.7);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .step-icon {
+            font-size: 1.8em;
+            color: #1EAE98;
+            margin-right: 15px;
+            vertical-align: middle;
+        }
+        .guidance-step h5 { display: inline-block; vertical-align: middle; }
     </style>
-  </head>
-  <body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-chartbg" data-col="2-columns">
-<?php
-// Preparar datos del usuario (debe pasarse desde el controlador preferiblemente)
-$isLoggedIn = session()->get('isLoggedIn') ?? false;
-$userData = session()->get('usuario') ?? null;
+</head>
 
-$nombreCompleto = "Invitado";
-$rolTexto = "Rol Desconocido";
-$rutaFotoPerfil = base_url('recursos_operador/images/layout_img/user_img.jpg');
+<body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-gradient-x-purple-blue" data-col="2-columns">
 
-if ($isLoggedIn && $userData) {
-    $nombreCompleto = $userData['nombre'] . ' ' . $userData['apellido_paterno'] . ' ' . $userData['apellido_materno'];
-    $id_rol = $userData['id_rol'] ?? null;
-    switch ($id_rol) {
-        case 1: $rolTexto = 'Administrador'; break;
-        case 2: $rolTexto = 'Operador'; break;
-        case 3: $rolTexto = 'Encuestador'; break;
-        default: $rolTexto = 'Miembro'; break;
-    }
-    if (!empty($userData['foto'])) {
-        $rutaFotoPerfil = base_url('public/img_user/' . $userData['foto']);
-    }
-}
-?>
+    <?php
+    $userData = session()->get('usuario') ?? null;
+    $nombreUsuario = ($userData && isset($userData['nombre'])) ? esc($userData['nombre']) : 'Propietario';
+    $nombreCompleto = ($userData) ? esc($userData['nombre'] . ' ' . $userData['apellido_paterno']) : 'Invitado';
+    $rutaFotoPerfil = ($userData && !empty($userData['foto'])) ? base_url('public/img_user/' . $userData['foto']) : base_url(RECURSOS_CONTROLADOR_IMAGES . 'portrait/small/avatar-s-19.png');
+    ?>
+
     <nav class="header-navbar navbar-expand-md navbar navbar-with-menu navbar-without-dd-arrow fixed-top navbar-semi-light">
       <div class="navbar-wrapper">
         <div class="navbar-container content">
@@ -66,16 +117,9 @@ if ($isLoggedIn && $userData) {
             <ul class="nav navbar-nav float-right">
               <li class="dropdown dropdown-user nav-item"><a class="dropdown-toggle nav-link dropdown-user-link" href="#" data-toggle="dropdown"> <span class="avatar avatar-online"><img src="<?= $rutaFotoPerfil ?>" alt="avatar"><i></i></span></a>
                 <div class="dropdown-menu dropdown-menu-right">
-                    <div class="arrow_box_right">
-                      <a class="dropdown-item" href="#">
-                        <span class="avatar avatar-online">
-                          <img src="<?= $rutaFotoPerfil ?>" alt="avatar">
-                        </span>
-                        <span class="user-name text-bold-700 ml-1"><?= esc($nombreCompleto) ?></span>
-                      </a>
-                    </div>                    
-                    <div class="dropdown-divider"></div><a class="dropdown-item" href="/controlador/perfil"><i class="ft-user"></i> Editar Perfil</a>
-                    <div class="dropdown-divider"></div><a class="dropdown-item" href="/logout"><i class="ft-power"></i> Cerrar Sesión</a>
+                  <div class="arrow_box_right"><a class="dropdown-item" href="#"><span class="avatar avatar-online"><img src="<?= $rutaFotoPerfil ?>" alt="avatar"><span class="user-name text-bold-700 ml-1"><?= $nombreCompleto ?></span></span></a>
+                    <div class="dropdown-divider"></div><a class="dropdown-item" href="<?= base_url('controlador/perfil') ?>"><i class="ft-user"></i> Editar Perfil</a>
+                    <div class="dropdown-divider"></div><a class="dropdown-item" href="/logout"><i class="ft-power"></i> Cerrar Sesion</a>
                   </div>
                 </div>
               </li>
@@ -85,7 +129,7 @@ if ($isLoggedIn && $userData) {
       </div>
     </nav>
 
-    <div class="main-menu menu-fixed menu-light menu-accordion menu-shadow " data-scroll-to-active="true" data-img="<?= base_url(RECURSOS_CONTROLADOR_IMAGES . 'backgrounds/02.jpg') ?>">
+    <div class="main-menu menu-fixed menu-light menu-accordion menu-shadow" data-scroll-to-active="true" data-img="<?= base_url(RECURSOS_CONTROLADOR_IMAGES . 'backgrounds/02.jpg') ?>">
       <div class="navbar-header">
         <ul class="nav navbar-nav flex-row">
           <li class="nav-item mr-auto"><a class="navbar-brand" href="<?= base_url('controlador/panel') ?>">
@@ -95,168 +139,186 @@ if ($isLoggedIn && $userData) {
       </div>
       <div class="main-menu-content">
         <ul class="navigation navigation-main" id="main-menu-navigation" data-menu="menu-navigation">
-          <li class="active"><a href="<?= base_url('controlador/panel') ?>"><i class="la la-home"></i><span class="menu-title">Panel</span></a></li>
-          <li class=" nav-item"><a href="<?= base_url('controlador/graficas') ?>"><i class="la la-pie-chart"></i><span class="menu-title">Gráficas</span></a></li>
-          <li class=" nav-item"><a href="<?= base_url('controlador/usuarios') ?>"><i class="la la-users"></i><span class="menu-title">Usuarios</span></a></li>
-          <li class=" nav-item"><a href="<?= base_url('controlador/encuestas') ?>"><i class="la la-list-alt"></i><span class="menu-title">Encuestas</span></a></li>
-          <li class=" nav-item"><a href="<?= base_url('controlador/respuestas') ?>"><i class="la la-check-square"></i><span class="menu-title">Respuestas</span></a></li>
-          <li class=" nav-item"><a href="<?= base_url('controlador/perfil') ?>"><i class="la la-user"></i><span class="menu-title">Perfil</span></a></li>
+            <li class="active"><a href="<?= base_url('controlador/panel') ?>"><i class="la la-home"></i><span class="menu-title">Panel</span></a></li>
+            <li class="nav-item"><a href="<?= base_url('controlador/graficas') ?>"><i class="la la-pie-chart"></i><span class="menu-title">Graficas</span></a></li>
+            <li class="nav-item"><a href="<?= base_url('controlador/usuarios') ?>"><i class="la la-users"></i><span class="menu-title">Usuarios</span></a></li>
+            <li class="nav-item"><a href="<?= base_url('controlador/encuestas') ?>"><i class="la la-list-alt"></i><span class="menu-title">Encuestas</span></a></li>
+            <li class="nav-item"><a href="<?= base_url('controlador/respuestas') ?>"><i class="la la-check-square"></i><span class="menu-title">Respuestas</span></a></li>
+            <li class="nav-item"><a href="<?= base_url('controlador/perfil') ?>"><i class="la la-user"></i><span class="menu-title">Perfil</span></a></li>
         </ul>
       </div>
       <div class="navigation-background"></div>
     </div>
+
     <div class="app-content content">
-      <div class="content-wrapper">
-        <div class="content-wrapper-before"></div>
-        <div class="content-header row">
-           <div class="content-header-left col-md-4 col-12 mb-2">
-            <h3 class="content-header-title">Dashboard</h3>
-          </div>
-        </div>
-        <div class="content-body">
-            
-            <div class="row">
-                <div class="col-12">
-                    <div class="card" style="background-image: linear-gradient(to right, #6666ff, #7657f5); color: white;">
-                        <div class="card-body">
-                            <h4 class="card-title" style="color: white;">¡Bienvenido al Panel de Control!</h4>
-                            <p class="card-text mb-0">Desde aquí puedes monitorear la actividad, gestionar usuarios y analizar los resultados de las encuestas.</p>
+        <div class="content-wrapper">
+            <div class="content-wrapper-before"></div>
+            <div class="content-header row">
+                <div class="content-header-left col-md-4 col-12 mb-2">
+                    <h3 class="content-header-title">Panel de Control</h3>
+                </div>
+                <div class="content-header-right col-md-8 col-12">
+                    <div class="breadcrumbs-top float-md-right">
+                        <div class="breadcrumb-wrapper mr-1">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="<?= base_url('controlador/panel') ?>">Panel</a></li>
+                                <li class="breadcrumb-item active">Inicio</li>
+                            </ol>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="content-body">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card ai-card">
+                            <div class="card-body text-center">
+                                <i class="la la-rocket assistant-avatar"></i>
+                                <h2 class="mt-3 text-primary">Asistente de Supervision</h2>
+                                <p class="text-muted">Tu guia para dominar el panel de Vota y Opina.</p>
 
-            <div class="row">
-                <div class="col-xl-4 col-lg-6 col-md-12">
-                    <div class="card pull-up ecom-card-1 kpi-card bg-white">
-                        <div class="card-content ecom-card2 height-180">
-                            <div class="kpi-header">
-                                <h5 class="text-muted info">Usuarios Registrados</h5>
-                                <i class="la la-users info"></i>
-                            </div>
-                            <div class="card-body"><h1 class="info text-center font-large-2 text-bold-700"><?= esc($totalUsuarios ?? 0) ?></h1></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-4 col-lg-6 col-md-12">
-                    <div class="card pull-up ecom-card-1 kpi-card bg-white">
-                        <div class="card-content ecom-card2 height-180">
-                            <div class="kpi-header">
-                                <h5 class="text-muted warning">Encuestas Existentes</h5>
-                                <i class="la la-list-alt warning"></i>
-                            </div>
-                            <div class="card-body"><h1 class="warning text-center font-large-2 text-bold-700"><?= esc($totalEncuestas ?? 0) ?></h1></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-4 col-lg-12">
-                    <div class="card pull-up ecom-card-1 kpi-card bg-white">
-                        <div class="card-content ecom-card2 height-180">
-                           <div class="kpi-header">
-                                <h5 class="text-muted danger">Respuestas Recibidas</h5>
-                                <i class="la la-check-square danger"></i>
-                            </div>
-                            <div class="card-body"><h1 class="danger text-center font-large-2 text-bold-700"><?= esc($totalRespuestas ?? 0) ?></h1></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                                <div class="ai-message-container mb-4">
+                                    <p class="ai-message text-bold-600 h4" id="aiMessage"></p>
+                                </div>
 
-            <div class="row match-height">
-                 <div class="col-lg-6 col-md-12"> <div class="card">
-                        <div class="card-header"><h4 class="card-title">Distribución de Usuarios por Rol</h4></div>
-                        <div class="card-content collapse show">
-                            <div class="card-body"><div class="height-400"><canvas id="graficaUsuariosPorRol"></canvas></div></div>
-                        </div>
-                    </div>
-                </div>
-                 <div class="col-lg-6 col-md-12"> <div class="card">
-                        <div class="card-header"><h4 class="card-title">Estado de Encuestas</h4></div>
-                        <div class="card-content collapse show">
-                            <div class="card-body"><div class="height-400"><canvas id="graficaEstadoEncuestas"></canvas></div></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                                <div id="guidanceSteps" class="mt-4" style="max-width: 650px; margin: 0 auto; text-align: left;">
+                                    
+                                    <div id="step1" class="guidance-step">
+                                        <i class="la la-bar-chart step-icon"></i>
+                                        <h5 class="text-bold-600">Vista General en Graficas</h5>
+                                        <p class="pl-5 ml-2">Aqui tienes el pulso de toda la operacion con datos y estadisticas al momento para tomar decisiones.</p>
+                                    </div>
 
-             <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header"><h4 class="card-title">Actividad General de Respuestas (Últimos 30 Días)</h4></div>
-                        <div class="card-content collapse show">
-                            <div class="card-body"><div class="height-400"><canvas id="graficaActividadDiaria"></canvas></div></div>
+                                    <div id="step2" class="guidance-step">
+                                        <i class="la la-users step-icon"></i>
+                                        <h5 class="text-bold-600">Control de Usuarios</h5>
+                                        <p class="pl-5 ml-2">Este es tu centro de equipo. Puedes ver quien es quien, administrar sus accesos y permisos.</p>
+                                    </div>
+                                    
+                                    <div id="step3" class="guidance-step">
+                                        <i class="la la-list-alt step-icon"></i>
+                                        <h5 class="text-bold-600">Gestion de Encuestas</h5>
+                                        <p class="pl-5 ml-2">Revisa todas las encuestas creadas, activalas o desactivalas, y mira a detalle sus preguntas y opciones.</p>
+                                    </div>
+
+                                    <div id="step4" class="guidance-step">
+                                        <i class="la la-map-marker step-icon"></i>
+                                        <h5 class="text-bold-600">Verificacion de Respuestas</h5>
+                                        <p class="pl-5 ml-2">Para asegurar la calidad, aqui puedes ver en el mapa donde se capturo cada opinion. Transparencia total.</p>
+                                    </div>
+
+                                    <div id="step5" class="guidance-step">
+                                        <i class="la la-user-circle step-icon"></i>
+                                        <h5 class="text-bold-600">Tu Perfil Personal</h5>
+                                        <p class="pl-5 ml-2">En esta seccion puedes actualizar tu informacion, tu nombre, contacto y cambiar tu foto cuando quieras.</p>
+                                    </div>
+                                </div>
+
+                                <button id="startButton" class="btn btn-primary btn-lg mt-4"><i class="la la-play-circle"></i> Iniciar Recorrido</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-      </div>
     </div>
     
     <footer class="footer footer-static footer-light navbar-border navbar-shadow">
-      <div class="clearfix blue-grey lighten-2 text-sm-center mb-0 px-2"><span class="float-md-left d-block d-md-inline-block"><?= date('Y') ?> &copy; Copyright <a class="text-bold-800 grey darken-2" href="#">Vota y Opina</a></span>
-      </div>
+        <div class="clearfix blue-grey lighten-2 text-sm-center mb-0 px-2"><span class="float-md-left d-block d-md-inline-block"><?= date('Y') ?> &copy; Copyright <a class="text-bold-800 grey darken-2" href="#">Vota y Opina</a></span>
+        </div>
     </footer>
 
     <script src="<?= base_url(RECURSOS_CONTROLADOR_VENDORS . 'js/vendors.min.js') ?>"></script>
-    <script src="<?= base_url(RECURSOS_CONTROLADOR_VENDORS . 'js/charts/chart.min.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_CONTROLADOR_JS . 'core/app-menu-lite.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_CONTROLADOR_JS . 'core/app-lite.js') ?>"></script>
-    
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const CHART_COLORS = ['#6666FF', '#FF9F40', '#FF6384', '#4BC0C0', '#9966FF', '#FFCD56'];
+
+    <script type="text/javascript">
+    $(document).ready(function() {
+        const userName = '<?= $nombreUsuario ?>';
+        const aiMessageElement = $('#aiMessage');
+        const startButton = $('#startButton');
+        
+        // Mensajes del recorrido, incluyendo los nuevos apartados
+        const messages = {
+            welcome: `Hola ${userName}. Soy tu guia. Exploremos juntos tu panel.`,
+            step1: "Primero, en Graficas tienes el panorama general de tu operacion.",
+            step2: "Ahora, en Usuarios, puedes administrar a todo tu equipo.",
+            step3: "En Encuestas, tienes el control total de tus cuestionarios.",
+            step4: "Despues, en Respuestas, verificas el trabajo de campo con mapas.",
+            step5: "Por ultimo, en Perfil, mantienes tus datos personales al dia.",
+            end: "Excelente. Ya conoces lo principal. Tienes el control total."
+        };
+
+        const steps = [
+            { text: messages.step1, element: '#step1' },
+            { text: messages.step2, element: '#step2' },
+            { text: messages.step3, element: '#step3' },
+            { text: messages.step4, element: '#step4' },
+            { text: messages.step5, element: '#step5' }
+        ];
+        
+        let currentStep = 0;
+        let isTourRunning = false;
+
+        function typeWriter(text, callback) {
+            aiMessageElement.text('');
+            aiMessageElement.removeClass('typing-animation').width(); // Forzar reinicio de animacion
+            aiMessageElement.addClass('typing-animation');
+
+            let i = 0;
+            const speed = 40;
+
+            function type() {
+                if (i < text.length) {
+                    aiMessageElement.text(aiMessageElement.text() + text.charAt(i));
+                    i++;
+                    setTimeout(type, speed);
+                } else {
+                    aiMessageElement.removeClass('typing-animation');
+                    if (callback) {
+                        setTimeout(callback, 500);
+                    }
+                }
+            }
+            type();
+        }
+
+        function startTour() {
+            if (isTourRunning) return;
+            isTourRunning = true;
+            currentStep = 0;
             
-            // Gráfica 1: Barras Verticales (Usuarios por Rol)
-            new Chart(document.getElementById('graficaUsuariosPorRol').getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: <?= $graficaRolesLabels ?? '[]' ?>,
-                    datasets: [{
-                        label: 'Total de Usuarios',
-                        data: <?= $graficaRolesData ?? '[]' ?>,
-                        backgroundColor: CHART_COLORS,
-                        borderWidth: 0
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, legend: { display: false }, scales: { yAxes: [{ ticks: { beginAtZero: true, stepSize: 1 } }] } }
-            });
+            startButton.prop('disabled', true).html('<i class="la la-spinner la-spin"></i> En recorrido...');
+            $('.guidance-step').removeClass('visible highlight');
 
-            // Gráfica 2: Pastel (Estado de Encuestas)
-            new Chart(document.getElementById('graficaEstadoEncuestas').getContext('2d'), {
-                type: 'pie',
-                data: {
-                    labels: <?= $graficaEncuestasStatusLabels ?? '[]' ?>,
-                    datasets: [{ 
-                        data: <?= $graficaEncuestasStatusData ?? '[]' ?>, 
-                        backgroundColor: ['#4BC0C0', '#FF6384'], // Verde-azulado para Activas, Rosa para Inactivas
-                        borderColor: '#fff', 
-                        borderWidth: 2 
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, legend: { position: 'right' } }
-            });
+            typeWriter(messages.welcome, nextStep);
+        }
 
-            // Gráfica 3: Línea de Picos (Actividad Diaria General)
-            new Chart(document.getElementById('graficaActividadDiaria').getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: <?= $graficaActividadLabels ?? '[]' ?>,
-                    datasets: [{
-                        label: 'Respuestas por Día',
-                        data: <?= $graficaActividadData ?? '[]' ?>,
-                        borderColor: '#FF6384',
-                        borderWidth: 3,
-                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                        pointBackgroundColor: '#FF6384',
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        lineTension: 0 // Esto crea los "picos"
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, tooltips: { mode: 'index', intersect: false }, scales: { yAxes: [{ ticks: { beginAtZero: true } }], xAxes: [{ ticks: { autoSkip: true, maxTicksLimit: 15 } }] } }
-            });
-        });
+        function nextStep() {
+            if (currentStep < steps.length) {
+                const step = steps[currentStep];
+                typeWriter(step.text, () => {
+                    $('.guidance-step.highlight').removeClass('highlight');
+                    const stepElement = $(step.element);
+                    stepElement.addClass('visible highlight');
+                    
+                    currentStep++;
+                    setTimeout(nextStep, 3500);
+                });
+            } else {
+                typeWriter(messages.end, () => {
+                    isTourRunning = false;
+                    startButton.prop('disabled', false).html('<i class="la la-refresh"></i> Iniciar de Nuevo');
+                    setTimeout(() => $('.guidance-step.highlight').removeClass('highlight'), 2000);
+                });
+            }
+        }
+
+        startButton.on('click', startTour);
+        
+        // Iniciar con el mensaje de bienvenida al cargar la pagina
+        setTimeout(() => typeWriter(messages.welcome), 500);
+    });
     </script>
-  </body>
+</body>
 </html>
