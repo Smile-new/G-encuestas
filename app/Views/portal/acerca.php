@@ -3,11 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="description" content="Videograph Template">
-    <meta name="keywords" content="Videograph, unica, creative, html">
+    <meta name="description" content="Conoce cómo Vota y Opina obtiene datos confiables a través de encuestas y censos. Nuestro equipo en campo y sistemas digitales garantizan información precisa y al instante.">
+    <meta name="keywords" content="acerca de, Vota y Opina, encuestas, censos, datos confiables, investigación social, intención de voto, estadísticas">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Acerca de</title>
+    <title>Acerca de | Vota y Opina</title>
 
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&display=swap" rel="stylesheet">

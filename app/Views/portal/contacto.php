@@ -3,11 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="description" content="Videograph Template">
-    <meta name="keywords" content="Videograph, unica, creative, html">
+    <meta name="description" content="Ponte en contacto con Vota y Opina. Estamos ubicados en Tlaxcala y ofrecemos encuestas y censos confiables. Llámanos, envíanos un correo o visítanos en nuestras oficinas.">
+    <meta name="keywords" content="contacto, Vota y Opina, encuestas, censos, teléfono, dirección, correo, Tlaxcala">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Contacto</title>
+    <title>Contacto | Vota y Opina</title>
 
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&display=swap" rel="stylesheet">
