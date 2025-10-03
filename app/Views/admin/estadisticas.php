@@ -195,7 +195,7 @@
                     </a>
                 </li>
                 <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('estadisticas') ?>">
+                    <a class="nav-link" href="<?= base_url('estadistica') ?>">
                         <span class="menu-icon"><i class="mdi mdi-chart-bar"></i></span>
                         <span class="menu-title">Estadísticas</span>
                     </a>
