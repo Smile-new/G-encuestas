@@ -343,7 +343,10 @@
                                                 <!-- Botones de PDF -->
                                                 <button type="button" class="btn btn-primary" id="download_pdf_btn" style="display: none;">Descargar PDF</button>
                                                 <!-- BOTÓN DE EXCEL -->
-                                                <button type="button" class="btn btn-success ml-2" id="download_excel_btn" style="display: none;">Descargar Excel</button>
+                                                <button type="button" class="btn btn-success ml-2" id="downloadExcelBtn" style="display: none;">
+  Descargar Excel
+</button>
+
                                             </div>
                                         </div>
                                     </form>
@@ -390,49 +393,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // ... (Todo tu código JavaScript existente para los gráficos y filtros) ...
-
-            // --- CÓDIGO NUEVO PARA DESCARGAR EXCEL ---
-            
-            // 1. Referencia al nuevo botón
-            const downloadExcelBtn = document.getElementById('download_excel_btn');
-            
-            // 2. Modifica tu función `generarGraficos` para mostrar/ocultar el botón
-            //    Junto a `downloadPdfBtn.style.display = 'block';` añade:
-            //    downloadExcelBtn.style.display = 'block';
-            //    Y junto a `downloadPdfBtn.style.display = 'none';` añade:
-            //    downloadExcelBtn.style.display = 'none';
-
-            // 3. Añadir el evento de clic
-            downloadExcelBtn.addEventListener('click', function() {
-                const idEncuesta = encuestaSelect.value;
-                const selectedQuestions = Array.from(preguntaCheckboxContainer.querySelectorAll('input[type="checkbox"]:checked'));
-                const idsPreguntas = selectedQuestions.map(cb => cb.value);
-
-                if (!idEncuesta || idsPreguntas.length === 0) {
-                    alert('Por favor, selecciona una encuesta y al menos una pregunta para generar el reporte.');
-                    return;
-                }
-
-                // Construir los parámetros de la URL
-                const params = new URLSearchParams();
-                params.append('id_encuesta', idEncuesta);
-                idsPreguntas.forEach(id => params.append('ids_preguntas[]', id)); // PHP lo lee como array
-
-                if (municipioSelect.value) params.append('id_municipio', municipioSelect.value);
-                if (seccionSelect.value) params.append('id_seccion', seccionSelect.value);
-                if (comunidadSelect.value) params.append('id_comunidad', comunidadSelect.value);
-                
-                // Construir la URL final para la descarga
-                const url = `${baseUrl}/descargarExcel?${params.toString()}`;
-
-                // Iniciar la descarga
-                window.location.href = url;
-            });
-        });
-    </script>
+    
 
     <script>
          // Plugin para ajustar padding inferior dinámicamente según la altura de la leyenda
@@ -461,6 +422,7 @@
         const nextChartBtn = document.getElementById('next_chart_btn');
         const chartCounter = document.getElementById('chart_counter');
         const generateChartsBtn = document.getElementById('generate_charts_btn');
+        const BASE_URL = "<?= base_url() ?>";
 
         // Nuevos elementos para la jerarquía padre
         const estadoSelect = document.getElementById('estado_select');
@@ -796,6 +758,7 @@
             }
             chartNavigationContainer.style.display = 'none';
             downloadPdfBtn.style.display = 'none';
+            downloadExcelBtn.style.display = 'none';
             if (!idEncuesta || selectedQuestions.length === 0) {
                 noDataMessage.style.display = 'block';
                 noDataMessage.textContent = "Selecciona una encuesta y al menos una pregunta para ver los resultados.";
@@ -814,6 +777,7 @@
                 }
                 actualizarControlesNavegacion();
                 downloadPdfBtn.style.display = 'block';
+                downloadExcelBtn.style.display = 'block'; 
             } else {
                 noDataMessage.style.display = 'block';
                 noDataMessage.textContent = "No hay datos de respuestas para las preguntas seleccionadas.";
@@ -841,6 +805,8 @@
                 actualizarControlesNavegacion();
             }
         }
+
+        
 
         async function generarPDF() {
     const { jsPDF } = window.jspdf;
@@ -1045,12 +1011,42 @@
     doc.save("reporte-encuesta.pdf");
 }
 
+
+
         // Eventos de botones
         generateChartsBtn.addEventListener('click', generarGraficos);
         prevChartBtn.addEventListener('click', mostrarGraficoAnterior);
         nextChartBtn.addEventListener('click', mostrarSiguienteGrafico);
         downloadPdfBtn.addEventListener('click', generarPDF);
+
+        downloadExcelBtn.addEventListener('click', function() {
+                const idEncuesta = encuestaSelect.value;
+                const idsPreguntas = Array.from(preguntaCheckboxContainer.querySelectorAll('input:checked')).map(cb => cb.value);
+
+                if (!idEncuesta || idsPreguntas.length === 0) {
+                    showTemporaryAlert('Por favor, selecciona una encuesta y al menos una pregunta para generar el reporte de Excel.');
+                    return;
+                }
+                
+                const params = new URLSearchParams();
+                params.append('id_encuesta', idEncuesta);
+                params.append('ids_preguntas', idsPreguntas.join(',')); // Unimos el array en un string
+                
+                if (municipioSelect.value) params.append('id_municipio', municipioSelect.value);
+                if (seccionSelect.value) params.append('id_seccion', seccionSelect.value);
+                if (comunidadSelect.value) params.append('id_comunidad', comunidadSelect.value);
+                
+                // Construimos la URL usando BASE_URL y la ruta definida en routes.php
+                const urlFinal = `${BASE_URL}/estadisticas/descargarExcel?${params.toString()}`;
+                
+                // Redirigimos a la nueva URL para iniciar la descarga
+                window.location.href = urlFinal;
+            });
+
     });
+
+   
+
 </script>
 </body>
 </html>
