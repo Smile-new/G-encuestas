@@ -96,6 +96,8 @@ $routes->get('estadistica/getSecciones/(:num)', 'EstadisticasController::getSecc
 $routes->get('estadistica/getComunidades/(:num)', 'EstadisticasController::getComunidades/$1');
 $routes->get('estadistica/getRespuestas', 'EstadisticasController::getRespuestas');
 $routes->get('estadistica/getOpcionesPregunta/(:num)', 'EstadisticasController::getOpcionesPregunta/$1');
+$routes->get('estadisticas/descargarExcel', 'EstadisticasController::descargarExcel');
+
 
 
 
