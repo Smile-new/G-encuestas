@@ -51,6 +51,18 @@
 .logout_sidebar a:hover {
     background-color: #d32f2f;
 }
+
+/* Campos NO editables */
+input[readonly] {
+    background-color: #f0f0f0;  /* gris claro */
+    cursor: not-allowed;
+}
+
+/* Campos editables */
+input:not([readonly]) {
+    border: 2px solid #4CAF50; /* borde verde */
+    background-color: #eaffea; /* verde muy suave de fondo */
+}
   </style>
 </head>
 
@@ -144,7 +156,7 @@ if ($userData) {
         <div class="menu">
     <ul class="list">
         <li class="header">NAVEGACIÓN PRINCIPAL</li>
-        <li class="active">
+        <li>
             <a href="<?= site_url('home') ?>">
                 <i class="material-icons">home</i>
                 <span>Inicio</span>
@@ -156,7 +168,7 @@ if ($userData) {
                 <span>Formularios</span>
             </a>
         </li>
-        <li>
+        <li class="active">
             <a href="<?= site_url('perfil') ?>">
                 <i class="material-icons">account_circle</i>
                 <span>Perfil</span>
@@ -211,33 +223,38 @@ if ($userData) {
                                 <label>Nombre de Usuario</label>
                                 <input type="text" name="usuario" value="<?= esc($userData['usuario']) ?>" class="form-control" readonly>
                             </div>
+
+                            <div class="form-group">
+                                <label>Rol</label>
+                                <input type="text" name="usuario" value="<?= $rolTexto ?>" class="form-control" readonly>
+                            </div>
                           
                           <div class="form-group">
                               <label>Nombre(s)</label>
                               <input type="text" name="nombre" 
                                      value="<?= esc($userData['nombre']) ?>" 
-                                     class="form-control" readonly>
+                                     class="form-control">
                           </div>
 
                           <div class="form-group">
                               <label>Apellido Paterno</label>
                               <input type="text" name="apellido_paterno" 
                                      value="<?= esc($userData['apellido_paterno']) ?>" 
-                                     class="form-control" readonly>
+                                     class="form-control">
                           </div>
 
                           <div class="form-group">
                               <label>Apellido Materno</label>
                               <input type="text" name="apellido_materno" 
                                      value="<?= esc($userData['apellido_materno']) ?>" 
-                                     class="form-control" readonly>
+                                     class="form-control">
                           </div>
 
                           <div class="form-group">
                               <label>Teléfono</label>
                               <input type="text" name="telefono" 
                                      value="<?= esc($userData['telefono']) ?>" 
-                                     class="form-control" readonly>
+                                     class="form-control">
                           </div>
 
 

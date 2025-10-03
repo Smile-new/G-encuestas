@@ -43,6 +43,7 @@ if ($isLoggedIn && $userData) {
         case 1: $rolTexto = 'Administrador'; break;
         case 2: $rolTexto = 'Operador'; break;
         case 3: $rolTexto = 'Encuestador'; break;
+        case 4: $rolTexto = 'Supervisor'; break;
         default: $rolTexto = 'Miembro'; break;
     }
     if (!empty($userData['foto'])) {
@@ -146,6 +147,23 @@ if ($isLoggedIn && $userData) {
 
       <!-- Datos del usuario -->
       <div class="col-md-8">
+
+      <div class="form-group row">
+          <label for="usuario" class="col-sm-4 col-form-label">Usuario:</label>
+          <div class="col-sm-8">
+            <input type="text" name="usuario" id="usuario" class="form-control" 
+                   value="<?= esc($userData['usuario']) ?>" readonly>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="usuario" class="col-sm-4 col-form-label">rol:</label>
+          <div class="col-sm-8">
+            <input type="text" name="usuario" id="usuario" class="form-control" 
+                   value="<?= $rolTexto ?>" readonly>
+          </div>
+        </div>
+        
         <div class="form-group row">
           <label for="nombre" class="col-sm-4 col-form-label">Nombre:</label>
           <div class="col-sm-8">
@@ -175,14 +193,6 @@ if ($isLoggedIn && $userData) {
           <div class="col-sm-8">
             <input type="tel" name="telefono" id="telefono" class="form-control" 
                    value="<?= esc($userData['telefono']) ?>">
-          </div>
-        </div>
-
-        <div class="form-group row">
-          <label for="usuario" class="col-sm-4 col-form-label">Usuario:</label>
-          <div class="col-sm-8">
-            <input type="text" name="usuario" id="usuario" class="form-control" 
-                   value="<?= esc($userData['usuario']) ?>" required>
           </div>
         </div>
 

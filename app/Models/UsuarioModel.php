@@ -23,4 +23,12 @@ class UsuarioModel extends Model
         'id_rol',
         'creado_por_id' 
     ];
+
+    public function getUsuarioConRol($idUsuario)
+    {
+        return $this->select('usuarios.*, roles.nombre_rol')
+                    ->join('roles', 'roles.id_rol = usuarios.id_rol')
+                    ->where('usuarios.id_usuario', $idUsuario)
+                    ->first();
+    }
 }

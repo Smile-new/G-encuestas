@@ -423,13 +423,13 @@
             <div class="menu">
                 <ul class="list">
                     <li class="header">NAVEGACIÓN PRINCIPAL</li>
-                    <li class="active">
+                    <li>
                         <a href="<?= base_url('home') ?>">
                             <i class="material-icons">home</i>
                             <span>Inicio</span>
                         </a>
                     </li>
-                    <li>
+                    <li class="active">
                         <a href="<?= base_url('formularios') ?>">
                             <i class="material-icons">assignment</i>
                             <span>Formularios</span>

@@ -21,30 +21,38 @@ class Propietario extends BaseController
         $this->usuarioModel = new UsuarioModel();
     }
 
-    private function _prepareUserData(): array
-    {
-        $session = session();
-        $userData = $session->get('usuario');
-        $data = [];
+private function _prepareUserData(): array
+{
+    $session = session();
+    $userData = $session->get('usuario');
+    $data = [];
 
-        $data['isLoggedIn'] = $session->get('isLoggedIn');
-        $data['userData'] = $userData;
-        $data['id_encuestador'] = $userData['id_usuario'] ?? null;
-        $data['nombreCompleto'] = "Invitado";
-        $data['nombreUsuario'] = "invitado";
-        $data['rutaFotoPerfil'] = base_url('recursos_encuestador_images/user.png'); 
+    $data['isLoggedIn'] = $session->get('isLoggedIn');
+    $data['nombreCompleto'] = "Invitado";
+    $data['nombreUsuario'] = "invitado";
+    $data['rutaFotoPerfil'] = base_url(RECURSOS_ENCUESTADOR_IMAGES . '/user.png');
+    $data['rolTexto'] = "Rol desconocido";
 
-        if ($data['isLoggedIn'] && is_array($userData)) {
-            $data['nombreCompleto'] = trim(esc($userData['nombre'] ?? '') . ' ' .
-                esc($userData['apellido_paterno'] ?? '') . ' ' .
-                esc($userData['apellido_materno'] ?? ''));
-            $data['nombreUsuario'] = esc($userData['usuario'] ?? '');
-            if (!empty($userData['foto'])) {
-                $data['rutaFotoPerfil'] = base_url('public/img_user/' . esc($userData['foto']));
+    if ($data['isLoggedIn'] && is_array($userData)) {
+        // Obtener usuario actualizado con JOIN al rol
+        $usuarioConRol = $this->usuarioModel->getUsuarioConRol($userData['id_usuario']);
+
+        if ($usuarioConRol) {
+            $data['userData'] = $usuarioConRol;
+            $data['nombreCompleto'] = trim(esc($usuarioConRol['nombre'] ?? '') . ' ' .
+                esc($usuarioConRol['apellido_paterno'] ?? '') . ' ' .
+                esc($usuarioConRol['apellido_materno'] ?? ''));
+            $data['nombreUsuario'] = esc($usuarioConRol['usuario'] ?? '');
+            $data['rolTexto'] = esc($usuarioConRol['nombre_rol']);
+
+            if (!empty($usuarioConRol['foto'])) {
+                $data['rutaFotoPerfil'] = base_url('public/img_user/' . esc($usuarioConRol['foto']));
             }
         }
-        return $data;
     }
+
+    return $data;
+}
     
     /**
      * [NUEVO INDEX] Muestra la vista principal del panel (Controlador/panel).
@@ -464,8 +472,7 @@ public function actualizarPerfil() {
         'nombre' => 'required|min_length[3]|max_length[50]', 
         'apellido_paterno' => 'required|min_length[3]|max_length[50]', 
         'apellido_materno' => 'permit_empty|max_length[50]', 
-        'telefono' => 'permit_empty|min_length[7]|max_length[15]', 
-        'usuario' => 'required|min_length[4]|max_length[30]', 
+        'telefono' => 'permit_empty|min_length[7]|max_length[15]',
         'foto' => 'permit_empty|is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]', 
     ]; 
     
@@ -478,8 +485,7 @@ public function actualizarPerfil() {
         'nombre' => $this->request->getPost('nombre'), 
         'apellido_paterno' => $this->request->getPost('apellido_paterno'), 
         'apellido_materno' => $this->request->getPost('apellido_materno'), 
-        'telefono' => $this->request->getPost('telefono'), 
-        'usuario' => $this->request->getPost('usuario'), 
+        'telefono' => $this->request->getPost('telefono'),
     ]; 
     
     // ✅ Procesar la foto si fue subida 

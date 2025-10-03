@@ -104,7 +104,8 @@ $routes->get('estadisticas/descargarExcel', 'EstadisticasController::descargarEx
 
 //Administrador
     $routes->get('dashboard', 'Administrador::index'); // Alias para /administrador/dashboard   
-    
+    $routes->get('admin/perfil', 'Administrador::perfil'); // Alias para /administrador/dashboard   
+    $routes->get('admin/actualizar/perfil', 'Administrador::actualizarPerfil'); // Alias para /administrador/dashboard  
 
 
 //Operador

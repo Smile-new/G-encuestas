@@ -20,6 +20,29 @@ class Administrador extends Controller // Asegúrate de que este nombre de clase
         // helper('url');
     }
 
+private function _prepareUserData(): array { 
+    $session = session(); 
+    $userData = $session->get('usuario'); 
+    $data = []; 
+    
+    $data['isLoggedIn'] = $session->get('isLoggedIn'); 
+    $data['userData'] = $userData; 
+    $data['id_encuestador'] = $userData['id_usuario'] ?? null; 
+    $data['nombreCompleto'] = "Invitado"; 
+    $data['nombreUsuario'] = "invitado"; 
+    $data['rutaFotoPerfil'] = base_url(RECURSOS_ENCUESTADOR_IMAGES . '/user.png'); 
+    
+    if ($data['isLoggedIn'] && is_array($userData)) { 
+        $data['nombreCompleto'] = trim(esc($userData['nombre'] ?? '') . ' ' . esc($userData['apellido_paterno'] ?? '') . ' ' . esc($userData['apellido_materno'] ?? '')); 
+        $data['nombreUsuario'] = esc($userData['usuario'] ?? ''); 
+        
+        if (!empty($userData['foto'])) { 
+            $data['rutaFotoPerfil'] = base_url('public/img_user/' . esc($userData['foto'])); 
+        } 
+    } 
+    return $data; 
+}
+
     // Método para la página principal del administrador (dashboard)
     public function index()
     {
@@ -189,6 +212,57 @@ class Administrador extends Controller // Asegúrate de que este nombre de clase
     }
 
     // Método para la visualización de estadísticas (vista estadisticas.php)
+
+    public function perfil()
+    {
+        $data = $this->_prepareUserData();
+        return view('admin/perfil', $data);
+    }
+
+    /** * Actualizar datos del perfil del operador */ 
+public function actualizarPerfil() { 
+    $session = session(); 
+    $user = $session->get('usuario'); 
+    // ✅ Reglas de validación 
+    $rules = [ 
+        'nombre' => 'required|min_length[3]|max_length[50]', 
+        'apellido_paterno' => 'required|min_length[3]|max_length[50]', 
+        'apellido_materno' => 'permit_empty|max_length[50]', 
+        'telefono' => 'permit_empty|min_length[7]|max_length[15]',
+        'foto' => 'permit_empty|is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]', 
+    ]; 
+    
+    if (!$this->validate($rules)) { 
+        return redirect()->back()->withInput()->with('errors', $this->validator->getErrors()); 
+    } 
+    
+    // ✅ Preparar datos a actualizar 
+    $dataUpdate = [ 
+        'nombre' => $this->request->getPost('nombre'), 
+        'apellido_paterno' => $this->request->getPost('apellido_paterno'), 
+        'apellido_materno' => $this->request->getPost('apellido_materno'), 
+        'telefono' => $this->request->getPost('telefono'),
+    ]; 
+    
+    // ✅ Procesar la foto si fue subida 
+    $fotoFile = $this->request->getFile('foto');
+    if ($fotoFile && $fotoFile->isValid() && !$fotoFile->hasMoved()) { 
+        $nombreFoto = time() . '_' . $fotoFile->getName(); 
+        $fotoFile->move(FCPATH . 'public/img_user', $nombreFoto); 
+        $dataUpdate['foto'] = $nombreFoto; 
+        
+        // Actualizar la sesión con nueva foto 
+        $user['foto'] = $nombreFoto; } 
+        
+        // ✅ Actualizar base de datos 
+        $this->usuarioModel->update($user['id_usuario'], $dataUpdate); 
+        
+        // ✅ Refrescar sesión con los datos nuevos 
+        $user = array_merge($user, $dataUpdate); 
+        $session->set('usuario', $user); 
+        $session->setFlashdata('success', 'Perfil actualizado correctamente'); 
+        return redirect()->back(); 
+    }
    
 
     // Aquí puedes añadir otros métodos como `tablas()`, `users()`, `crear_encuesta()` etc.

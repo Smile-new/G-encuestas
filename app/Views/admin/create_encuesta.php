@@ -123,6 +123,14 @@
                         <span class="menu-title">Usuarios</span>
                     </a>
                 </li>
+                <li class="nav-item menu-items">
+            <a class="nav-link" href="<?= base_url('admin/perfil') ?>">
+              <span class="menu-icon">
+                <i class="mdi mdi-account-circle"></i>
+              </span>
+              <span class="menu-title">Perfil</span>
+            </a>
+          </li>
             </ul>
         </nav>
         <div class="container-fluid page-body-wrapper">

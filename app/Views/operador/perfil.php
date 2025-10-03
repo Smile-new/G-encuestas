@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pluto - Editar Encuestador</title>
+    <title>Vota y Opina - Perfil</title>
     <link rel="icon" href="<?= base_url('recursos_operador/images/fevicon.png') ?>" type="image/png" />
     <link rel="stylesheet" href="<?= base_url('recursos_operador/css/bootstrap.min.css') ?>" />
     <link rel="stylesheet" href="<?= base_url('recursos_operador/css/style.css') ?>" />
@@ -62,7 +62,7 @@ if ($isLoggedIn && $userData) {
         default: $rolTexto = 'Miembro'; break;
     }
     if (!empty($userData['foto'])) {
-        $rutaFotoPerfil = base_url('img_user/' . $userData['foto']);
+        $rutaFotoPerfil = base_url('public/img_user/' . $userData['foto']);
     }
 }
 ?>
@@ -168,36 +168,41 @@ if ($isLoggedIn && $userData) {
                                                 <label for="usuario">Usuario</label>
                                                 <input type="text" class="form-control" value="<?= $userData['usuario'] ?>" readonly>
                                             </div>
+
+                                            <div class="form-group">
+                                                <label for="usuario">Rol</label>
+                                                <input type="text" class="form-control" value="<?= $rolTexto ?>" readonly>
+                                            </div>
                                           
                                           <div class="form-group">
                                               <label for="nombre">Nombre</label>
                                               <input type="text" class="form-control" name="nombre" 
-                                                     value="<?= esc($userData['nombre']) ?>" readonly>
+                                                     value="<?= esc($userData['nombre']) ?>">
                                           </div>
 
                                           <div class="form-group">
                                               <label for="apellido_paterno">Apellido Paterno</label>
                                               <input type="text" class="form-control" name="apellido_paterno" 
-                                                     value="<?= esc($userData['apellido_paterno']) ?>" readonly>
+                                                     value="<?= esc($userData['apellido_paterno']) ?>">
                                           </div>
 
                                           <div class="form-group">
                                               <label for="apellido_materno">Apellido Materno</label>
                                               <input type="text" class="form-control" name="apellido_materno" 
-                                                     value="<?= esc($userData['apellido_materno']) ?>" readonly>
+                                                     value="<?= esc($userData['apellido_materno']) ?>">
                                           </div>
 
                                           <div class="form-group">
                                               <label for="telefono">Teléfono</label>
                                               <input type="text" class="form-control" name="telefono" 
-                                                     value="<?= esc($userData['telefono']) ?>" readonly>
+                                                     value="<?= esc($userData['telefono']) ?>">
                                           </div>
 
 
                                             <div class="form-group">
                                                 <label for="foto">Foto de Perfil Actual</label><br>
                                                 <?php if(!empty($userData['foto'])): ?>
-                                                    <img src="<?= base_url('img_user/' . $userData['foto']) ?>" 
+                                                    <img src="<?= base_url('public/img_user/' . $userData['foto']) ?>" 
                                                         alt="Foto actual" class="img-responsive rounded-circle mb-2" 
                                                         style="width: 100px; height: 100px; object-fit: cover;">
                                                 <?php else: ?>
