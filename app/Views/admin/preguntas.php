@@ -37,7 +37,7 @@ if ($isLoggedIn && is_array($userData)) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Corona Admin - <?= esc($title ?? 'Gestión de Preguntas por Encuesta') ?></title>
+    <title>Vota y Opina - <?= esc($title ?? 'Gestión de Preguntas por Encuesta') ?></title>
     
     <!-- Enlaces a recursos CSS de la plantilla original -->
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/mdi/css/materialdesignicons.min.css') ?>">

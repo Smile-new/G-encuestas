@@ -33,7 +33,7 @@ if ($isLoggedIn && is_array($userData)) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Corona Admin - Crear Usuario</title>
+    <title>Vota y Opina - Crear Usuario</title>
     <!-- CSS de la plantilla -->
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/mdi/css/materialdesignicons.min.css') ?>">
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/css/vendor.bundle.base.css') ?>">

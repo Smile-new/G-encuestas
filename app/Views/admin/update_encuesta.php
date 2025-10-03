@@ -38,7 +38,7 @@ if ($isLoggedIn && is_array($userData)) {
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Corona Admin - Actualizar Encuesta</title>
+    <title>Vota y Opina - Actualizar Encuesta</title>
     <!-- Tus estilos CSS aquí -->
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/mdi/css/materialdesignicons.min.css') ?>">
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/css/vendor.bundle.base.css') ?>">

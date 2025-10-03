@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Corona Admin - Dashboard</title>
+    <title>Vota y Opina - Dashboard</title>
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/mdi/css/materialdesignicons.min.css') ?>">
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/css/vendor.bundle.base.css') ?>">
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/jvectormap/jquery-jvectormap.css') ?>">

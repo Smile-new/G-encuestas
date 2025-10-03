@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="<?= base_url('recursos_admin/vendors/mdi/css/materialdesignicons.min.css') ?>">
     <link rel="stylesheet" href="<?= base_url('recursos_admin/vendors/css/vendor.bundle.base.css') ?>">
     <link rel="stylesheet" href="<?= base_url('recursos_admin/css/style.css') ?>">
-    <link rel="shortcut icon" href="<?= base_url('recursos_admin/images/favicon.png') ?>" />
+    
 
     <style>
         label {
