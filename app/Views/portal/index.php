@@ -7,7 +7,7 @@
     <meta name="keywords" content="encuestas, censos, vota, opina, estudios de opinión, análisis electoral, investigación social, intención de voto, datos confiables">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Inicio</title>
+    <title>Vota y Opina - Encuestas y Censos Confiables</title>
 
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&display=swap" rel="stylesheet">
