@@ -331,8 +331,11 @@
                                             <div class="form-group col-md-3 d-flex align-items-end">
                                                 <button type="button" class="btn btn-success" id="generate_charts_btn" disabled>Generar Gráficos</button>
                                             </div>
-                                            <div class="form-group col-md-3 d-flex align-items-end">
+                                            <div class="form-group col-md-6 d-flex align-items-end">
+                                                <!-- Botones de PDF -->
                                                 <button type="button" class="btn btn-primary" id="download_pdf_btn" style="display: none;">Descargar PDF</button>
+                                                <!-- BOTÓN DE EXCEL -->
+                                                <button type="button" class="btn btn-success ml-2" id="download_excel_btn" style="display: none;">Descargar Excel</button>
                                             </div>
                                         </div>
                                     </form>
@@ -377,6 +380,51 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ... (Todo tu código JavaScript existente para los gráficos y filtros) ...
+
+            // --- CÓDIGO NUEVO PARA DESCARGAR EXCEL ---
+            
+            // 1. Referencia al nuevo botón
+            const downloadExcelBtn = document.getElementById('download_excel_btn');
+            
+            // 2. Modifica tu función `generarGraficos` para mostrar/ocultar el botón
+            //    Junto a `downloadPdfBtn.style.display = 'block';` añade:
+            //    downloadExcelBtn.style.display = 'block';
+            //    Y junto a `downloadPdfBtn.style.display = 'none';` añade:
+            //    downloadExcelBtn.style.display = 'none';
+
+            // 3. Añadir el evento de clic
+            downloadExcelBtn.addEventListener('click', function() {
+                const idEncuesta = encuestaSelect.value;
+                const selectedQuestions = Array.from(preguntaCheckboxContainer.querySelectorAll('input[type="checkbox"]:checked'));
+                const idsPreguntas = selectedQuestions.map(cb => cb.value);
+
+                if (!idEncuesta || idsPreguntas.length === 0) {
+                    alert('Por favor, selecciona una encuesta y al menos una pregunta para generar el reporte.');
+                    return;
+                }
+
+                // Construir los parámetros de la URL
+                const params = new URLSearchParams();
+                params.append('id_encuesta', idEncuesta);
+                idsPreguntas.forEach(id => params.append('ids_preguntas[]', id)); // PHP lo lee como array
+
+                if (municipioSelect.value) params.append('id_municipio', municipioSelect.value);
+                if (seccionSelect.value) params.append('id_seccion', seccionSelect.value);
+                if (comunidadSelect.value) params.append('id_comunidad', comunidadSelect.value);
+                
+                // Construir la URL final para la descarga
+                const url = `${baseUrl}/descargarExcel?${params.toString()}`;
+
+                // Iniciar la descarga
+                window.location.href = url;
+            });
+        });
+    </script>
 
     <script>
          // Plugin para ajustar padding inferior dinámicamente según la altura de la leyenda
