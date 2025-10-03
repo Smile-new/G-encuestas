@@ -26,9 +26,9 @@ class Administrador extends Controller // Asegúrate de que este nombre de clase
         $session = session(); // Obtener la instancia de la sesión
 
         // Validar si el usuario está logueado y es administrador
-        // Asumo que id_rol = 4 es el rol de Administrador.
+        // Asumo que id_rol = 1 es el rol de Administrador.
         // Asegúrate de que tu lógica de sesión esté guardando el 'id_rol' correctamente.
-        if (!$session->get('isLoggedIn') || ($session->get('usuario')['id_rol'] ?? null) != 4) {
+        if (!$session->get('isLoggedIn') || ($session->get('usuario')['id_rol'] ?? null) != 1) {
             // Si no está logueado o no es administrador, redirigir a la página de login
             return redirect()->to(base_url('login'))->with('error', 'Acceso no autorizado. Por favor, inicia sesión como administrador.');
         }
