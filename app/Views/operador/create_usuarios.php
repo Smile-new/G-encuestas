@@ -5,7 +5,7 @@ $isLoggedIn = $session->get('isLoggedIn');
 $userData = $session->get('usuario');
 $nombreCompleto = "Invitado";
 $rolTexto = "Rol Desconocido";
-$rutaFotoPerfil = base_url(RECURSOS_OPERADOR_IMAGES . '/layout_img/user_img.jpg');
+$rutaFotoPerfil = base_url('recursos_operador/images/layout_img/user_img.jpg'); // Ruta por defecto
 
 if ($isLoggedIn && is_array($userData)) {
     $nombreCompleto = esc($userData['nombre']) . ' ' . esc($userData['apellido_paterno']) . ' ' . esc($userData['apellido_materno']);
@@ -28,17 +28,16 @@ if ($isLoggedIn && is_array($userData)) {
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>Vota y Opina - Crear Encuestador</title>
-      <link rel="icon" href="<?= base_url(RECURSOS_OPERADOR_IMAGES . '/fevicon.png') ?>" type="image/png" />
-      <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_CSS . '/bootstrap.min.css') ?>" />
-      <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_CSS . '/style.css') ?>" />
-      <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_CSS . '/responsive.css') ?>" />
-      <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_CSS . '/colors.css') ?>" />
-      <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_CSS . '/bootstrap-select.css') ?>" />
-      <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_CSS . '/perfect-scrollbar.css') ?>" />
-      <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_CSS . '/custom.css') ?>" />
-      <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_JS . '/semantic.min.css') ?>" />
-      <link rel="stylesheet" href="<?= base_url(RECURSOS_OPERADOR_CSS . '/jquery.fancybox.css') ?>" />
-        <style>
+      <link rel="icon" href="<?= base_url('recursos_operador/images/fevicon.png') ?>" type="image/png" />
+      <link rel="stylesheet" href="<?= base_url('recursos_operador/css/bootstrap.min.css') ?>" />
+      <link rel="stylesheet" href="<?= base_url('recursos_operador/css/style.css') ?>" />
+      <link rel="stylesheet" href="<?= base_url('recursos_operador/css/responsive.css') ?>" />
+      <link rel="stylesheet" href="<?= base_url('recursos_operador/css/colors.css') ?>" />
+      <link rel="stylesheet" href="<?= base_url('recursos_operador/css/bootstrap-select.css') ?>" />
+      <link rel="stylesheet" href="<?= base_url('recursos_operador/css/perfect-scrollbar.css') ?>" />
+      <link rel="stylesheet" href="<?= base_url('recursos_operador/css/custom.css') ?>" />
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+      <style>
        .logout_sidebar {
     position: absolute;
     bottom: 20px; /* distancia desde abajo */
@@ -72,17 +71,20 @@ if ($isLoggedIn && is_array($userData)) {
                <div class="sidebar_blog_1">
                   <div class="sidebar-header">
                      <div class="logo_section">
-                        <a href="<?= base_url('operador/dashboard') ?>"><img class="logo_icon img-responsive" src="<?= base_url(RECURSOS_OPERADOR_IMAGES . '/logo/logo_icon.png') ?>" alt="#" /></a>
+                        <a href="<?= base_url('operador/dashboard') ?>"><img class="logo_icon img-responsive" src="<?= base_url(RECURSOS_OPERADOR_IMAGES . '/logo/logo_icon.png') ?>" alt="Logo" /></a>
                      </div>
                   </div>
                   <div class="sidebar_user_info">
                      <div class="icon_setting"></div>
                      <div class="user_profle_side">
                         <div class="user_img">
+                           <!-- Foto de perfil dinámica en el sidebar -->
                            <img class="img-responsive" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil" />
                         </div>
                         <div class="user_info">
+                           <!-- Nombre completo dinámico en el sidebar -->
                            <h6><?= $nombreCompleto ?></h6>
+                           <!-- Rol dinámico en el sidebar -->
                            <p><span class="online_animation"></span> <?= $rolTexto ?></p>
                         </div>
                      </div>
@@ -92,22 +94,22 @@ if ($isLoggedIn && is_array($userData)) {
                   <h4>General</h4>
                   <ul class="list-unstyled components">
                         <li class="active">
-                            <a href="<?= base_url('operador/dashboard') ?>"><i class="fa fa-dashboard yellow_color"></i> <span>Home</span></a>
+                            <a href="<?= base_url('operador/dashboard') ?>"><i></i> <span>Home</span></a>
                         </li>
-                        <li><a href="<?= base_url('operador_user') ?>"><i class="fa fa-table purple_color2"></i> <span>Encuestadores</span></a></li>
-                        <li>
-                              <a href="<?= base_url('operador/perfil') ?>">
-                                 <i class="fa fa-user purple_color2"></i> <span>Perfil</span>
-                              </a>
-                        </li>
-                     </ul>
-                  </div>
-                  <div class="logout_sidebar">
-                     <a href="<?= base_url('logout') ?>" class="btn_logout">
-                        <i class="fa fa-sign-out purple_color2"></i> Cerrar Sesión
-                     </a>
-                  </div>
-            </nav>
+                        <li><a href="<?= base_url('operador_user') ?>"><i></i> <span>Encuestadores</span></a></li>
+                    <li>
+                        <a href="<?= base_url('operador/perfil') ?>">
+                            <i></i> <span>Perfil</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="logout_sidebar">
+                <a href="<?= base_url('logout') ?>" class="btn_logout">
+                    <i></i> Cerrar Sesión
+                </a>
+            </div>
+        </nav>
             <div id="content">
                <div class="topbar">
                   <nav class="navbar navbar-expand-lg navbar-light">
@@ -117,9 +119,10 @@ if ($isLoggedIn && is_array($userData)) {
                            <div class="icon_info">
                               <ul class="user_profile_dd">
                                  <li>
+                                    <!-- Foto de perfil dinámica en la navbar -->
                                     <a class="dropdown-toggle" data-toggle="dropdown"><img class="img-responsive rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil" /><span class="name_user"><?= $nombreCompleto ?></span></a>
                                     <div class="dropdown-menu">
-                                       <a class="dropdown-item" href="<?= base_url('logout') ?>"><span>Log Out</span> <i class="fa fa-sign-out"></i></a>
+                                       <a class="dropdown-item" href="<?= base_url('logout') ?>"><span>Log Out</span> <i></i></a>
                                     </div>
                                  </li>
                               </ul>
@@ -145,56 +148,65 @@ if ($isLoggedIn && is_array($userData)) {
                                  <div class="padding_infor_info">
                                     <?php if (session()->getFlashdata('errors')): ?>
                                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                            <ul>
-                                                <?php foreach (session()->getFlashdata('errors') as $error): ?>
-                                                    <li><?= esc($error) ?></li>
-                                                <?php endforeach; ?>
-                                            </ul>
-                                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
+                                           <ul>
+                                              <?php foreach (session()->getFlashdata('errors') as $error): ?>
+                                                  <li><?= esc($error) ?></li>
+                                              <?php endforeach; ?>
+                                           </ul>
+                                           <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                               <span aria-hidden="true">&times;</span>
+                                           </button>
                                         </div>
                                     <?php endif; ?>
                                     <form action="<?= base_url('operador_user/store') ?>" method="post" enctype="multipart/form-data">
-                                        <?= csrf_field() ?>
-                                        <div class="form-group">
-                                            <label for="nombre">Nombre</label>
-                                            <input type="text" class="form-control" name="nombre" id="nombre" value="<?= old('nombre') ?>" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="apellido_paterno">Apellido Paterno</label>
-                                            <input type="text" class="form-control" name="apellido_paterno" id="apellido_paterno" value="<?= old('apellido_paterno') ?>" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="apellido_materno">Apellido Materno</label>
-                                            <input type="text" class="form-control" name="apellido_materno" id="apellido_materno" value="<?= old('apellido_materno') ?>">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="telefono">Teléfono</label>
-                                            <input type="text" class="form-control" name="telefono" id="telefono" value="<?= old('telefono') ?>">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="usuario">Usuario</label>
-                                            <input type="text" class="form-control" name="usuario" id="usuario" value="<?= old('usuario') ?>" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="contrasena">Contraseña</label>
-                                            <div class="input-group">
-                                                <input type="text" class="form-control" name="contrasena" id="contrasena" value="<?= old('contrasena') ?>" required>
-                                                <div class="input-group-append">
-                                                    <button class="btn btn-outline-secondary" type="button" id="generate-password">Generar</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="foto">Foto de Perfil</label>
-                                            <input type="file" class="form-control-file" name="foto" id="foto" accept="image/*">
-                                            <img id="preview-foto" src="#" alt="Vista previa de la foto" class="img-responsive rounded-circle mt-2" style="width: 100px; height: 100px; object-fit: cover; display: none;">
-                                        </div>
-                                        <div class="text-right">
-                                            <a href="<?= base_url('operador_user') ?>" class="btn btn-secondary">Cancelar</a>
-                                            <button type="submit" class="btn btn-primary">Guardar Encuestador</button>
-                                        </div>
+                                       <?= csrf_field() ?>
+                                       <div class="form-group">
+                                          <label for="nombre">Nombre</label>
+                                          <input type="text" class="form-control" name="nombre" id="nombre" value="<?= old('nombre') ?>" required>
+                                       </div>
+                                       <div class="form-group">
+                                          <label for="apellido_paterno">Apellido Paterno</label>
+                                          <input type="text" class="form-control" name="apellido_paterno" id="apellido_paterno" value="<?= old('apellido_paterno') ?>" required>
+                                       </div>
+                                       <div class="form-group">
+                                          <label for="apellido_materno">Apellido Materno</label>
+                                          <input type="text" class="form-control" name="apellido_materno" id="apellido_materno" value="<?= old('apellido_materno') ?>">
+                                       </div>
+                                       <div class="form-group">
+                                          <label for="telefono">Teléfono</label>
+                                          <input type="text" class="form-control" name="telefono" id="telefono" value="<?= old('telefono') ?>">
+                                       </div>
+                                      
+                                       <!-- INICIO DE CAMPOS DE USUARIO Y CONTRASEÑA -->
+                                       <div class="form-group">
+                                          <label for="usuario">Usuario</label>
+                                          <div class="input-group">
+                                             <input type="text" class="form-control" name="usuario" id="usuario" value="<?= old('usuario') ?>" required>
+                                             <div class="input-group-append">
+                                                <button class="btn btn-outline-secondary" type="button" id="generate-username">Generar</button>
+                                             </div>
+                                          </div>
+                                       </div>
+                                       <div class="form-group">
+                                          <label for="contrasena">Contraseña</label>
+                                          <div class="input-group">
+                                             <input type="text" class="form-control" name="contrasena" id="contrasena" value="<?= old('contrasena') ?>" required>
+                                             <div class="input-group-append">
+                                                <button class="btn btn-outline-secondary" type="button" id="generate-password">Generar</button>
+                                             </div>
+                                          </div>
+                                       </div>
+                                       <!-- FIN DE CAMPOS DE USUARIO Y CONTRASEÑA -->
+
+                                       <div class="form-group">
+                                          <label for="foto">Foto de Perfil</label>
+                                          <input type="file" class="form-control-file" name="foto" id="foto" accept="image/*">
+                                          <img id="preview-foto" src="#" alt="Vista previa de la foto" class="img-responsive rounded-circle mt-2" style="width: 100px; height: 100px; object-fit: cover; display: none;">
+                                       </div>
+                                       <div class="text-right">
+                                          <a href="<?= base_url('operador_user') ?>" class="btn btn-secondary">Cancelar</a>
+                                          <button type="submit" class="btn btn-primary">Guardar Encuestador</button>
+                                       </div>
                                     </form>
                                  </div>
                               </div>
@@ -214,33 +226,60 @@ if ($isLoggedIn && is_array($userData)) {
             </div>
          </div>
       </div>
-      <script src="<?= base_url(RECURSOS_OPERADOR_JS . '/jquery.min.js') ?>"></script>
-      <script src="<?= base_url(RECURSOS_OPERADOR_JS . '/popper.min.js') ?>"></script>
-      <script src="<?= base_url(RECURSOS_OPERADOR_JS . '/bootstrap.min.js') ?>"></script>
+      <script src="<?= base_url('recursos_operador/js/jquery.min.js') ?>"></script>
+      <script src="<?= base_url('recursos_operador/js/popper.min.js') ?>"></script>
+      <script src="<?= base_url('recursos_operador/js/bootstrap.min.js') ?>"></script>
       <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const generateUsernameBtn = document.getElementById('generate-username');
+            const usernameInput = document.getElementById('usuario');
             const generatePasswordBtn = document.getElementById('generate-password');
             const passwordInput = document.getElementById('contrasena');
             const fotoInput = document.getElementById('foto');
             const previewFoto = document.getElementById('preview-foto');
 
-            function generateRandomPassword(length = 10) {
-                const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
-                let password = '';
+            /**
+             * Genera una cadena de texto aleatoria.
+             * @param {number} length - La longitud de la cadena a generar.
+             * @param {string} chars - El conjunto de caracteres a utilizar.
+             * @returns {string}
+             */
+            function generateRandomString(length, chars) {
+                let result = '';
                 for (let i = 0; i < length; i++) {
-                    password += chars.charAt(Math.floor(Math.random() * chars.length));
+                    result += chars.charAt(Math.floor(Math.random() * chars.length));
                 }
-                return password;
+                return result;
             }
 
-            generatePasswordBtn.addEventListener('click', function() {
-                passwordInput.type = 'text'; // Mostrar la contraseña generada
-                passwordInput.value = generateRandomPassword();
-            });
-            
-            // Generar una contraseña al cargar la página
-            passwordInput.value = generateRandomPassword();
+            // Función para generar y establecer el nombre de usuario
+            function generateUsername() {
+                const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+                // El prefijo es 'votayopina' (10 chars), se necesitan 5 más para un total de 15
+                const randomPart = generateRandomString(5, chars);
+                usernameInput.value = 'votayopina' + randomPart;
+            }
 
+            // Función para generar y establecer la contraseña
+            function generatePassword() {
+                const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|';
+                passwordInput.type = 'text'; // Asegurarse de que sea visible
+                passwordInput.value = generateRandomString(15, chars);
+            }
+            
+            // Event listeners para los botones de generar
+            generateUsernameBtn.addEventListener('click', generateUsername);
+            generatePasswordBtn.addEventListener('click', generatePassword);
+            
+            // Generar un usuario y contraseña al cargar la página si los campos están vacíos
+            if (!usernameInput.value) {
+                generateUsername();
+            }
+            if (!passwordInput.value) {
+                generatePassword();
+            }
+
+            // Lógica para previsualizar la imagen (sin cambios)
             fotoInput.addEventListener('change', function(event) {
                 const [file] = event.target.files;
                 if (file) {
@@ -248,8 +287,8 @@ if ($isLoggedIn && is_array($userData)) {
                     previewFoto.style.display = 'block';
                 }
             });
-
         });
       </script>
    </body>
 </html>
+

@@ -30,6 +30,7 @@ class Operador_User extends BaseController
         if ($rolEncuestador) {
             $this->idRolEncuestador = $rolEncuestador['id_rol'];
         } else {
+            // Manejo de error si el rol no existe, para evitar fallos.
             $this->idRolEncuestador = null; 
         }
     }
@@ -59,11 +60,11 @@ class Operador_User extends BaseController
         
         if (!empty($usuariosEncuestadores)) {
             $conteoRespuestas = $this->respuestaModel
-                                    ->select('respuestas.id_usuario, COUNT(respuestas.id_respuesta) as respuestas_contestadas')
-                                    ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta')
-                                    ->where('encuestas.activa', 1)
-                                    ->groupBy('respuestas.id_usuario')
-                                    ->findAll();
+                                     ->select('respuestas.id_usuario, COUNT(respuestas.id_respuesta) as respuestas_contestadas')
+                                     ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta')
+                                     ->where('encuestas.activa', 1)
+                                     ->groupBy('respuestas.id_usuario')
+                                     ->findAll();
             
             $conteoMap = array_column($conteoRespuestas, 'respuestas_contestadas', 'id_usuario');
             
@@ -88,15 +89,17 @@ class Operador_User extends BaseController
     
     /**
      * Procesa la creación de un nuevo usuario con rol "encuestador".
-     * VERSIÓN CORREGIDA: Usa los datos del formulario.
+     * AHORA USA LOS DATOS DEL FORMULARIO.
      */
     public function store()
     {
+        // --- INICIO DE LA MODIFICACIÓN ---
+        // Se restauran y ajustan las reglas de validación para usuario y contraseña.
         $rules = [
             'nombre'           => 'required|alpha_space|min_length[3]|max_length[100]',
             'apellido_paterno' => 'required|alpha_space|min_length[3]|max_length[100]',
-            'usuario'          => 'required|alpha_numeric|min_length[5]|max_length[100]|is_unique[usuarios.usuario]',
-            'contrasena'       => 'required|min_length[8]',
+            'usuario'          => 'required|min_length[15]|max_length[100]|is_unique[usuarios.usuario]',
+            'contrasena'       => 'required|min_length[15]',
             'foto'             => 'if_exist|uploaded[foto]|max_size[foto,1024]|is_image[foto]|mime_in[foto,image/jpg,image/jpeg,image/png,image/gif]',
         ];
         
@@ -111,10 +114,9 @@ class Operador_User extends BaseController
             $fotoFile->move(FCPATH . 'public/img_user', $fotoFileName);
         }
 
-        // --- INICIO DE LA MODIFICACIÓN ---
         // Se obtienen el usuario y contraseña directamente del formulario
         $usuario = $this->request->getPost('usuario');
-        $contrasena = $this->request->getPost('contrasena');
+        $contrasenaPlana = $this->request->getPost('contrasena');
         // --- FIN DE LA MODIFICACIÓN ---
 
         $data = [
@@ -126,14 +128,14 @@ class Operador_User extends BaseController
             'id_rol'           => $this->idRolEncuestador,
             'creado_por_id'    => session()->get('usuario')['id_usuario'],
             'usuario'          => $usuario, // Se guarda el usuario del formulario
-            'contrasena'       => password_hash($contrasena, PASSWORD_BCRYPT), // Se guarda la contraseña del formulario
+            'contrasena'       => password_hash($contrasenaPlana, PASSWORD_BCRYPT), // Se guarda la contraseña del formulario
         ];
 
         if ($this->usuarioModel->insert($data)) {
             return redirect()->to(base_url('operador_user'))
                              ->with('message', 'Encuestador creado correctamente.')
                              ->with('usuario_creado', $usuario)
-                             ->with('contrasena_creada', $contrasena);
+                             ->with('contrasena_creada', $contrasenaPlana);
         } else {
             return redirect()->back()->withInput()->with('error', 'No se pudo crear el encuestador.');
         }
@@ -175,7 +177,7 @@ class Operador_User extends BaseController
         ];
 
         if ($this->request->getPost('contrasena')) {
-            $rules['contrasena'] = 'min_length[8]'; // No es 'required' en la actualización
+            $rules['contrasena'] = 'min_length[8]';
         }
         
         if ($this->request->getFile('foto') && $this->request->getFile('foto')->isValid()) {
@@ -245,9 +247,14 @@ class Operador_User extends BaseController
         return $this->response->setJSON($ubicaciones);
     }
 
-    private function generateRandomPassword($length = 10)
+    /**
+     * Genera una cadena de texto aleatoria con la longitud especificada.
+     * @param int $length La longitud deseada de la cadena.
+     * @return string La cadena aleatoria generada.
+     */
+    private function generateRandomString($length = 15)
     {
-        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?';
+        $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|';
         $password = '';
         $max = strlen($chars) - 1;
         for ($i = 0; $i < $length; $i++) {
@@ -256,3 +263,4 @@ class Operador_User extends BaseController
         return $password;
     }
 }
+
