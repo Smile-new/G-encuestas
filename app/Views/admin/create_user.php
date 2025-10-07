@@ -223,9 +223,12 @@ if ($isLoggedIn && is_array($userData)) {
                                                 <option value="">Selecciona un Rol</option>
                                                 <?php if (!empty($roles) && is_array($roles)): ?>
                                                     <?php foreach ($roles as $rol): ?>
-                                                        <option value="<?= esc($rol['id_rol']) ?>" <?= old('id_rol') == $rol['id_rol'] ? 'selected' : '' ?>>
-                                                            <?= esc($rol['nombre_rol']) ?>
-                                                        </option>
+                                                        <?php // Condición para excluir el rol de 'Administrador'
+                                                        if (strtolower($rol['nombre_rol']) !== 'administrador'): ?>
+                                                            <option value="<?= esc($rol['id_rol']) ?>" <?= old('id_rol') == $rol['id_rol'] ? 'selected' : '' ?>>
+                                                                <?= esc($rol['nombre_rol']) ?>
+                                                            </option>
+                                                        <?php endif; // Fin de la condición ?>
                                                     <?php endforeach; ?>
                                                 <?php endif; ?>
                                             </select>

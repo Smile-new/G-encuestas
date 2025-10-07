@@ -261,8 +261,8 @@ if ($isLoggedIn && is_array($userData)) {
                                                                             <i class="fa fa-pencil"></i>Editar
                                                                         </a>
                                                                         <a href="<?= base_url('operador_user/verMapa/' . esc($usuario['id_usuario'])) ?>" class="btn btn-monitoreo" title="Monitoreo en tiempo real">
-    <i class="fa fa-map-marker"></i> Ver Mapa
-</a>
+                                                                            <i class="fa fa-map-marker"></i> Ver Mapa
+                                                                        </a>
                                                                     </td>
                                                                 </tr>
                                                             <?php endforeach; ?>

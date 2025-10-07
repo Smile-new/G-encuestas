@@ -270,39 +270,42 @@ if ($isLoggedIn && is_array($userData)) {
                                         <tbody>
                                             <?php if (!empty($usuarios) && is_array($usuarios)): ?>
                                                 <?php foreach ($usuarios as $usuario): ?>
-                                                    <tr>
-                                                        <td><?= esc($usuario['id_usuario']); ?></td>
-                                                        <td>
-                                                            <?php if (!empty($usuario['foto'])): ?>
-                                                                <img src="<?= base_url('public/img_user/' . $usuario['foto']); ?>" alt="Foto de <?= esc($usuario['nombre']); ?>" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
-                                                            <?php else: ?>
-                                                                <i class="mdi mdi-account-circle" style="font-size: 40px;"></i>
-                                                            <?php endif; ?>
-                                                        </td>
-                                                        <td><?= esc($usuario['nombre']) . ' ' . esc($usuario['apellido_paterno']) . ' ' . esc($usuario['apellido_materno']); ?></td>
-                                                        <td>
-                                                            <?php
-                                                            $rolNombre = 'Desconocido';
-                                                            foreach ($roles as $rol) {
-                                                                if ($rol['id_rol'] == $usuario['id_rol']) {
-                                                                    $rolNombre = esc($rol['nombre_rol']);
-                                                                    break;
-                                                                }
-                                                            }
-                                                            echo $rolNombre;
-                                                            ?>
-                                                        </td>
-                                                        <td><?= esc($usuario['usuario']); ?></td>
-                                                        <td><?= esc($usuario['telefono']); ?></td>
-                                                        <td>
-                                                            <a href="<?= base_url('usuarios/edit/' . $usuario['id_usuario']); ?>" class="btn btn-warning btn-sm me-2">Editar</a>
+                                                    <?php
+                                                    // Primero, determinamos el nombre del rol para este usuario
+                                                    $rolNombre = '';
+                                                    foreach ($roles as $rol) {
+                                                        if ($rol['id_rol'] == $usuario['id_rol']) {
+                                                            $rolNombre = $rol['nombre_rol'];
+                                                            break;
+                                                        }
+                                                    }
+                                                    
+                                                    // Ahora, comprobamos si el rol NO es 'Administrador' para mostrar la fila
+                                                    if (strtolower($rolNombre) !== 'administrador'):
+                                                    ?>
+                                                        <tr>
+                                                            <td><?= esc($usuario['id_usuario']); ?></td>
+                                                            <td>
+                                                                <?php if (!empty($usuario['foto'])): ?>
+                                                                    <img src="<?= base_url('public/img_user/' . $usuario['foto']); ?>" alt="Foto de <?= esc($usuario['nombre']); ?>" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                                                                <?php else: ?>
+                                                                    <i class="mdi mdi-account-circle" style="font-size: 40px;"></i>
+                                                                <?php endif; ?>
+                                                            </td>
+                                                            <td><?= esc($usuario['nombre']) . ' ' . esc($usuario['apellido_paterno']) . ' ' . esc($usuario['apellido_materno']); ?></td>
+                                                            <td><?= esc($rolNombre); // Ya tenemos el nombre del rol, solo lo mostramos ?></td>
+                                                            <td><?= esc($usuario['usuario']); ?></td>
+                                                            <td><?= esc($usuario['telefono']); ?></td>
+                                                            <td>
+                                                                <a href="<?= base_url('usuarios/edit/' . $usuario['id_usuario']); ?>" class="btn btn-warning btn-sm me-2">Editar</a>
 
-                                                            <form id="deleteForm-<?= esc($usuario['id_usuario']); ?>" action="<?= base_url('usuarios/delete/' . $usuario['id_usuario']); ?>" method="post" class="d-inline">
-                                                                <?= csrf_field() ?>
-                                                                <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?= esc($usuario['id_usuario']); ?>, '<?= esc($usuario['nombre'] . ' ' . $usuario['apellido_paterno']); ?>')">Eliminar</button>
-                                                            </form>
-                                                        </td>
-                                                    </tr>
+                                                                <form id="deleteForm-<?= esc($usuario['id_usuario']); ?>" action="<?= base_url('usuarios/delete/' . $usuario['id_usuario']); ?>" method="post" class="d-inline">
+                                                                    <?= csrf_field() ?>
+                                                                    <button type="button" class="btn btn-danger btn-sm" onclick="confirmDelete(<?= esc($usuario['id_usuario']); ?>, '<?= esc($usuario['nombre'] . ' ' . $usuario['apellido_paterno']); ?>')">Eliminar</button>
+                                                                </form>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endif; // Fin de la condición que excluye al administrador ?>
                                                 <?php endforeach; ?>
                                             <?php else: ?>
                                                 <tr>
