@@ -113,7 +113,7 @@ if ($isLoggedIn && is_array($userData)) {
                     </div>
                 </div>
             </div>
-            <p>Please wait...</p>
+            <p>Inciando Encuestador</p>
         </div>
     </div>
     <div class="overlay"></div>

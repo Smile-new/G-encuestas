@@ -25,12 +25,12 @@
   </head>
   <style>
       .dropdown-menu-right .user-name {
-    display: inline-block;
-    max-width: 180px; /* ajusta según tu diseño */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+        display: inline-block;
+        max-width: 180px; /* ajusta según tu diseño */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
     </style>
   <body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-gradient-x-purple-blue" data-col="2-columns">
 <?php
@@ -70,16 +70,15 @@ if ($isLoggedIn && $userData) {
               <li class="dropdown dropdown-user nav-item"><a class="dropdown-toggle nav-link dropdown-user-link" href="#" data-toggle="dropdown"> <span class="avatar avatar-online"><img src="<?= $rutaFotoPerfil ?>" alt="avatar"><i></i></span></a>
                 <div class="dropdown-menu dropdown-menu-right">
                     <div class="arrow_box_right">
-                      <a class="dropdown-item" href="#">
-                        <span class="avatar avatar-online">
-                          <img src="<?= $rutaFotoPerfil ?>" alt="avatar">
-                        </span>
-                        <span class="user-name text-bold-700 ml-1"><?= esc($nombreCompleto) ?></span>
-                      </a>
-                    </div>                    
-                    <div class="dropdown-divider"></div><a class="dropdown-item" href="/controlador/perfil"><i class="ft-user"></i> Editar Perfil</a>
-                    <div class="dropdown-divider"></div><a class="dropdown-item" href="/logout"><i class="ft-power"></i> Cerrar Sesión</a>
-                  </div>
+                        <a class="dropdown-item" href="#">
+                            <span class="avatar avatar-online">
+                                <img src="<?= $rutaFotoPerfil ?>" alt="avatar">
+                            </span>
+                            <span class="user-name text-bold-700 ml-1"><?= esc($nombreCompleto) ?></span>
+                        </a>
+                    </div>                   
+                  <div class="dropdown-divider"></div><a class="dropdown-item" href="/controlador/perfil"><i class="ft-user"></i> Editar Perfil</a>
+                  <div class="dropdown-divider"></div><a class="dropdown-item" href="/logout"><i class="ft-power"></i> Cerrar Sesión</a>
                 </div>
               </li>
             </ul>
@@ -152,8 +151,8 @@ if ($isLoggedIn && $userData) {
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="filtroUsuario">Buscar por Usuario:</label>
-                                            <input type="text" id="filtroUsuario" class="form-control" placeholder="Escribe un nombre de usuario...">
+                                            <label for="filtroUsuario">Buscar por Nombre:</label> <!-- CAMBIO: Texto de la etiqueta -->
+                                            <input type="text" id="filtroUsuario" class="form-control" placeholder="Escribe un nombre...">
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -183,7 +182,10 @@ if ($isLoggedIn && $userData) {
                                         <tbody id="tablaUsuarios">
                                             <?php if (!empty($listaUsuarios)) : ?>
                                                 <?php foreach ($listaUsuarios as $usuario) : ?>
-                                                    <tr data-rol="<?= esc($usuario['nombre_rol']) ?>" data-usuario="<?= esc($usuario['usuario']) ?>">
+                                                    <!-- CAMBIO 1: Añadir el atributo data-nombre-completo -->
+                                                    <tr data-rol="<?= esc($usuario['nombre_rol']) ?>" 
+                                                        data-usuario="<?= esc($usuario['usuario']) ?>" 
+                                                        data-nombre-completo="<?= esc($usuario['nombre'] . ' ' . $usuario['apellido_paterno'] . ' ' . $usuario['apellido_materno']) ?>">
                                                         <td>
                                                             <?php 
                                                                 $foto_url = $usuario['foto'] ? $img_path_user . $usuario['foto'] : base_url(RECURSOS_CONTROLADOR_IMAGES . 'portrait/small/avatar-s-19.png');
@@ -335,19 +337,21 @@ if ($isLoggedIn && $userData) {
         document.getElementById('filtroRol').addEventListener('change', filtrarTabla);
 
         function filtrarTabla() {
-            const filtroUsuario = document.getElementById('filtroUsuario').value.toLowerCase();
+            const terminoBusqueda = document.getElementById('filtroUsuario').value.toLowerCase();
             const filtroRol = document.getElementById('filtroRol').value;
             const filas = document.getElementById('tablaUsuarios').getElementsByTagName('tr');
 
             for (let i = 0; i < filas.length; i++) {
                 const fila = filas[i];
-                const usuario = fila.getAttribute('data-usuario').toLowerCase();
+                
+                // --- CAMBIO 2: Leer el atributo 'data-nombre-completo' en lugar de 'data-usuario' ---
+                const nombreCompleto = fila.getAttribute('data-nombre-completo').toLowerCase();
                 const rol = fila.getAttribute('data-rol');
 
-                const coincideUsuario = usuario.includes(filtroUsuario);
+                const coincideNombre = nombreCompleto.includes(terminoBusqueda);
                 const coincideRol = (filtroRol === '' || rol === filtroRol);
 
-                if (coincideUsuario && coincideRol) {
+                if (coincideNombre && coincideRol) {
                     fila.style.display = '';
                 } else {
                     fila.style.display = 'none';
