@@ -11,16 +11,7 @@ $rutaFotoPerfil = base_url(RECURSOS_ADMIN_IMAGES . '/faces/face15.jpg');
 
 if ($isLoggedIn && is_array($userData)) {
     $nombreCompleto = esc($userData['nombre']) . ' ' . esc($userData['apellido_paterno']) . ' ' . esc($userData['apellido_materno']);
-    $id_rol = $userData['id_rol'] ?? null;
-    
-    // ✅ CORRECCIÓN: Ajustar los roles a los de tu base de datos
-    switch ($id_rol) {
-        case 4: $rolTexto = 'Administrador'; break;
-        case 3: $rolTexto = 'Encuestador'; break;
-        case 2: $rolTexto = 'Supervisor'; break;
-        case 1: $rolTexto = 'Operador'; break;
-        default: $rolTexto = 'Miembro'; break;
-    }
+$rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
 
     if (!empty($userData['foto'])) {
         $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto']));

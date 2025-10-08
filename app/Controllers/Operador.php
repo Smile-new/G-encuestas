@@ -50,7 +50,7 @@ private function _prepareUserData(): array
     
     public function dashboard()
     {
-        
+        $data = $this->_prepareUserData();
         return view('operador/dash');
     }
 

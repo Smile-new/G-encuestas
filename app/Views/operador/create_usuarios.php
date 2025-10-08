@@ -9,13 +9,7 @@ $rutaFotoPerfil = base_url('recursos_operador/images/layout_img/user_img.jpg'); 
 
 if ($isLoggedIn && is_array($userData)) {
     $nombreCompleto = esc($userData['nombre']) . ' ' . esc($userData['apellido_paterno']) . ' ' . esc($userData['apellido_materno']);
-    $id_rol = $userData['id_rol'] ?? null;
-    switch ($id_rol) {
-        case 1: $rolTexto = 'Administrador'; break;
-        case 2: $rolTexto = 'Operador'; break;
-        case 3: $rolTexto = 'Encuestador'; break;
-        default: $rolTexto = 'Miembro'; break;
-    }
+   $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
     if (!empty($userData['foto'])) {
         $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto']));
     }

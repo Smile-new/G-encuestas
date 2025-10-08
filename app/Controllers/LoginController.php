@@ -43,7 +43,11 @@ class LoginController extends Controller
         }
 
         // Buscar usuario en la base de datos por el campo 'usuario'
-        $usuario = $usuarioModel->where('usuario', $usuario_o_email)->first();
+        $usuario = $usuarioModel
+            ->select('usuarios.*, roles.nombre_rol')
+            ->join('roles', 'roles.id_rol = usuarios.id_rol')
+            ->where('usuarios.usuario', $usuario_o_email)
+            ->first();
 
         if ($usuario) {
             // VERIFICACIÓN DE CONTRASEÑA: Usar password_verify()
@@ -70,6 +74,7 @@ class LoginController extends Controller
                         'usuario'            => $usuario['usuario'], // Usar el campo 'usuario' de la DB
                         'foto'               => $foto_perfil,
                         'id_rol'             => $usuario['id_rol'], // Usar el campo 'id_rol' de la DB
+                        'nombre_rol'       => $usuario['nombre_rol']
                         // 'id_estado' y 'id_municipio' se eliminan si no están en el UsuarioModel
                     ],
                     'isLoggedIn' => true

@@ -1,3 +1,23 @@
+<?php
+// Obtener la instancia de la sesión
+$session = session();
+$userData = $session->get('usuario');
+$isLoggedIn = $session->get('isLoggedIn');
+
+// Definir valores por defecto
+$nombreCompleto = "Invitado";
+$rolTexto = "Rol Desconocido";
+$rutaFotoPerfil = base_url(RECURSOS_ADMIN_IMAGES . '/faces/face15.jpg');
+
+if ($isLoggedIn && is_array($userData)) {
+    $nombreCompleto = esc($userData['nombre']) . ' ' . esc($userData['apellido_paterno']) . ' ' . esc($userData['apellido_materno']);
+$rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
+
+    if (!empty($userData['foto'])) {
+        $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto']));
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
   <head>

@@ -18,13 +18,7 @@ if ($isLoggedIn && is_array($userData)) {
                       esc($userData['apellido_materno']);
     $nombreUsuario = esc($userData['usuario']);
     
-    $id_rol = $userData['id_rol'] ?? null;
-    switch ($id_rol) {
-        case 1: $rolTexto = 'Administrador'; break;
-        case 2: $rolTexto = 'Operador'; break;
-        case 3: $rolTexto = 'Encuestador'; break;
-        default: $rolTexto = 'Miembro'; break;
-    }
+$rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
 
     if (!empty($userData['foto'])) {
         $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto']));

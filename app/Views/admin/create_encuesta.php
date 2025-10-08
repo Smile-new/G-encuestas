@@ -53,13 +53,7 @@
                           esc($userData['apellido_materno']);
         $nombreUsuario = esc($userData['usuario']); // Usamos el campo 'usuario' del array de sesión
         
-        $id_rol = $userData['id_rol'] ?? null; // Usar id_rol para el rol
-        switch ($id_rol) {
-            case 1: $rolTexto = 'Administrador'; break;
-            case 2: $rolTexto = 'Operador'; break;
-            case 3: $rolTexto = 'Encuestador'; break;
-            default: $rolTexto = 'Miembro'; break;
-        }
+$rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
 
         // Si hay una foto de usuario cargada en la sesión, usarla; de lo contrario, usar la por defecto
         if (!empty($userData['foto'])) {
