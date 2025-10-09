@@ -231,10 +231,12 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                                                 <option value="">Todos los Roles</option>
                                                 <?php if (!empty($roles) && is_array($roles)): ?>
                                                     <?php foreach ($roles as $rol): ?>
-                                                        <option value="<?= esc($rol['id_rol']) ?>"
+                                                         <?php if (strtolower($rol['nombre_rol']) !== 'administrador'): // Ocultar rol administrador ?>
+                                                            <option value="<?= esc($rol['id_rol']) ?>"
                                                                 <?= (isset($_GET['id_rol']) && $_GET['id_rol'] == $rol['id_rol']) ? 'selected' : '' ?>>
-                                                            <?= esc($rol['nombre_rol']) ?>
-                                                        </option>
+                                                                <?= esc($rol['nombre_rol']) ?>
+                                                            </option>
+                                                        <?php endif; ?>
                                                     <?php endforeach; ?>
                                                 <?php endif; ?>
                                             </select>

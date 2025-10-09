@@ -6,14 +6,24 @@ use CodeIgniter\Controller;
 use App\Models\EncuestaModel; // Importar tu EncuestaModel
 use App\Models\UsuarioModel;  // Importar tu UsuarioModel
 use App\Models\RolModel;      // Importar tu RolModel para los roles de usuario
+use App\Models\RespuestaModel; // Importar tu RespuestaModel
 // Si tienes un modelo para respuestas, impórtalo aquí:
 // use App\Models\RespuestaModel;
 
 class Administrador extends Controller // Asegúrate de que este nombre de clase coincida con el nombre del archivo (Administrador.php)
 {
+
+    protected UsuarioModel $usuarioModel;
+    protected EncuestaModel $encuestaModel;
+    protected RolModel $rolModel;
+    protected RespuestaModel $respuestaModel;
     // Método constructor
     public function __construct()
     {
+        $this->usuarioModel = new UsuarioModel();
+        $this->encuestaModel = new EncuestaModel();
+        $this->rolModel = new RolModel();
+        $this->respuestaModel = new RespuestaModel();
         // En CodeIgniter 4, se recomienda cargar helpers en el método `initController` si es para todo el controlador
         // o directamente donde se usan si es esporádico. Para `BaseController`, el helper `url` ya suele estar cargado.
         // Si no usas BaseController y necesitas el helper aquí, descoméntalo:
@@ -60,6 +70,7 @@ private function _prepareUserData(): array {
         $encuestaModel = new EncuestaModel();
         $usuarioModel = new UsuarioModel();
         $rolModel = new RolModel(); // Instanciar tu RolModel
+        $respuestaModel = new RespuestaModel();
         // Si tienes un RespuestaModel, instáncialo:
         // $respuestaModel = new RespuestaModel();
 
@@ -67,43 +78,21 @@ private function _prepareUserData(): array {
 
         // Total de Encuestas
         $totalEncuestas = $encuestaModel->countAllResults();
-        // Simulación de valor anterior para el cálculo del porcentaje
-        $previousTotalEncuestas = 240; // Ejemplo: valor del mes anterior
-
         // Encuestas Activas
         $encuestasActivas = $encuestaModel->where('activa', 1)->countAllResults();
-        // Simulación de valor anterior para el cálculo del porcentaje
-        $previousEncuestasActivas = 115; // Ejemplo: valor del mes anterior
-
         // Total de Usuarios Registrados
         $usuariosRegistrados = $usuarioModel->countAllResults();
-        // Simulación de valor anterior para el cálculo del porcentaje
-        $previousUsuariosRegistrados = 480; // Ejemplo: valor del mes anterior
-
         // Total de Respuestas:
-        $totalRespuestas = 7500; // Valor de ejemplo si no tienes un sistema de respuestas en DB todavía.
-        $previousTotalRespuestas = 7600; // Ejemplo: valor del mes anterior
+        $totalRespuestas = $respuestaModel -> countAllResults(); // Valor de ejemplo si no tienes un sistema de respuestas en DB todavía.
 
-        // --- Cálculo de porcentajes de cambio ---
-        $percentageChangeTotalEncuestas = 0;
-        if ($previousTotalEncuestas > 0) {
-            $percentageChangeTotalEncuestas = (($totalEncuestas - $previousTotalEncuestas) / $previousTotalEncuestas) * 100;
-        }
 
-        $percentageChangeEncuestasActivas = 0;
-        if ($previousEncuestasActivas > 0) {
-            $percentageChangeEncuestasActivas = (($encuestasActivas - $previousEncuestasActivas) / $previousEncuestasActivas) * 100;
-        }
+        // Porcentajes sobre totales
+        $percentageChangeTotalEncuestas = 100; // porque el total actual es el 100%
+        $percentageChangeEncuestasActivas = $totalEncuestas > 0 ? round(($encuestasActivas / $totalEncuestas) * 100, 1) : 0;
+        $percentageChangeTotalRespuestas = 100;
+        $percentageChangeUsuariosRegistrados = 100; // el total de usuarios es el 100%
 
-        $percentageChangeTotalRespuestas = 0;
-        if ($previousTotalRespuestas > 0) {
-            $percentageChangeTotalRespuestas = (($totalRespuestas - $previousTotalRespuestas) / $previousTotalRespuestas) * 100;
-        }
 
-        $percentageChangeUsuariosRegistrados = 0;
-        if ($previousUsuariosRegistrados > 0) {
-            $percentageChangeUsuariosRegistrados = (($usuariosRegistrados - $previousUsuariosRegistrados) / $previousUsuariosRegistrados) * 100;
-        }
 
         // --- Datos para los gráficos ---
 

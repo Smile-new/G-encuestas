@@ -1,23 +1,3 @@
-<?php
-// Obtener la instancia de la sesión
-$session = session();
-$userData = $session->get('usuario');
-$isLoggedIn = $session->get('isLoggedIn');
-
-// Definir valores por defecto
-$nombreCompleto = "Invitado";
-$rolTexto = "Rol Desconocido";
-$rutaFotoPerfil = base_url(RECURSOS_ADMIN_IMAGES . '/faces/face15.jpg');
-
-if ($isLoggedIn && is_array($userData)) {
-    $nombreCompleto = esc($userData['nombre']) . ' ' . esc($userData['apellido_paterno']) . ' ' . esc($userData['apellido_materno']);
-$rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
-
-    if (!empty($userData['foto'])) {
-        $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto']));
-    }
-}
-?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -75,6 +55,9 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
               width: 100%; /* Make buttons full width if they must stack */
               box-sizing: border-box; /* Include padding/border in width */
           }
+          .grid-margin, .stretch-card {
+        margin-bottom: 15px; /* Más consistente en móviles */
+    }
       }
 
       /* Chart container styling for responsiveness */
@@ -96,7 +79,7 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
   <body>
     <div class="container-scroller">
       <nav class="sidebar sidebar-offcanvas" id="sidebar">
-        <div class="sidebar-brand-wrapper d-lg-flex align-items-center justify-content-center fixed-top">
+        <div class="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top">
           <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo.png') ?>" alt="logo" /> </a>
         </div>
         <ul class="nav">
@@ -169,11 +152,11 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
       </nav>
       <div class="container-fluid page-body-wrapper">
         <nav class="navbar p-0 fixed-top d-flex flex-row">
-               <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
-                    <a class="navbar-brand brand-logo-mini" href="<?= site_url('dashboard') ?>">
-                        <img src="<?= base_url('recursos_admin/images/logo.png') ?>" alt="logo" />
-                    </a>
-                </div>
+          <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
+            <a class="navbar-brand brand-logo-mini" href="<?= site_url('dashboard') ?>">
+            <img src="<?= base_url('recursos_admin/images/logo.png') ?>" alt="logo" />
+            </a>
+          </div>
           <div class="navbar-menu-wrapper flex-grow d-flex align-items-stretch">
             <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
               <span class="mdi mdi-menu"></span>
