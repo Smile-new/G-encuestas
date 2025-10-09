@@ -116,6 +116,68 @@
             background-color: #6c757d;
             cursor: not-allowed;
         }
+
+        /* Logo mini más grande en el navbar */
+        .navbar .navbar-brand-wrapper .navbar-brand.brand-logo-mini img {
+        width: auto;       /* que respete proporción */
+        max-height: 90px;  /* ajusta según lo que necesites */
+        height: auto;
+        }
+
+
+        /* === Responsive mejorado === */
+
+/* Tablets y pantallas medianas */
+@media (max-width: 991px) {
+  /* Ajusta espaciados entre tarjetas */
+  .grid-margin,
+  .stretch-card {
+    margin-bottom: 20px;
+  }
+}
+
+/* Móviles y pantallas pequeñas */
+@media (max-width: 767px) {
+  /* Sidebar se colapsa, no desaparece */
+  .sidebar {
+    position: fixed;
+    left: -250px;
+    transition: all 0.3s ease;
+    width: 250px;
+    z-index: 999;
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  /* Navbar: ajusta contenido */
+  .navbar .navbar-brand-wrapper {
+    padding: 0;
+  }
+
+  /* Oculta solo el texto, no el perfil entero */
+  .navbar-profile-name {
+    display: none !important;
+  }
+
+  /* Botones en tablas: que ocupen ancho completo */
+  .table td .btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 6px;
+  }
+
+  /* Mejora la experiencia del main-panel */
+  .main-panel {
+    padding: 10px;
+  }
+
+  /* Logo mini más centrado */
+  .navbar .navbar-brand-wrapper .navbar-brand.brand-logo-mini img {
+    max-height: 70px;
+  }
+}
     </style>
 </head>
 <body>
@@ -130,7 +192,6 @@
     if ($isLoggedIn && $userData) {
         $nombreCompleto = trim(($userData['nombre'] ?? '') . ' ' . ($userData['apellido_paterno'] ?? '') . ' ' . ($userData['apellido_materno'] ?? ''));
 $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
-
         if (!empty($userData['foto'])) {
             $rutaFotoPerfil = base_url('public/img_user/' . $userData['foto']);
         }
@@ -140,59 +201,69 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
     ?>
 
     <div class="container-scroller">
-        <nav class="sidebar sidebar-offcanvas" id="sidebar">
-            <div class="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top">
-                <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url('recursos_admin/images/logo.png') ?>" alt="logo" /></a>
+      <nav class="sidebar sidebar-offcanvas" id="sidebar">
+        <div class="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top">
+          <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo.png') ?>" alt="logo" /> </a>
+        </div>
+        <ul class="nav">
+          <li class="nav-item profile">
+            <div class="profile-desc">
+              <div class="profile-pic">
+                <div class="count-indicator">
+                  <img class="img-xs rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil">
+                  <span class="count bg-success"></span>
+                </div>
+                <div class="profile-name">
+                  <h5 class="mb-0 font-weight-normal"><?= esc($nombreCompleto) ?></h5>
+                  <span><?= esc($rolTexto) ?></span>
+                </div>
+              </div>
             </div>
-            <ul class="nav">
-                <li class="nav-item profile">
-                    <div class="profile-desc">
-                        <div class="profile-pic">
-                            <div class="count-indicator">
-                                <img class="img-xs rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil">
-                                <span class="count bg-success"></span>
-                            </div>
-                            <div class="profile-name">
-                                <h5 class="mb-0 font-weight-normal"><?= $nombreCompleto ?></h5>
-                                <span><?= $rolTexto ?></span>
-                            </div>
-                        </div>
-                    </div>
-                </li>
-                <li class="nav-item nav-category">
-                    <span class="nav-link">Navegación</span>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('dashboard') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-speedometer"></i></span>
-                        <span class="menu-title">Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('encuestas') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-playlist-play"></i></span>
-                        <span class="menu-title">Encuestas</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('preguntas') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-table-large"></i></span>
-                        <span class="menu-title">Preguntas</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('estadistica') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-chart-bar"></i></span>
-                        <span class="menu-title">Estadísticas</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('usuarios') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-contacts"></i></span>
-                        <span class="menu-title">Usuarios</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
+          </li>
+          <li class="nav-item nav-category">
+            <span class="nav-link">Navigation</span>
+          </li>
+          <li class="nav-item menu-items">
+            <a class="nav-link" href="<?= base_url('dashboard') ?>">
+              <span class="menu-icon">
+                <i class="mdi mdi-speedometer"></i>
+              </span>
+              <span class="menu-title">Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item menu-items">
+            <a class="nav-link" href="<?= base_url('encuestas') ?>">
+              <span class="menu-icon">
+                <i class="mdi mdi-playlist-play"></i>
+              </span>
+              <span class="menu-title">Encuestas</span>
+            </a>
+          </li>
+          <li class="nav-item menu-items">
+            <a class="nav-link" href="<?= base_url('preguntas') ?>">
+              <span class="menu-icon">
+                <i class="mdi mdi-table-large"></i>
+              </span>
+              <span class="menu-title">Preguntas</span>
+            </a>
+          </li>
+          <li class="nav-item menu-items">
+            <a class="nav-link" href="<?= base_url('estadistica') ?>">
+              <span class="menu-icon">
+                <i class="mdi mdi-chart-bar"></i>
+              </span>
+              <span class="menu-title">Estadisticas</span>
+            </a>
+          </li>
+          <li class="nav-item menu-items">
+            <a class="nav-link" href="<?= base_url('usuarios') ?>">
+              <span class="menu-icon">
+                <i class="mdi mdi-contacts"></i>
+              </span>
+              <span class="menu-title">Usuarios</span>
+            </a>
+          </li>
+          <li class="nav-item menu-items">
             <a class="nav-link" href="<?= base_url('admin/perfil') ?>">
               <span class="menu-icon">
                 <i class="mdi mdi-account-circle"></i>
@@ -200,13 +271,15 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
               <span class="menu-title">Perfil</span>
             </a>
           </li>
-            </ul>
-        </nav>
+        </ul>
+      </nav>
 
         <div class="container-fluid page-body-wrapper">
             <nav class="navbar p-0 fixed-top d-flex flex-row">
                 <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
-                    <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url('recursos_admin/images/logo.png') ?>" alt="logo" /></a>
+                    <a class="navbar-brand brand-logo-mini" href="<?= site_url('dashboard') ?>">
+                        <img src="<?= base_url('recursos_admin/images/logo.png') ?>" alt="logo" />
+                    </a>
                 </div>
                 <div class="navbar-menu-wrapper flex-grow d-flex align-items-stretch">
                     <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
@@ -1033,6 +1106,28 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
 
    
 
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const sidebar = document.querySelector(".sidebar");
+  const toggleBtn = document.querySelector(".navbar-toggler-right[data-toggle='offcanvas']");
+  const overlay = document.querySelector(".sidebar-overlay");
+
+  if (toggleBtn && sidebar) {
+    toggleBtn.addEventListener("click", function () {
+      sidebar.classList.toggle("active");
+      if (overlay) overlay.classList.toggle("active");
+    });
+  }
+
+  if (overlay) {
+    overlay.addEventListener("click", function () {
+      sidebar.classList.remove("active");
+      overlay.classList.remove("active");
+    });
+  }
+});
 </script>
 </body>
 </html>

@@ -30,6 +30,13 @@
             padding: 0.3rem 0.6rem; /* Ajustar padding para botones pequeños */
             font-size: 0.75rem;
         }
+
+        /* Logo mini más grande en el navbar */
+        .navbar .navbar-brand-wrapper .navbar-brand.brand-logo-mini img {
+        width: auto;       /* que respete proporción */
+        max-height: 90px;  /* ajusta según lo que necesites */
+        height: auto;
+        }
     </style>
 </head>
 <body>
@@ -130,7 +137,9 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
         <div class="container-fluid page-body-wrapper">
             <nav class="navbar p-0 fixed-top d-flex flex-row">
                 <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
-                    <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo.png') ?>" alt="logo" /> </a>
+                    <a class="navbar-brand brand-logo-mini" href="<?= site_url('dashboard') ?>">
+                        <img src="<?= base_url('recursos_admin/images/logo.png') ?>" alt="logo" />
+                    </a>
                 </div>
                 <div class="navbar-menu-wrapper flex-grow d-flex align-items-stretch">
                     <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">

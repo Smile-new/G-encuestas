@@ -29,7 +29,6 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
         .card { border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .card-body { padding: 1.5rem; }
         .rounded-circle { object-fit: cover; }
-        @media (max-width: 767px) { .sidebar { display: none; } }
 
         .text-usuario {
     color: rgba(0, 0, 0, 1); /* azul */
@@ -39,13 +38,18 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
     color: #000000ff; /* verde */
 }
 
-
+        /* Logo mini más grande en el navbar */
+        .navbar .navbar-brand-wrapper .navbar-brand.brand-logo-mini img {
+        width: auto;       /* que respete proporción */
+        max-height: 90px;  /* ajusta según lo que necesites */
+        height: auto;
+        }
     </style>
 </head>
 <body>
 <div class="container-scroller">
-<nav class="sidebar sidebar-offcanvas" id="sidebar">
-        <div class="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top">
+      <nav class="sidebar sidebar-offcanvas" id="sidebar">
+        <div class="sidebar-brand-wrapper d-lg-flex align-items-center justify-content-center fixed-top">
           <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo.png') ?>" alt="logo" /> </a>
         </div>
         <ul class="nav">
@@ -118,9 +122,11 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
       </nav>
       <div class="container-fluid page-body-wrapper">
         <nav class="navbar p-0 fixed-top d-flex flex-row">
-          <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
-            <a class="navbar-brand brand-logo-mini" href="<?= base_url('dashboard') ?>"><img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo-mini.svg') ?>" alt="logo" /></a>
-          </div>
+               <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
+                    <a class="navbar-brand brand-logo-mini" href="<?= site_url('dashboard') ?>">
+                        <img src="<?= base_url('recursos_admin/images/logo.png') ?>" alt="logo" />
+                    </a>
+                </div>
           <div class="navbar-menu-wrapper flex-grow d-flex align-items-stretch">
             <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
               <span class="mdi mdi-menu"></span>

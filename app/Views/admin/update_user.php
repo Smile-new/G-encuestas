@@ -31,6 +31,15 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/mdi/css/materialdesignicons.min.css') ?>">
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/css/vendor.bundle.base.css') ?>">
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_CSS . '/style.css') ?>">
+
+    <style>
+        /* Logo mini más grande en el navbar */
+        .navbar .navbar-brand-wrapper .navbar-brand.brand-logo-mini img {
+        width: auto;       /* que respete proporción */
+        max-height: 90px;  /* ajusta según lo que necesites */
+        height: auto;
+        }
+    </style>
 </head>
 <body>
     <div class="container-scroller">
@@ -87,8 +96,10 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
         <div class="container-fluid page-body-wrapper">
             <!-- Barra de navegación superior (Navbar) -->
             <nav class="navbar p-0 fixed-top d-flex flex-row">
-                 <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
-                    <a class="navbar-brand brand-logo-mini" href="<?= base_url('administrador/dashboard') ?>"><img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo-mini.svg') ?>" alt="logo" /></a>
+                <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">
+                    <a class="navbar-brand brand-logo-mini" href="<?= site_url('dashboard') ?>">
+                        <img src="<?= base_url('recursos_admin/images/logo.png') ?>" alt="logo" />
+                    </a>
                 </div>
                 <div class="navbar-menu-wrapper flex-grow d-flex align-items-stretch">
                     <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">

@@ -51,6 +51,80 @@
 .logout_sidebar a:hover {
     background-color: #d32f2f;
 }
+  /* ====== Estilos personalizados para el perfil ====== */
+  .perfil-container {
+      background: linear-gradient(135deg, #ff5252 0%, #f44336 100%);
+      color: #fff;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+  }
+
+  .perfil-container h2 {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 25px;
+  }
+
+  .perfil-card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 30px;
+  }
+
+  .perfil-card .form-group label {
+      font-weight: 600;
+      color: #f44336;
+  }
+
+  .perfil-card .form-control {
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      transition: all 0.3s ease;
+  }
+
+  .perfil-card .form-control:focus {
+      border-color: #f44336;
+      box-shadow: 0 0 5px rgba(244,67,54,0.4);
+  }
+
+  .perfil-card img {
+      display: block;
+      margin: 0 auto 15px auto;
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+  }
+
+  .perfil-card input[type="file"] {
+      border: none;
+      background: #f9f9f9;
+      border-radius: 8px;
+      padding: 8px;
+  }
+
+  .perfil-card button {
+      background: linear-gradient(45deg, #ff7043, #f44336);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+  }
+
+  .perfil-card button:hover {
+      background: linear-gradient(45deg, #f44336, #d32f2f);
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(244,67,54,0.3);
+  }
   </style>
 </head>
 
@@ -189,69 +263,60 @@ if ($userData) {
 
 <section class="content">
     <div class="container-fluid">
-        <div class="block-header">
-            <h2>MI PERFIL</h2>
-        </div>
 
         <div class="row clearfix">
-            <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12">
-                <div class="card">
-                    <div class="header">
-                        <h2 class="text-center">Información de usuario</h2>
-                    </div>
-                    <div class="body">
-                        <?php if(session()->getFlashdata('success')): ?>
-                            <div class="alert alert-success"><?= session()->getFlashdata('success') ?></div>
-                        <?php endif; ?>
+            <div class="perfil-container">
+  <h2 class="text-center">Mi Perfil</h2>
 
-                        <form action="<?= base_url('perfil/actualizar') ?>" method="POST" enctype="multipart/form-data">
-                            <?= csrf_field() ?>
+  <div class="perfil-card">
+    <?php if(session()->getFlashdata('success')): ?>
+        <div class="alert alert-success text-center">
+            <?= session()->getFlashdata('success') ?>
+        </div>
+    <?php endif; ?>
 
-                            <div class="form-group">
-                                <label>Nombre de Usuario</label>
-                                <input type="text" name="usuario" value="<?= esc($userData['usuario']) ?>" class="form-control" readonly>
-                            </div>
-                          
-                          <div class="form-group">
-                              <label>Nombre(s)</label>
-                              <input type="text" name="nombre" 
-                                     value="<?= esc($userData['nombre']) ?>" 
-                                     class="form-control" readonly>
-                          </div>
+    <form action="<?= base_url('perfil/actualizar') ?>" method="POST" enctype="multipart/form-data">
+        <?= csrf_field() ?>
 
-                          <div class="form-group">
-                              <label>Apellido Paterno</label>
-                              <input type="text" name="apellido_paterno" 
-                                     value="<?= esc($userData['apellido_paterno']) ?>" 
-                                     class="form-control" readonly>
-                          </div>
+        <div class="text-center">
+            <img src="<?= !empty($userData['foto']) ? base_url('public/img_user/'.$userData['foto']) : base_url('recursos_encuestador/images/user.png') ?>" alt="Foto de perfil">
+        </div>
 
-                          <div class="form-group">
-                              <label>Apellido Materno</label>
-                              <input type="text" name="apellido_materno" 
-                                     value="<?= esc($userData['apellido_materno']) ?>" 
-                                     class="form-control" readonly>
-                          </div>
+        <div class="form-group">
+            <label>Nombre de Usuario</label>
+            <input type="text" name="usuario" value="<?= esc($userData['usuario']) ?>" class="form-control" readonly>
+        </div>
 
-                          <div class="form-group">
-                              <label>Teléfono</label>
-                              <input type="text" name="telefono" 
-                                     value="<?= esc($userData['telefono']) ?>" 
-                                     class="form-control" readonly>
-                          </div>
+        <div class="form-group">
+            <label>Nombre(s)</label>
+            <input type="text" name="nombre" value="<?= esc($userData['nombre']) ?>" class="form-control" readonly>
+        </div>
 
+        <div class="form-group">
+            <label>Apellido Paterno</label>
+            <input type="text" name="apellido_paterno" value="<?= esc($userData['apellido_paterno']) ?>" class="form-control" readonly>
+        </div>
 
-                            <div class="form-group">
-                                <label>Foto de Perfil</label><br>
-                                <img src="<?= !empty($userData['foto']) ? base_url('public/img_user/'.$userData['foto']) : base_url('recursos_encuestador/images/user.png') ?>" 
-                                     alt="Foto actual" width="100" class="mb-2">
-                                <input type="file" name="foto" class="form-control">
-                            </div>
+        <div class="form-group">
+            <label>Apellido Materno</label>
+            <input type="text" name="apellido_materno" value="<?= esc($userData['apellido_materno']) ?>" class="form-control" readonly>
+        </div>
 
-                           <button type="submit" class="btn bg-orange waves-effect">Actualizar</button>
-                        </form>
-                    </div>
-                </div>
+        <div class="form-group">
+            <label>Teléfono</label>
+            <input type="text" name="telefono" value="<?= esc($userData['telefono']) ?>" class="form-control" readonly>
+        </div>
+
+        <div class="form-group">
+            <label>Actualizar Foto de Perfil</label>
+            <input type="file" name="foto" class="form-control">
+        </div>
+
+        <button type="submit" class="btn bg-orange waves-effect">Actualizar</button>
+    </form>
+  </div>
+</div>
+
             </div>
         </div>
 
