@@ -211,9 +211,6 @@
                                 <h4 class="font-weight-normal mb-3">Total de Encuestas <i class="mdi mdi-chart-line mdi-24px float-right"></i></h4>
                                 <h2 class="mb-5">
                                     <?= esc($totalEncuestas) ?>
-                                    <span class="text-<?= ($percentageChangeTotalEncuestas >= 0) ? 'success' : 'danger' ?> small">
-                                        <?= ($percentageChangeTotalEncuestas >= 0 ? '+' : '') . esc($percentageChangeTotalEncuestas) ?>%
-                                    </span>
                                 </h2>
                             </div>
                         </div>
@@ -225,9 +222,6 @@
                                 <h4 class="font-weight-normal mb-3">Encuestas Activas <i class="mdi mdi-bookmark-outline mdi-24px float-right"></i></h4>
                                 <h2 class="mb-5">
                                     <?= esc($encuestasActivas) ?>
-                                    <span class="text-<?= ($percentageChangeEncuestasActivas >= 0) ? 'success' : 'danger' ?> small">
-                                        <?= ($percentageChangeEncuestasActivas >= 0 ? '+' : '') . esc($percentageChangeEncuestasActivas) ?>%
-                                    </span>
                                 </h2>
                             </div>
                         </div>
@@ -239,9 +233,6 @@
                                 <h4 class="font-weight-normal mb-3">Total de Respuestas <i class="mdi mdi-diamond mdi-24px float-right"></i></h4>
                                 <h2 class="mb-5">
                                     <?= esc($totalRespuestas) ?>
-                                    <span class="text-<?= ($percentageChangeTotalRespuestas >= 0) ? 'success' : 'danger' ?> small">
-                                        <?= ($percentageChangeTotalRespuestas >= 0 ? '+' : '') . esc($percentageChangeTotalRespuestas) ?>%
-                                    </span>
                                 </h2>
                             </div>
                         </div>
@@ -253,9 +244,6 @@
                                 <h4 class="font-weight-normal mb-3">Usuarios Registrados <i class="mdi mdi-account-multiple mdi-24px float-right"></i></h4>
                                 <h2 class="mb-5">
                                     <?= esc($usuariosRegistrados) ?>
-                                    <span class="text-<?= ($percentageChangeUsuariosRegistrados >= 0) ? 'success' : 'danger' ?> small">
-                                        <?= ($percentageChangeUsuariosRegistrados >= 0 ? '+' : '') . esc($percentageChangeUsuariosRegistrados) ?>%
-                                    </span>
                                 </h2>
                             </div>
                         </div>

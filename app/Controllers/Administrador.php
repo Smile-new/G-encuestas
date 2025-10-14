@@ -86,14 +86,6 @@ private function _prepareUserData(): array {
         $totalRespuestas = $respuestaModel -> countAllResults(); // Valor de ejemplo si no tienes un sistema de respuestas en DB todavía.
 
 
-        // Porcentajes sobre totales
-        $percentageChangeTotalEncuestas = 100; // porque el total actual es el 100%
-        $percentageChangeEncuestasActivas = $totalEncuestas > 0 ? round(($encuestasActivas / $totalEncuestas) * 100, 1) : 0;
-        $percentageChangeTotalRespuestas = 100;
-        $percentageChangeUsuariosRegistrados = 100; // el total de usuarios es el 100%
-
-
-
         // --- Datos para los gráficos ---
 
         // Ejemplo de datos para el gráfico de barras (Encuestas Creadas por Mes)
@@ -179,13 +171,9 @@ private function _prepareUserData(): array {
             'rutaFotoPerfil' => $rutaFotoPerfil,
 
             'totalEncuestas' => $totalEncuestas,
-            'percentageChangeTotalEncuestas' => round($percentageChangeTotalEncuestas, 1),
             'encuestasActivas' => $encuestasActivas,
-            'percentageChangeEncuestasActivas' => round($percentageChangeEncuestasActivas, 1),
             'totalRespuestas' => $totalRespuestas,
-            'percentageChangeTotalRespuestas' => round($percentageChangeTotalRespuestas, 1),
             'usuariosRegistrados' => $usuariosRegistrados,
-            'percentageChangeUsuariosRegistrados' => round($percentageChangeUsuariosRegistrados, 1),
 
             'labelsEncuestasMes' => $labelsEncuestasMes,
             'dataEncuestasMes' => $dataEncuestasMes,
