@@ -242,6 +242,11 @@ public function actualizarPerfil() {
         $longitud = $this->request->getPost('longitud');
         $referenciasTexto = $this->request->getPost('referencias_texto');
         
+        // --- Generar el ID ÚNICO para esta sesión de encuesta ---
+        // Esto es CLAVE para contar las encuestas realizadas, no solo las respuestas.
+        $idEncuestaRealizada = uniqid('encuesta_' . $idUsuario . '_', true);
+        // --------------------------------------------------------
+
         $direccionTexto = (!empty($latitud) && !empty($longitud))
             ? $this->respuestaModel->obtenerDireccion($latitud, $longitud)
             : null;
@@ -274,6 +279,7 @@ public function actualizarPerfil() {
                     'id_seccion' => $seccion['id_seccion'],
                     'id_comunidad' => $idComunidad,
                     'direccion' => $direccionTexto, 
+                    'id_encuesta_realizada' => $idEncuestaRealizada, // <<< AÑADIDO EL ID ÚNICO
                 ];
                 $this->respuestaModel->insert($data);
             }
@@ -309,8 +315,8 @@ public function actualizarPerfil() {
 
         $data = [
             'id_usuario' => $idUsuario,
-            'latitud'    => $json->latitud,
-            'longitud'   => $json->longitud,
+            'latitud'    => $json->latitud, // <<<< Limpiado
+            'longitud'   => $json->longitud, // <<<< Limpiado
         ];
 
         // 4. Usar el método save() que inserta o actualiza automáticamente

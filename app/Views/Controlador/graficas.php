@@ -146,7 +146,7 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                     <div class="card pull-up ecom-card-1 kpi-card bg-white">
                         <div class="card-content ecom-card2 height-180">
                            <div class="kpi-header">
-                                <h5 class="text-muted danger">Respuestas Recibidas</h5>
+                                <h5 class="text-muted danger">Encuestas Contestadas</h5>
                                 <i class="la la-check-square danger"></i>
                             </div>
                             <div class="card-body"><h1 class="danger text-center font-large-2 text-bold-700"><?= esc($totalRespuestas ?? 0) ?></h1></div>

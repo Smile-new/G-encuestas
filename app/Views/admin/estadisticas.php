@@ -351,7 +351,7 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                                             <div class="form-group col-md-3">
                                                 <label for="chart_type_select">Tipo de Gráfica</label>
                                                 <select class="form-control" id="chart_type_select">
-    <option value="bar">Gráfica de Barras (Estilo 3D)</option>
+    <option value="bar">Gráfica de Barras</option>
     <option value="doughnut">Gráfica de Dona</option>
     <option value="pie">Gráfica de Pastel</option>
     <option value="line">Gráfica de Líneas</option>

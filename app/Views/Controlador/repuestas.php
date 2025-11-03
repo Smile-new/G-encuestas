@@ -99,29 +99,46 @@
             border-color: #dee2e6;
         }
 
-          .dropdown-menu-right .user-name {
-    display: inline-block;
-    max-width: 180px; /* ajusta según tu diseño */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+        .dropdown-menu-right .user-name {
+            display: inline-block;
+            max-width: 180px; /* ajusta según tu diseño */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Estilos específicos para la lista de preguntas/respuestas en el modal */
+        #preguntasRespondidasContainer h6 {
+            font-weight: 700;
+            margin-top: 15px;
+            color: #333;
+        }
+        #preguntasRespondidasContainer .respuesta-item {
+            border-left: 3px solid #007bff;
+            padding-left: 10px;
+            margin-bottom: 15px;
+        }
+        #preguntasRespondidasContainer .respuesta-item p {
+            margin-bottom: 0;
+            font-size: 0.95rem;
+        }
         /* FIN: ESTILOS DE PAGINACIÓN MEJORADOS */
     </style>
-    <!-- [INICIO CORRECCIÓN] Definición global de initMap -->
+    <!-- [INICIO CÓDIGO MAPA] -->
     <script>
-        // Declaración global única de las instancias del mapa
+        // Variables globales para la instancia del mapa y el marcador
         var mapInstance;
         var mapMarker;
         
-        // Función global requerida por Google Maps API: Se define antes del script de carga
+        // Función global requerida por Google Maps API para la inicialización
         window.initMap = function() {
-            // Inicializamos una instancia base del mapa que será actualizada después
-            const defaultCoords = { lat: 19.35, lng: -99.05 }; // Coordenadas de México Central como default
+            // Esta función se mantiene simple y solo se encarga de definir las instancias globales.
+            const defaultCoords = { lat: 19.35, lng: -99.05 }; 
             const mapDiv = document.getElementById('mapaUbicacion');
             
-            // Verificamos si el div ya está en el DOM antes de inicializar
-            if (mapDiv) {
+            // La inicialización real del mapa se hará en updateMapUI, pero definimos las variables
+            // aquí si el div existe (aunque esté oculto).
+            if (mapDiv && !mapInstance) {
                 mapInstance = new google.maps.Map(mapDiv, {
                     center: defaultCoords,
                     zoom: 10,
@@ -138,20 +155,41 @@
         };
         
         /**
-         * Inicializa o actualiza el mapa de Google Maps con datos dinámicos.
+         * Función robusta para actualizar el mapa, diseñada para ejecutarse dentro de un modal.
+         * @param {string} direccion Dirección de la encuesta (para el título).
+         * @param {string} lat Latitud.
+         * @param {string} lng Longitud.
          */
-        function initMapData(direccion, lat, lng) {
+        function updateMapUI(direccion, lat, lng) {
             const mapDiv = document.getElementById('mapaUbicacion');
             
-            if (!window.google || !window.google.maps || !mapInstance) {
+            if (!window.google || !window.google.maps) {
                  mapDiv.innerHTML = `<div class="map-placeholder-content"><p class="text-danger">
                     <i class="la la-close font-large-2 mb-2"></i><br>
                     Error: La API de Google Maps no se cargó correctamente.
                 </p></div>`;
                 return;
             }
+            
+            // --- CÓDIGO CRÍTICO DE INICIALIZACIÓN/ACTUALIZACIÓN ---
+            // 1. Si la API cargó pero la instancia aún no existe, la creamos ahora que el div es visible.
+            if (!mapInstance) {
+                // Re-ejecutamos initMap para crear la instancia
+                window.initMap(); 
+            }
+            
+            if (!mapInstance) {
+                // Si aún falla, es un error de API Key.
+                mapDiv.innerHTML = `<div class="map-placeholder-content"><p class="text-danger">
+                    <i class="la la-close font-large-2 mb-2"></i><br>
+                    Error de inicialización de instancias. Revise la consola y su API Key.
+                </p></div>`;
+                return;
+            }
+            // --- FIN CÓDIGO CRÍTICO ---
 
-            if (!lat || !lng) {
+
+            if (!lat || !lng || lat === "null" || lng === "null") {
                  mapDiv.innerHTML = `<div class="map-placeholder-content"><p class="text-danger">
                     <i class="la la-close font-large-2 mb-2"></i><br>
                     Ubicación GPS de monitoreo no registrada para el encuestador.
@@ -166,21 +204,24 @@
             
             mapDiv.innerHTML = '';
             
+            // 1. FORZAR REDIMENSIONAMIENTO (CLAVE)
+            google.maps.event.trigger(mapInstance, 'resize');
+            
+            // 2. Centrar y colocar el marcador
             mapInstance.setCenter(coords);
             mapInstance.setZoom(14);
             mapMarker.setPosition(coords);
             mapMarker.setTitle(direccion);
             mapMarker.setMap(mapInstance); 
 
-            google.maps.event.trigger(mapInstance, 'resize');
-
+            // 3. Mostrar InfoWindow
             const infowindow = new google.maps.InfoWindow({
-                content: `<b>Última Ubicación GPS:</b><br>Lat: ${lat}, Lng: ${lng}`
+                content: `<b>Ubicación GPS:</b><br>Lat: ${lat}, Lng: ${lng}`
             });
             infowindow.open(mapInstance, mapMarker);
         }
     </script>
-    <!-- [FIN CORRECCIÓN] -->
+    <!-- [FIN CÓDIGO MAPA] -->
   </head>
   <body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-gradient-x-purple-blue" data-col="2-columns">
 <?php
@@ -194,7 +235,7 @@ $rutaFotoPerfil = base_url('recursos_operador/images/layout_img/user_img.jpg');
 
 if ($isLoggedIn && $userData) {
     $nombreCompleto = $userData['nombre'] . ' ' . $userData['apellido_paterno'] . ' ' . $userData['apellido_materno'];
-$rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
+    $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
     if (!empty($userData['foto'])) {
         $rutaFotoPerfil = base_url('public/img_user/' . $userData['foto']);
     }
@@ -220,7 +261,7 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                         </span>
                         <span class="user-name text-bold-700 ml-1"><?= esc($nombreCompleto) ?></span>
                       </a>
-                    </div>                    
+                    </div>          
                     <div class="dropdown-divider"></div><a class="dropdown-item" href="/controlador/perfil"><i class="ft-user"></i> Editar Perfil</a>
                     <div class="dropdown-divider"></div><a class="dropdown-item" href="/logout"><i class="ft-power"></i> Cerrar Sesión</a>
                   </div>
@@ -249,7 +290,7 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
           <li class="nav-item"><a href="<?= base_url('controlador/usuarios') ?>"><i class="la la-users"></i><span class="menu-title">Usuarios</span></a></li>
           <li class="nav-item"><a href="<?= base_url('controlador/encuestas') ?>"><i class="la la-list-alt"></i><span class="menu-title">Encuestas</span></a></li>
           <li class="active"><a href="<?= base_url('controlador/respuestas') ?>"><i class="la la-check-square"></i><span class="menu-title">Respuestas</span></a></li>
-          <li class=" nav-item"><a href="<?= base_url('controlador/perfil') ?>"><i class="la la-user"></i><span class="menu-title">Perfil</span></a></li>        
+          <li class=" nav-item"><a href="<?= base_url('controlador/perfil') ?>"><i class="la la-user"></i><span class="menu-title">Perfil</span></a></li>         
         </ul>
       </div>
       <div class="navigation-background"></div>
@@ -274,12 +315,12 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
           </div>
         </div>
         <div class="content-body">
-            <!-- Tabla de Respuestas -->
+            <!-- Tabla de Respuestas (Ahora por Instancia) -->
             <div class="row">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h4 class="card-title">Respuestas Geocodificadas Recibidas</h4>
+                            <h4 class="card-title">Encuestas Completadas Recibidas</h4>
                             <a class="heading-elements-toggle"><i class="la la-ellipsis-v font-medium-3"></i></a>
                             <div class="heading-elements">
                                 <ul class="list-inline mb-0">
@@ -291,12 +332,12 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                         </div>
                         <div class="card-content collapse show">
                             <div class="card-body">
-                                <p>Supervise las respuestas, incluyendo la ubicación de captura para control de calidad. Mostrando **<?= count($listaRespuestas) ?> de <?= $pager->getTotal() ?>** respuestas en total.</p>
+                                <p>Supervise las encuestas completadas, incluyendo la ubicación de captura para control de calidad. Mostrando **<?= count($listaRespuestas) ?> de <?= $totalRespuestas ?>** encuestas en total.</p>
                                 <div class="table-responsive">
                                     <table class="table table-striped table-bordered">
                                         <thead class="thead-dark">
                                             <tr>
-                                                <th>ID Resp.</th>
+                                                <th>ID Instancia</th>
                                                 <th>Encuesta</th>
                                                 <th>Encuestador</th>
                                                 <th>Fecha de Captura</th>
@@ -308,7 +349,10 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                                             <?php if (!empty($listaRespuestas)) : ?>
                                                 <?php foreach ($listaRespuestas as $respuesta) : ?>
                                                     <tr>
-                                                        <th scope="row"><?= esc($respuesta['id_respuesta']) ?></th>
+                                                        <!-- Muestra el ID de la instancia de la encuesta -->
+                                                        <th scope="row" title="ID de Instancia: <?= esc($respuesta['id_encuesta_realizada']) ?>">
+                                                            <?= substr(esc($respuesta['id_encuesta_realizada']), 0, 8) ?>...
+                                                        </th>
                                                         <td><?= esc($respuesta['nombre_encuesta']) ?></td>
                                                         <td><?= esc($respuesta['nombre_encuestador']) ?></td>
                                                         <td><?= esc($respuesta['fecha_respuesta']) ?></td>
@@ -322,15 +366,15 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                                                         <td>
                                                             <button 
                                                                 class="btn btn-primary btn-sm"
-                                                                onclick="mostrarDetalleRespuesta(<?= esc($respuesta['id_respuesta']) ?>)">
-                                                                <i class="la la-map"></i> Ver Detalle
+                                                                onclick="mostrarDetalleRespuesta('<?= esc($respuesta['id_encuesta_realizada']) ?>')">
+                                                                <i class="la la-file-text"></i> Ver Detalle
                                                             </button>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; ?>
                                             <?php else : ?>
                                                 <tr>
-                                                    <td colspan="6" class="text-center">No se encontraron respuestas registradas.</td>
+                                                    <td colspan="6" class="text-center">No se encontraron encuestas completadas.</td>
                                                 </tr>
                                             <?php endif; ?>
                                         </tbody>
@@ -338,7 +382,7 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                                 </div>
                                 <!-- Links de Paginación -->
                                 <div class="mt-3 pager">
-                                    <?= $pager->links() ?>
+                                    <?= $pager ?>
                                 </div>
                                 <!-- Fin Paginación -->
                             </div>
@@ -352,42 +396,41 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
     </div>
     <!-- ////////////////////////////////////////////////////////////////////////////-->
 
-    <!-- Modal para el detalle de la respuesta -->
+    <!-- Modal para el detalle de la respuesta (MODIFICADO) -->
     <div class="modal fade text-left" id="modalDetalleRespuesta" tabindex="-1" role="dialog" aria-labelledby="detalleRespuestaLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-primary white">
-                    <h4 class="modal-title white" id="detalleRespuestaLabel">Detalle y Auditoría de Respuesta #<span id="detalleIdRespuesta"></span></h4>
+                    <h4 class="modal-title white" id="detalleRespuestaLabel">Detalle y Auditoría de Encuesta #<span id="detalleIdInstancia"></span></h4>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true" class="white">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <!-- Columna de Datos de la Respuesta -->
-                        <div class="col-lg-6 col-md-12">
-                            <h5 class="mb-3 text-bold-600 border-bottom pb-1">Datos de Trazabilidad</h5>
+                        <!-- Columna de Resumen y Geolocalización -->
+                        <div class="col-lg-5 col-md-12 border-right">
+                            <h5 class="mb-3 text-bold-600 border-bottom pb-1">Resumen y Trazabilidad</h5>
                             <p><strong>Encuesta:</strong> <span id="detalleTituloEncuesta"></span></p>
-                            <p><strong>Encuestador:</strong> <span id="detalleNombreEncuestador"></span> (<span id="detalleAliasEncuestador"></span>)</p>
+                            <p><strong>Encuestador:</strong> <span id="detalleAliasEncuestador"></span></p>
                             <p><strong>Fecha/Hora:</strong> <span id="detalleFechaRespuesta"></span></p>
-                            <hr>
-                            <h5 class="mb-3 text-bold-600 border-bottom pb-1">Contenido de la Respuesta</h5>
-                            <p class="text-bold-600">Pregunta:</p>
-                            <p class="text-primary font-large-1" id="detallePregunta"></p>
-                            <p class="text-bold-600">Opción Seleccionada:</p>
-                            <p class="font-large-1 text-success" id="detalleOpcion"></p>
-                            <hr>
                             <p><strong>Referencias Adicionales:</strong> <span id="detalleReferencias"></span></p>
-                        </div>
-
-                        <!-- Columna de Geolocalización -->
-                        <div class="col-lg-6 col-md-12">
+                            <hr>
                             <h5 class="mb-3 text-bold-600 border-bottom pb-1">Auditoría de Ubicación</h5>
-                            <p><strong>Dirección Registrada (Respuesta):</strong> <span id="detalleDireccion"></span></p>
+                            <p><strong>Dirección Registrada:</strong> <span id="detalleDireccion"></span></p>
                             <div id="mapaUbicacion">
                                 <div class="map-placeholder-content">Cargando mapa...</div>
                             </div>
-                            <p class="text-muted mt-2"><small>El mapa muestra la **última ubicación** registrada del encuestador según el Monitoreo GPS.</small></p>
+                            <p class="text-muted mt-2"><small>El mapa muestra la **última ubicación** registrada del encuestador (punto GPS) al momento de la captura.</small></p>
+                        </div>
+
+                        <!-- Columna de Preguntas y Respuestas -->
+                        <div class="col-lg-7 col-md-12">
+                            <h5 class="mb-3 text-bold-600 border-bottom pb-1">Preguntas y Respuestas Registradas</h5>
+                            <div id="preguntasRespondidasContainer">
+                                <!-- Contenido dinámico de las preguntas -->
+                            </div>
+                            <p class="text-danger mt-3" id="errorPreguntas"></p>
                         </div>
                     </div>
                 </div>
@@ -407,82 +450,93 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
 
     <!-- CARGA DE GOOGLE MAPS API -->
     <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=<?= $google_maps_api_key ?>&callback=initMap">
-    </script>
-    
-    <script>
-    const detalleRespuestaUrl = "<?= site_url('controlador/detalleRespuesta') ?>";
-
-    function mostrarDetalleRespuesta(idRespuesta) {
-        fetch(`${detalleRespuestaUrl}?id=${idRespuesta}`)
-            .then(response => response.json())
-            .then(data => {
-                const detalle = data.detalle;
-                const ubicacion = data.ubicacion_mapa;
-
-                // Rellenar datos en el modal
-                document.getElementById('detalleIdRespuesta').textContent = detalle.id_respuesta;
-                document.getElementById('detalleTituloEncuesta').textContent = detalle.titulo_encuesta;
-                document.getElementById('detalleNombreEncuestador').textContent = `${detalle.nombre_usuario} ${detalle.apellido_paterno}`;
-                document.getElementById('detalleAliasEncuestador').textContent = detalle.alias_usuario;
-                document.getElementById('detalleFechaRespuesta').textContent = detalle.fecha_respuesta;
-                document.getElementById('detalleReferencias').textContent = detalle.referencias || 'Ninguna';
-                document.getElementById('detallePregunta').textContent = detalle.texto_pregunta;
-                document.getElementById('detalleOpcion').textContent = detalle.texto_opcion || 'No aplica';
-                document.getElementById('detalleDireccion').textContent = ubicacion.direccion || 'No registrada';
-
-                // Mostrar modal con Bootstrap 4
-                $('#modalDetalleRespuesta').modal('show');
-
-                // Cuando el modal esté visible, inicializamos el mapa
-                $('#modalDetalleRespuesta').on('shown.bs.modal', function () {
-                    initMapData(ubicacion.latitud, ubicacion.longitud, ubicacion.direccion);
-                });
-            })
-            .catch(err => console.error("Error cargando detalle:", err));
-    }
-
-    // Inicialización del mapa base
-    function initMap() {
-        const defaultCoords = { lat: 19.35, lng: -99.05 }; // Default México central
-        const mapDiv = document.getElementById('mapaUbicacion');
-
-        window.mapInstance = new google.maps.Map(mapDiv, {
-            center: defaultCoords,
-            zoom: 10
-        });
-
-        window.mapMarker = new google.maps.Marker({
-            map: mapInstance,
-            position: defaultCoords
-        });
-
-        mapMarker.setMap(null); // Ocultamos por defecto
-    }
-
-    // Función para actualizar el mapa con lat/lng
-    function initMapData(lat, lng, direccion) {
-        const mapDiv = document.getElementById("mapaUbicacion");
-
-        if (!lat || !lng) {
-            mapDiv.innerHTML = "<p class='text-muted text-center'>Ubicación no disponible</p>";
-            return;
-        }
-
-        const ubicacion = { lat: parseFloat(lat), lng: parseFloat(lng) };
-        mapInstance.setCenter(ubicacion);
-        mapInstance.setZoom(16);
-        mapMarker.setPosition(ubicacion);
-        mapMarker.setTitle(direccion || "Ubicación registrada");
-        mapMarker.setMap(mapInstance);
-
-        const infowindow = new google.maps.InfoWindow({
-            content: `<b>Última Ubicación GPS:</b><br>Lat: ${lat}, Lng: ${lng}`
-        });
-        infowindow.open(mapInstance, mapMarker);
-    }
+    src="https://maps.googleapis.com/maps/api/js?key=<?= $google_maps_api_key ?>&callback=initMap">
 </script>
 
+    <script>
+    const detalleRespuestaUrl = "<?= site_url('controlador/detalleRespuesta') ?>";
+    
+    // Variables globales para almacenar temporalmente los datos del mapa
+    let currentMapData = { direccion: null, latitud: null, longitud: null };
+    
+    // Event listener que se dispara CADA VEZ que el modal se abre completamente
+    $('#modalDetalleRespuesta').on('shown.bs.modal', function () {
+        // Ejecutamos la función de actualización del mapa (con el pequeño retraso)
+        setTimeout(function() {
+             updateMapUI(currentMapData.direccion, currentMapData.latitud, currentMapData.longitud); 
+        }, 250); // 250ms es el retraso óptimo para asegurar la visibilidad de Bootstrap
+    });
 
+    function mostrarDetalleRespuesta(idInstancia) {
+        // Limpiar contenido anterior
+        document.getElementById('preguntasRespondidasContainer').innerHTML = '<p class="text-muted">Cargando preguntas...</p>';
+        document.getElementById('errorPreguntas').textContent = '';
+        $('#detalleIdInstancia').text(idInstancia.substring(0, 8) + '...');
+        
+        // Limpiar el mapa antes de la carga (Muestra "Cargando mapa...")
+        document.getElementById('mapaUbicacion').innerHTML = '<div class="map-placeholder-content">Cargando mapa...</div>';
+        
+        // Resetear datos del mapa globalmente
+        currentMapData = { direccion: null, latitud: null, longitud: null };
+
+
+        fetch(`${detalleRespuestaUrl}?id_instancia=${idInstancia}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('errorPreguntas').textContent = `Error: ${data.error}`;
+                    document.getElementById('preguntasRespondidasContainer').innerHTML = '';
+                    return;
+                }
+
+                const detalle = data.detalle;
+                const preguntas = data.preguntas_respondidas;
+
+                // Rellenar datos de resumen en el modal
+                $('#detalleTituloEncuesta').text(detalle.titulo_encuesta);
+                // Detalle Alias Encuestador: Muestra Nombre Apellido (usuario)
+                $('#detalleAliasEncuestador').text(`${detalle.nombre_usuario} ${detalle.apellido_paterno} (${detalle.alias_usuario})`);
+                $('#detalleFechaRespuesta').text(detalle.fecha_respuesta);
+                $('#detalleReferencias').text(detalle.referencias || 'Ninguna');
+                $('#detalleDireccion').text(detalle.direccion || 'No registrada');
+                // ID de instancia completo en el título del modal
+                $('#detalleIdInstancia').text(idInstancia.substring(0, 15) + '...'); 
+                
+                // Almacenar datos del mapa para que el evento 'shown.bs.modal' los utilice
+                currentMapData.direccion = detalle.direccion;
+                currentMapData.latitud = detalle.latitud;
+                currentMapData.longitud = detalle.longitud;
+
+
+                // ----------------------------------------------------
+                // Rellenar las Preguntas y Respuestas
+                // ----------------------------------------------------
+                const container = $('#preguntasRespondidasContainer');
+                container.empty();
+
+                if (preguntas && preguntas.length > 0) {
+                    preguntas.forEach((item, index) => {
+                        const html = `
+                            <div class="respuesta-item">
+                                <h6>${index + 1}. ${item.texto_pregunta}</h6>
+                                <p class="text-success text-bold-600">Respuesta: ${item.respuesta_seleccionada || 'Sin respuesta seleccionada'}</p>
+                            </div>
+                        `;
+                        container.append(html);
+                    });
+                } else {
+                    container.html('<p class="text-muted">No se encontraron preguntas respondidas para esta instancia.</p>');
+                }
+
+                // Mostrar modal con Bootstrap 4.
+                $('#modalDetalleRespuesta').modal('show');
+            })
+            .catch(err => {
+                console.error("Error cargando detalle:", err);
+                document.getElementById('errorPreguntas').textContent = 'Error de red o servidor al cargar el detalle.';
+                $('#preguntasRespondidasContainer').empty();
+            });
+    }
+    </script>
   </body>
 </html>

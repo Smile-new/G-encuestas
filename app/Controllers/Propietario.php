@@ -66,7 +66,7 @@ private function _prepareUserData(): array
     /**
      * [NUEVA GRÁFICAS] Contiene la lógica completa de obtención y preparación de datos para las gráficas y KPIs.
      */
-    public function graficas()
+     public function graficas()
     {
         // 1. Instanciamos los modelos
         $usuarioModel   = new UsuarioModel();
@@ -76,7 +76,14 @@ private function _prepareUserData(): array
         // 2. Obtenemos los conteos totales para las tarjetas (KPIs)
         $totalUsuarios   = $usuarioModel->countAllResults();
         $totalEncuestas  = $encuestaModel->countAllResults();
-        $totalRespuestas = $respuestaModel->countAllResults();
+        
+        // --- Contar ENCUESTAS contestadas (INSTANCIAS ÚNICAS) ---
+        $conteoEncuestasData = $respuestaModel
+            ->select('COUNT(DISTINCT id_encuesta_realizada) as total_encuestas')
+            ->where('id_encuesta_realizada IS NOT NULL')
+            ->first();
+        $totalRespuestas = $conteoEncuestasData['total_encuestas'] ?? 0;
+        // ---------------------------------------------------------
 
         // 3. GRÁFICA DE BARRAS VERTICALES: Usuarios por Rol 
         $usuariosPorRol = $usuarioModel
@@ -100,8 +107,9 @@ private function _prepareUserData(): array
 
         // 5. GRÁFICA DE LÍNEA DE PICOS: Actividad general de los últimos 30 días 
         $actividad30Dias = $respuestaModel
-            ->select('DATE(fecha_respuesta) as fecha, COUNT(id_respuesta) as total')
+            ->select('DATE(fecha_respuesta) as fecha, COUNT(DISTINCT id_encuesta_realizada) as total')
             ->where('fecha_respuesta >=', date('Y-m-d H:i:s', strtotime('-30 days')))
+            ->where('id_encuesta_realizada IS NOT NULL')
             ->groupBy('DATE(fecha_respuesta)')
             ->orderBy('fecha', 'ASC')
             ->findAll();
@@ -117,15 +125,15 @@ private function _prepareUserData(): array
 
         // 6. Pasamos todos los datos a la vista 
         $data = [
-            'totalUsuarios'                => $totalUsuarios,
-            'totalEncuestas'               => $totalEncuestas,
-            'totalRespuestas'              => $totalRespuestas,
-            'graficaRolesLabels'           => json_encode($graficaRolesLabels),
-            'graficaRolesData'             => json_encode($graficaRolesData),
+            'totalUsuarios'              => $totalUsuarios,
+            'totalEncuestas'             => $totalEncuestas,
+            'totalRespuestas'            => $totalRespuestas, // Ahora es el total de INSTANCIAS de encuestas
+            'graficaRolesLabels'         => json_encode($graficaRolesLabels),
+            'graficaRolesData'           => json_encode($graficaRolesData),
             'graficaEncuestasStatusLabels' => json_encode($graficaEncuestasStatusLabels),
             'graficaEncuestasStatusData'   => json_encode($graficaEncuestasStatusData),
-            'graficaActividadLabels'       => json_encode($graficaActividadLabels),
-            'graficaActividadData'         => json_encode($graficaActividadData),
+            'graficaActividadLabels'     => json_encode($graficaActividadLabels),
+            'graficaActividadData'       => json_encode($graficaActividadData),
         ];
 
         return view('Controlador/graficas', $data);
@@ -141,8 +149,10 @@ private function _prepareUserData(): array
         $respuestaModel = new RespuestaModel();
         
         $query = $respuestaModel
-            ->select('DATE(fecha_respuesta) as fecha, COUNT(id_respuesta) as total')
-            ->where('fecha_respuesta >=', date('Y-m-d', strtotime('-30 days')));
+            // Se utiliza COUNT(DISTINCT id_encuesta_realizada) para reflejar la actividad basada en encuestas finalizadas.
+            ->select('DATE(fecha_respuesta) as fecha, COUNT(DISTINCT id_encuesta_realizada) as total')
+            ->where('fecha_respuesta >=', date('Y-m-d', strtotime('-30 days')))
+            ->where('id_encuesta_realizada IS NOT NULL'); // Solo contamos las que se completaron
 
         if ($encuestaId && $encuestaId !== 'all') {
             $query->where('id_encuesta', $encuestaId);
@@ -162,7 +172,6 @@ private function _prepareUserData(): array
 
         return $this->response->setJSON(['labels' => $labels, 'data' => $data]);
     }
-
     /**
      * Muestra la interfaz de supervisión de usuarios.
      * Carga la lista principal con roles y el nombre del creador.
@@ -270,6 +279,7 @@ private function _prepareUserData(): array
                 usuarios.id_usuario, 
                 usuarios.nombre, 
                 usuarios.apellido_paterno,
+                usuarios.apellido_materno,
                 usuarios.usuario,
                 roles.nombre_rol
             ')
@@ -352,7 +362,7 @@ private function _prepareUserData(): array
 
     /**
      * [FUNCIÓN PRINCIPAL]
-     * Muestra la interfaz de supervisión de respuestas con PAGINACIÓN.
+     * Muestra la interfaz de supervisión de respuestas con PAGINACIÓN, agrupadas por encuesta completada.
      */
     public function respuestas()
     {
@@ -361,25 +371,59 @@ private function _prepareUserData(): array
         $encuestaModel = new EncuestaModel();
 
         // --- Lógica de Paginación ---
-        $perPage = 50; // Definimos el límite de 50 respuestas por página
+        $perPage = 50; // Definimos el límite de 50 resultados por página
         
-        // Configuramos la consulta base con los JOINs necesarios
-        $query = $respuestaModel
+        // 1. Instancia de la Base de Datos (Corrección del error Undefined property: $db)
+        $db = \Config\Database::connect(); // <<< CORRECCIÓN CLAVE
+        
+        // 2. Consulta para OBTENER UNA SOLA FILA por cada INSTANCIA de encuesta completada.
+        // Usamos el id_encuesta_realizada para agrupar.
+        $subquery = $db->table('respuestas') // <<< USAMOS LA INSTANCIA $db
             ->select('
-                respuestas.id_respuesta,
-                respuestas.fecha_respuesta,
-                respuestas.direccion,
-                respuestas.id_usuario, 
+                id_encuesta_realizada,
+                MAX(fecha_respuesta) as fecha_respuesta,
+                MIN(id_respuesta) as id_respuesta_referencia,
+                id_usuario,
+                id_encuesta,
+                direccion
+            ')
+            ->where('id_encuesta_realizada IS NOT NULL')
+            ->groupBy('id_encuesta_realizada');
+
+        // Creamos una consulta principal para aplicar JOINS y PAGINACIÓN al resultado de la subconsulta
+        $query = $db->table('(' . $subquery->getCompiledSelect() . ') AS t1') // <<< USAMOS LA INSTANCIA $db
+            ->select('
+                t1.id_encuesta_realizada,
+                t1.fecha_respuesta,
+                t1.direccion,
+                t1.id_usuario, 
+                t1.id_encuesta,
                 usuarios.usuario AS nombre_encuestador,
                 encuestas.titulo AS nombre_encuesta
             ')
-            ->join('usuarios', 'usuarios.id_usuario = respuestas.id_usuario', 'left')
-            ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta', 'left')
-            ->orderBy('respuestas.fecha_respuesta', 'DESC');
+            ->join('usuarios', 'usuarios.id_usuario = t1.id_usuario', 'left')
+            ->join('encuestas', 'encuestas.id_encuesta = t1.id_encuesta', 'left')
+            ->orderBy('t1.fecha_respuesta', 'DESC');
         
-        // Obtenemos las respuestas paginadas
-        $listaRespuestas = $query->paginate($perPage);
-        $pager = $respuestaModel->pager; // Obtenemos la instancia de Pager
+        // Ejecutamos la paginación usando el modelo para manejar el objeto Pager
+        $db = \Config\Database::connect();
+        $builder = $db->table('respuestas');
+        
+        // Re-implementación de paginate para subquery: CodeIgniter no pagina directamente con subqueries en la tabla principal,
+        // así que usamos la paginación manual/simulada. 
+        
+        $totalResults = $query->countAllResults(false);
+        $page = $this->request->getVar('page') ?? 1;
+        $offset = ($page - 1) * $perPage;
+
+        $listaRespuestas = $query->limit($perPage, $offset)->get()->getResultArray();
+        
+        // Simulamos el objeto Pager que la vista espera (aunque no es el objeto oficial, proporciona los datos necesarios)
+        // Usamos service('pager') para generar los links
+        $pager = service('pager');
+        $pager->setPath(current_url());
+        $pagerLinks = $pager->makeLinks($page, $perPage, $totalResults);
+
 
         // Obtenemos la clave de API de Google Maps
         $googleConfig = config(\Config\Google::class);
@@ -387,8 +431,9 @@ private function _prepareUserData(): array
 
         $data = [
             'listaRespuestas' => $listaRespuestas,
-            'pager' => $pager, // Pasamos el objeto Pager a la vista
-            'perPage' => $perPage, // Pasamos el límite para referencia en la vista
+            'pager' => $pagerLinks, // Usamos la paginación simulada (links HTML)
+            'perPage' => $perPage,
+            'totalRespuestas' => $totalResults,
             'google_maps_api_key' => $google_maps_api_key, 
             'listaEncuestadores' => $usuarioModel->select('id_usuario, nombre, usuario')->findAll(),
             'listaEncuestas' => $encuestaModel->select('id_encuesta, titulo')->findAll(),
@@ -399,52 +444,73 @@ private function _prepareUserData(): array
 
     /**
      * [FUNCIÓN AJAX]
-     * Devuelve los detalles completos de una respuesta, incluyendo pregunta, opción y ubicación.
+     * Devuelve el DETALLE COMPLETO de la encuesta contestada, incluyendo preguntas y respuestas.
+     * Ahora recibe el id_encuesta_realizada (o id_instancia)
      */
     public function detalleRespuesta()
     {
-        $respuestaId = $this->request->getGet('id');
+        $idInstancia = $this->request->getGet('id_instancia');
         
-        if (!$respuestaId) {
-            return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de respuesta requerido.']);
+        if (!$idInstancia) {
+            return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de instancia de encuesta requerido.']);
         }
         
         $db = \Config\Database::connect();
-        
-        // Query para obtener la respuesta detallada con JOINS a todas las tablas necesarias
-        $builder = $db->table('respuestas');
-        $builder->select('
-            respuestas.*, 
-            usuarios.nombre AS nombre_usuario, usuarios.apellido_paterno, usuarios.usuario AS alias_usuario,
-            encuestas.titulo AS titulo_encuesta,
-            preguntas.texto_pregunta,
-            opciones.texto_opcion
-        ')
-        ->join('usuarios', 'usuarios.id_usuario = respuestas.id_usuario', 'left')
-        ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta', 'left')
-        ->join('preguntas', 'preguntas.id_pregunta = respuestas.id_pregunta', 'left')
-        ->join('opciones', 'opciones.id_opcion = respuestas.id_opcion', 'left')
-        ->where('respuestas.id_respuesta', $respuestaId);
+        $respuestaModel = new RespuestaModel();
+        $preguntaModel = new PreguntaModel();
 
-        $detalle = $builder->get()->getRowArray();
+        // 1. Obtener TODAS las respuestas de esta instancia (sesión de encuesta)
+        $respuestasInstancia = $respuestaModel
+            ->select('respuestas.*, preguntas.texto_pregunta, opciones.texto_opcion, encuestas.titulo AS titulo_encuesta, usuarios.usuario AS alias_usuario, usuarios.nombre AS nombre_usuario, usuarios.apellido_paterno')
+            ->join('preguntas', 'preguntas.id_pregunta = respuestas.id_pregunta', 'left')
+            ->join('opciones', 'opciones.id_opcion = respuestas.id_opcion', 'left')
+            ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta', 'left')
+            ->join('usuarios', 'usuarios.id_usuario = respuestas.id_usuario', 'left')
+            ->where('respuestas.id_encuesta_realizada', $idInstancia)
+            // Agregamos un ORDER BY para consistencia, si la tabla preguntas tiene una columna 'orden_pregunta'
+            // Si 'orden_pregunta' no existe, quita la siguiente línea
+            ->orderBy('preguntas.id_pregunta', 'ASC') 
+            ->findAll();
 
-        if (!$detalle) {
-            return $this->response->setStatusCode(404)->setJSON(['error' => 'Detalle de respuesta no encontrado.']);
+        if (empty($respuestasInstancia)) {
+            return $this->response->setStatusCode(404)->setJSON(['error' => 'Detalle de encuesta contestada no encontrado.']);
         }
         
-        // OBTENER COORDENADAS DE MONITOREO DEL USUARIO
-        $monitoreoModel = new MonitoreoModel();
-        $ubicacionMonitoreo = $monitoreoModel->find($detalle['id_usuario']);
+        // 2. Estructurar el detalle de la encuesta para la vista
+        $detalle = [];
+        $preguntasRespondidas = [];
         
+        foreach ($respuestasInstancia as $respuesta) {
+            // Datos del encabezado (tomados de la primera respuesta)
+            if (empty($detalle)) {
+                $detalle = [
+                    'id_usuario' => $respuesta['id_usuario'],
+                    'alias_usuario' => $respuesta['alias_usuario'],
+                    'nombre_usuario' => $respuesta['nombre_usuario'],
+                    'apellido_paterno' => $respuesta['apellido_paterno'],
+                    'titulo_encuesta' => $respuesta['titulo_encuesta'],
+                    'fecha_respuesta' => $respuesta['fecha_respuesta'],
+                    'direccion' => $respuesta['direccion'],
+                    'referencias' => $respuesta['referencias'],
+                    'id_encuesta_realizada' => $respuesta['id_encuesta_realizada'],
+                ];
+                // Obtener coordenadas de monitoreo (una sola vez)
+                $monitoreoModel = new MonitoreoModel();
+                $ubicacionMonitoreo = $monitoreoModel->find($respuesta['id_usuario']);
+                $detalle['latitud'] = $ubicacionMonitoreo['latitud'] ?? null;
+                $detalle['longitud'] = $ubicacionMonitoreo['longitud'] ?? null;
+            }
+            
+            $preguntasRespondidas[] = [
+                'texto_pregunta' => $respuesta['texto_pregunta'],
+                'respuesta_seleccionada' => $respuesta['texto_opcion'],
+            ];
+        }
+
+        // 3. Devolver la respuesta en formato JSON
         return $this->response->setJSON([
             'detalle' => $detalle,
-            'ubicacion_mapa' => [
-                'direccion' => $detalle['direccion'] ?? 'Ubicación no registrada',
-                'referencias' => $detalle['referencias'] ?? 'N/A',
-                // Devolvemos las coordenadas para el mapa
-                'latitud' => $ubicacionMonitoreo['latitud'] ?? null,
-                'longitud' => $ubicacionMonitoreo['longitud'] ?? null
-            ]
+            'preguntas_respondidas' => $preguntasRespondidas
         ]);
     }
 

@@ -59,16 +59,27 @@ class Operador_User extends BaseController
         $usuariosEncuestadores = $query->findAll();
         
         if (!empty($usuariosEncuestadores)) {
-            $conteoRespuestas = $this->respuestaModel
-                                     ->select('respuestas.id_usuario, COUNT(respuestas.id_respuesta) as respuestas_contestadas')
-                                     ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta')
-                                     ->where('encuestas.activa', 1)
-                                     ->groupBy('respuestas.id_usuario')
-                                     ->findAll();
+            // 1. Obtener solo los IDs de los encuestadores que estamos listando
+            $encuestadorIds = array_column($usuariosEncuestadores, 'id_usuario');
             
-            $conteoMap = array_column($conteoRespuestas, 'respuestas_contestadas', 'id_usuario');
+            // 2. Consulta para contar ENCUESTAS completadas por INSTANCIA (id_encuesta_realizada)
+            $conteoEncuestas = $this->respuestaModel
+                                    ->select('respuestas.id_usuario, COUNT(DISTINCT respuestas.id_encuesta_realizada) as encuestas_contestadas')
+                                    // Aseguramos que solo contamos las instancias de encuestas de los usuarios listados
+                                    ->whereIn('respuestas.id_usuario', $encuestadorIds)
+                                    // Filtramos por encuestas activas
+                                    ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta')
+                                    ->where('encuestas.activa', 1) 
+                                    // Aseguramos que el identificador NO sea NULL (solo encuestas completas)
+                                    ->where('respuestas.id_encuesta_realizada IS NOT NULL')
+                                    ->groupBy('respuestas.id_usuario')
+                                    ->findAll();
+            
+            // 3. Mapeamos los resultados por id_usuario
+            $conteoMap = array_column($conteoEncuestas, 'encuestas_contestadas', 'id_usuario');
             
             foreach ($usuariosEncuestadores as &$usuario) {
+                // Usamos la clave 'respuestas_contestadas' para mantener compatibilidad con la vista
                 $usuario['respuestas_contestadas'] = $conteoMap[$usuario['id_usuario']] ?? 0;
             }
             unset($usuario);
@@ -263,4 +274,3 @@ class Operador_User extends BaseController
         return $password;
     }
 }
-

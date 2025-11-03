@@ -234,7 +234,7 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                                                             <th>Nombre Completo</th>
                                                             <th>Teléfono</th>
                                                             <th>Usuario</th>
-                                                            <th>Respuestas Contestadas</th>
+                                                            <th>Encuestas Contestadas</th>
                                                             <th>Acciones</th>
                                                         </tr>
                                                     </thead>
