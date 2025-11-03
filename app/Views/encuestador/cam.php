@@ -289,22 +289,22 @@ if ($userData) {
 
         <div class="form-group">
             <label>Nombre(s)</label>
-            <input type="text" name="nombre" value="<?= esc($userData['nombre']) ?>" class="form-control" readonly>
+            <input type="text" name="nombre" value="<?= esc($userData['nombre']) ?>" class="form-control">
         </div>
 
         <div class="form-group">
             <label>Apellido Paterno</label>
-            <input type="text" name="apellido_paterno" value="<?= esc($userData['apellido_paterno']) ?>" class="form-control" readonly>
+            <input type="text" name="apellido_paterno" value="<?= esc($userData['apellido_paterno']) ?>" class="form-control">
         </div>
 
         <div class="form-group">
             <label>Apellido Materno</label>
-            <input type="text" name="apellido_materno" value="<?= esc($userData['apellido_materno']) ?>" class="form-control" readonly>
+            <input type="text" name="apellido_materno" value="<?= esc($userData['apellido_materno']) ?>" class="form-control">
         </div>
 
         <div class="form-group">
             <label>Teléfono</label>
-            <input type="text" name="telefono" value="<?= esc($userData['telefono']) ?>" class="form-control" readonly>
+            <input type="text" name="telefono" value="<?= esc($userData['telefono']) ?>" class="form-control">
         </div>
 
         <div class="form-group">
