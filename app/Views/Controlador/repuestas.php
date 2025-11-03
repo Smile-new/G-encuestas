@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html class="loading" lang="es" data-textdirection="ltr">
-  <head>
+<head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui">
@@ -10,18 +10,10 @@
     <link href="https://fonts.googleapis.com/css?family=Muli:300,300i,400,400i,600,600i,700,700i%7CComfortaa:300,400,700" rel="stylesheet">
     <link href="https://maxcdn.icons8.com/fonts/line-awesome/1.1/css/line-awesome.min.css" rel="stylesheet">
     
-    <!-- BEGIN VENDOR CSS-->
     <link rel="stylesheet" type="text/css" href="<?= base_url(RECURSOS_CONTROLADOR_CSS . 'vendors.css') ?>">
-    <!-- END VENDOR CSS-->
-
-    <!-- BEGIN CHAMELEON CSS-->
     <link rel="stylesheet" type="text/css" href="<?= base_url(RECURSOS_CONTROLADOR_CSS . 'app-lite.css') ?>">
-    <!-- END CHAMELEON CSS-->
-
-    <!-- BEGIN Page Level CSS-->
     <link rel="stylesheet" type="text/css" href="<?= base_url(RECURSOS_CONTROLADOR_CSS . 'core/menu/menu-types/vertical-menu.css') ?>">
     <link rel="stylesheet" type="text/css" href="<?= base_url(RECURSOS_CONTROLADOR_CSS . 'core/colors/palette-gradient.css') ?>">
-    <!-- END Page Level CSS-->
     <style>
         /* CORRECCIÓN: Asegura que el modal esté por encima del menú lateral (z-index 999) */
         .modal {
@@ -45,13 +37,13 @@
             font-size: 1.25rem !important;
         }
         .map-placeholder-content {
-            /* Estilo para el contenido del placeholder si no hay mapa */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100%;
             background-color: #f8f9fa;
+            text-align: center;
         }
 
         /* INICIO: ESTILOS DE PAGINACIÓN MEJORADOS */
@@ -124,146 +116,8 @@
         }
         /* FIN: ESTILOS DE PAGINACIÓN MEJORADOS */
     </style>
-    <!-- [INICIO CÓDIGO MAPA] -->
-    <script>
-        // Variables globales para la instancia del mapa y el marcador
-        var mapInstance;
-        var mapMarker;
-        
-        // Función global requerida por Google Maps API para la inicialización
-        // Función global requerida por Google Maps API
-window.initMap = function() {
-    console.log('Google Maps API cargada correctamente');
-    
-    // Solo inicializar variables globales, el mapa se crea en updateMapUI
-    const mapDiv = document.getElementById('mapaUbicacion');
-    
-    if (mapDiv) {
-        // Limpiar placeholder
-        mapDiv.innerHTML = '<div class="map-placeholder-content">Preparando mapa...</div>';
-    }
-};
-        
-        /**
-         * Función robusta para actualizar el mapa, diseñada para ejecutarse dentro de un modal.
-         * @param {string} direccion Dirección de la encuesta (para el título).
-         * @param {string} lat Latitud.
-         * @param {string} lng Longitud.
-         */
-        /**
- * Función robusta para actualizar el mapa
- */
-function updateMapUI(direccion, lat, lng) {
-    const mapDiv = document.getElementById('mapaUbicacion');
-    
-    // Verificar si Google Maps API está cargada
-    if (!window.google || !window.google.maps) {
-        mapDiv.innerHTML = `<div class="map-placeholder-content">
-            <p class="text-warning">
-                <i class="la la-warning font-large-2 mb-2"></i><br>
-                Cargando API de Google Maps...
-            </p>
-        </div>`;
-        
-        // Reintentar después de 2 segundos
-        setTimeout(() => {
-            if (window.google && window.google.maps) {
-                updateMapUI(direccion, lat, lng);
-            }
-        }, 2000);
-        return;
-    }
-
-    // Validar coordenadas
-    if (!lat || !lng || lat === "null" || lng === "null" || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))) {
-        mapDiv.innerHTML = `<div class="map-placeholder-content">
-            <p class="text-info">
-                <i class="la la-map-marker font-large-2 mb-2"></i><br>
-                Ubicación GPS no registrada para esta encuesta.
-            </p>
-        </div>`;
-        return;
-    }
-
-    const latFloat = parseFloat(lat);
-    const lngFloat = parseFloat(lng);
-    
-    // Validar rango de coordenadas (ajusta según tu ubicación)
-    if (latFloat < -90 || latFloat > 90 || lngFloat < -180 || lngFloat > 180) {
-        mapDiv.innerHTML = `<div class="map-placeholder-content">
-            <p class="text-danger">
-                <i class="la la-close font-large-2 mb-2"></i><br>
-                Coordenadas GPS inválidas.
-            </p>
-        </div>`;
-        return;
-    }
-
-    const coords = { lat: latFloat, lng: lngFloat };
-
-    try {
-        // INICIALIZAR MAPA SI NO EXISTE
-        if (!mapInstance) {
-            mapInstance = new google.maps.Map(mapDiv, {
-                center: coords,
-                zoom: 16,
-                mapTypeId: google.maps.MapTypeId.ROADMAP,
-                gestureHandling: "greedy"
-            });
-            
-            mapMarker = new google.maps.Marker({
-                map: mapInstance,
-                position: coords,
-                title: 'Ubicación de Encuesta',
-                animation: google.maps.Animation.DROP
-            });
-        } else {
-            // Si ya existe, actualizar posición
-            mapInstance.setCenter(coords);
-            mapInstance.setZoom(16);
-            mapMarker.setPosition(coords);
-            mapMarker.setTitle(direccion || 'Ubicación de Encuesta');
-        }
-
-        // Crear o actualizar InfoWindow
-        if (!window.currentInfoWindow) {
-            window.currentInfoWindow = new google.maps.InfoWindow();
-        }
-        
-        window.currentInfoWindow.setContent(`
-            <div style="padding: 10px; max-width: 250px;">
-                <h6 style="margin: 0 0 8px 0; color: #333;">Ubicación GPS Registrada</h6>
-                <p style="margin: 0; font-size: 12px; color: #666;">
-                    <strong>Dirección:</strong> ${direccion || 'No disponible'}<br>
-                    <strong>Coordenadas:</strong><br>
-                    Lat: ${latFloat.toFixed(6)}<br>
-                    Lng: ${lngFloat.toFixed(6)}
-                </p>
-            </div>
-        `);
-        
-        window.currentInfoWindow.open(mapInstance, mapMarker);
-
-        // Disparar evento de resize después de un pequeño delay
-        setTimeout(() => {
-            google.maps.event.trigger(mapInstance, 'resize');
-            mapInstance.setCenter(coords); // Recentrar después del resize
-        }, 100);
-
-    } catch (error) {
-        console.error('Error al inicializar el mapa:', error);
-        mapDiv.innerHTML = `<div class="map-placeholder-content">
-            <p class="text-danger">
-                <i class="la la-close font-large-2 mb-2"></i><br>
-                Error al cargar el mapa: ${error.message}
-            </p>
-        </div>`;
-    }
-}
-    </script>
-    <!-- [FIN CÓDIGO MAPA] -->
-  </head>
-  <body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-gradient-x-purple-blue" data-col="2-columns">
+</head>
+<body class="vertical-layout vertical-menu 2-columns menu-expanded fixed-navbar" data-open="click" data-menu="vertical-menu" data-color="bg-gradient-x-purple-blue" data-col="2-columns">
 <?php
 // Preparar datos del usuario (debe pasarse desde el controlador preferiblemente)
 $isLoggedIn = session()->get('isLoggedIn') ?? false;
@@ -282,7 +136,6 @@ if ($isLoggedIn && $userData) {
 }
 ?>
 
-    <!-- fixed-top-->
     <nav class="header-navbar navbar-expand-md navbar navbar-with-menu navbar-without-dd-arrow fixed-top navbar-semi-light">
       <div class="navbar-wrapper">
         <div class="navbar-container content">
@@ -294,17 +147,16 @@ if ($isLoggedIn && $userData) {
             <ul class="nav navbar-nav float-right">
               <li class="dropdown dropdown-user nav-item"><a class="dropdown-toggle nav-link dropdown-user-link" href="#" data-toggle="dropdown"> <span class="avatar avatar-online"><img src="<?= $rutaFotoPerfil ?>" alt="avatar"><i></i></span></a>
                 <div class="dropdown-menu dropdown-menu-right">
-                    <div class="arrow_box_right">
-                      <a class="dropdown-item" href="#">
-                        <span class="avatar avatar-online">
-                          <img src="<?= $rutaFotoPerfil ?>" alt="avatar">
-                        </span>
-                        <span class="user-name text-bold-700 ml-1"><?= esc($nombreCompleto) ?></span>
-                      </a>
-                    </div>          
-                    <div class="dropdown-divider"></div><a class="dropdown-item" href="/controlador/perfil"><i class="ft-user"></i> Editar Perfil</a>
-                    <div class="dropdown-divider"></div><a class="dropdown-item" href="/logout"><i class="ft-power"></i> Cerrar Sesión</a>
+                  <div class="arrow_box_right">
+                    <a class="dropdown-item" href="#">
+                      <span class="avatar avatar-online">
+                        <img src="<?= $rutaFotoPerfil ?>" alt="avatar">
+                      </span>
+                      <span class="user-name text-bold-700 ml-1"><?= esc($nombreCompleto) ?></span>
+                    </a>
                   </div>
+                  <div class="dropdown-divider"></div><a class="dropdown-item" href="/controlador/perfil"><i class="ft-user"></i> Editar Perfil</a>
+                  <div class="dropdown-divider"></div><a class="dropdown-item" href="/logout"><i class="ft-power"></i> Cerrar Sesión</a>
                 </div>
               </li>
             </ul>
@@ -312,8 +164,6 @@ if ($isLoggedIn && $userData) {
         </div>
       </div>
     </nav>
-
-    <!--////////////////////////////////////////////////////////////////////////////-->
 
     <div class="main-menu menu-fixed menu-light menu-accordion menu-shadow" data-scroll-to-active="true" data-img="<?= base_url(RECURSOS_CONTROLADOR_IMAGES . 'backgrounds/02.jpg') ?>">
       <div class="navbar-header">
@@ -330,7 +180,7 @@ if ($isLoggedIn && $userData) {
           <li class="nav-item"><a href="<?= base_url('controlador/usuarios') ?>"><i class="la la-users"></i><span class="menu-title">Usuarios</span></a></li>
           <li class="nav-item"><a href="<?= base_url('controlador/encuestas') ?>"><i class="la la-list-alt"></i><span class="menu-title">Encuestas</span></a></li>
           <li class="active"><a href="<?= base_url('controlador/respuestas') ?>"><i class="la la-check-square"></i><span class="menu-title">Respuestas</span></a></li>
-          <li class=" nav-item"><a href="<?= base_url('controlador/perfil') ?>"><i class="la la-user"></i><span class="menu-title">Perfil</span></a></li>         
+          <li class=" nav-item"><a href="<?= base_url('controlador/perfil') ?>"><i class="la la-user"></i><span class="menu-title">Perfil</span></a></li>
         </ul>
       </div>
       <div class="navigation-background"></div>
@@ -355,7 +205,6 @@ if ($isLoggedIn && $userData) {
           </div>
         </div>
         <div class="content-body">
-            <!-- Tabla de Respuestas (Ahora por Instancia) -->
             <div class="row">
                 <div class="col-12">
                     <div class="card">
@@ -389,7 +238,6 @@ if ($isLoggedIn && $userData) {
                                             <?php if (!empty($listaRespuestas)) : ?>
                                                 <?php foreach ($listaRespuestas as $respuesta) : ?>
                                                     <tr>
-                                                        <!-- Muestra el ID de la instancia de la encuesta -->
                                                         <th scope="row" title="ID de Instancia: <?= esc($respuesta['id_encuesta_realizada']) ?>">
                                                             <?= substr(esc($respuesta['id_encuesta_realizada']), 0, 8) ?>...
                                                         </th>
@@ -420,23 +268,17 @@ if ($isLoggedIn && $userData) {
                                         </tbody>
                                     </table>
                                 </div>
-                                <!-- Links de Paginación -->
                                 <div class="mt-3 pager">
                                     <?= $pager ?>
                                 </div>
-                                <!-- Fin Paginación -->
-                            </div>
+                                </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- Fin de la tabla -->
-        </div>
+            </div>
       </div>
     </div>
-    <!-- ////////////////////////////////////////////////////////////////////////////-->
-
-    <!-- Modal para el detalle de la respuesta (MODIFICADO) -->
     <div class="modal fade text-left" id="modalDetalleRespuesta" tabindex="-1" role="dialog" aria-labelledby="detalleRespuestaLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
@@ -448,7 +290,6 @@ if ($isLoggedIn && $userData) {
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <!-- Columna de Resumen y Geolocalización -->
                         <div class="col-lg-5 col-md-12 border-right">
                             <h5 class="mb-3 text-bold-600 border-bottom pb-1">Resumen y Trazabilidad</h5>
                             <p><strong>Encuesta:</strong> <span id="detalleTituloEncuesta"></span></p>
@@ -464,12 +305,10 @@ if ($isLoggedIn && $userData) {
                             <p class="text-muted mt-2"><small>El mapa muestra la **última ubicación** registrada del encuestador (punto GPS) al momento de la captura.</small></p>
                         </div>
 
-                        <!-- Columna de Preguntas y Respuestas -->
                         <div class="col-lg-7 col-md-12">
                             <h5 class="mb-3 text-bold-600 border-bottom pb-1">Preguntas y Respuestas Registradas</h5>
                             <div id="preguntasRespondidasContainer">
-                                <!-- Contenido dinámico de las preguntas -->
-                            </div>
+                                </div>
                             <p class="text-danger mt-3" id="errorPreguntas"></p>
                         </div>
                     </div>
@@ -481,17 +320,9 @@ if ($isLoggedIn && $userData) {
         </div>
     </div>
 
-    <!-- JQUERY (necesario para $ y modales de Bootstrap) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<!-- BOOTSTRAP JS (necesario para $('#modalDetalleRespuesta').modal) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-
-
-    <!-- CARGA DE GOOGLE MAPS API -->
-    <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=<?= $google_maps_api_key ?>&callback=initMap">
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
     const detalleRespuestaUrl = "<?= site_url('controlador/detalleRespuesta') ?>";
@@ -499,33 +330,66 @@ if ($isLoggedIn && $userData) {
     // Variables globales para almacenar temporalmente los datos del mapa
     let currentMapData = { direccion: null, latitud: null, longitud: null };
     
-    // Event listener que se dispara CADA VEZ que el modal se abre completamente
+    // --- EVENTOS GLOBALES DEL MODAL (Definidos una sola vez) ---
+
+    // Evento que se dispara CADA VEZ que el modal se abre completamente
     $('#modalDetalleRespuesta').on('shown.bs.modal', function () {
-        // Ejecutamos la función de actualización del mapa (con el pequeño retraso)
+        console.log('Modal abierto, actualizando mapa...');
+        
+        // Retraso para asegurar que el modal es visible ANTES de dibujar el mapa
         setTimeout(function() {
-             updateMapUI(currentMapData.direccion, currentMapData.latitud, currentMapData.longitud); 
-        }, 250); // 250ms es el retraso óptimo para asegurar la visibilidad de Bootstrap
+            updateMapUI(
+                currentMapData.direccion, 
+                currentMapData.latitud, 
+                currentMapData.longitud
+            ); 
+        }, 250); 
     });
+
+    // Evento que se dispara CADA VEZ que el modal se cierra completamente
+    $('#modalDetalleRespuesta').on('hidden.bs.modal', function () {
+        console.log('Modal cerrado, destruyendo instancias de mapa...');
+        
+        // 1. Cerrar el info window si existe
+        if (window.currentInfoWindow) {
+            window.currentInfoWindow.close();
+        }
+        
+        // 2. ***** LA CORRECCIÓN CLAVE ESTÁ AQUÍ *****
+        // Destruimos las instancias globales de Google Maps.
+        // Al ponerlas en 'null', forzamos a updateMapUI a recrearlas
+        // desde cero en el bloque 'if (!mapInstance)' la próxima vez.
+        mapInstance = null;
+        mapMarker = null;
+        window.currentInfoWindow = null;
+
+        // 3. Resetear el HTML del div para el placeholder
+        $('#mapaUbicacion').html('<div class="map-placeholder-content">Cargando mapa...</div>');
+    });
+
+
+    // --- FUNCIÓN PRINCIPAL PARA MOSTRAR DETALLES ---
 
     function mostrarDetalleRespuesta(idInstancia) {
         // Limpiar contenido anterior
-        document.getElementById('preguntasRespondidasContainer').innerHTML = '<p class="text-muted">Cargando preguntas...</p>';
-        document.getElementById('errorPreguntas').textContent = '';
+        $('#preguntasRespondidasContainer').html('<p class="text-muted">Cargando preguntas...</p>');
+        $('#errorPreguntas').text('');
         $('#detalleIdInstancia').text(idInstancia.substring(0, 8) + '...');
         
-        // Limpiar el mapa antes de la carga (Muestra "Cargando mapa...")
-        document.getElementById('mapaUbicacion').innerHTML = '<div class="map-placeholder-content">Cargando mapa...</div>';
+        // Resetear placeholder del mapa (esto se hace en 'hidden.bs.modal',
+        // pero lo ponemos aquí también por seguridad)
+        $('#mapaUbicacion').html('<div class="map-placeholder-content">Cargando mapa...</div>');
         
         // Resetear datos del mapa globalmente
         currentMapData = { direccion: null, latitud: null, longitud: null };
 
-
+        // Iniciar la petición de datos
         fetch(`${detalleRespuestaUrl}?id_instancia=${idInstancia}`)
             .then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    document.getElementById('errorPreguntas').textContent = `Error: ${data.error}`;
-                    document.getElementById('preguntasRespondidasContainer').innerHTML = '';
+                    $('#errorPreguntas').text(`Error: ${data.error}`);
+                    $('#preguntasRespondidasContainer').empty();
                     return;
                 }
 
@@ -534,12 +398,10 @@ if ($isLoggedIn && $userData) {
 
                 // Rellenar datos de resumen en el modal
                 $('#detalleTituloEncuesta').text(detalle.titulo_encuesta);
-                // Detalle Alias Encuestador: Muestra Nombre Apellido (usuario)
                 $('#detalleAliasEncuestador').text(`${detalle.nombre_usuario} ${detalle.apellido_paterno} (${detalle.alias_usuario})`);
                 $('#detalleFechaRespuesta').text(detalle.fecha_respuesta);
                 $('#detalleReferencias').text(detalle.referencias || 'Ninguna');
                 $('#detalleDireccion').text(detalle.direccion || 'No registrada');
-                // ID de instancia completo en el título del modal
                 $('#detalleIdInstancia').text(idInstancia.substring(0, 15) + '...'); 
                 
                 // Almacenar datos del mapa para que el evento 'shown.bs.modal' los utilice
@@ -547,10 +409,7 @@ if ($isLoggedIn && $userData) {
                 currentMapData.latitud = detalle.latitud;
                 currentMapData.longitud = detalle.longitud;
 
-
-                // ----------------------------------------------------
                 // Rellenar las Preguntas y Respuestas
-                // ----------------------------------------------------
                 const container = $('#preguntasRespondidasContainer');
                 container.empty();
 
@@ -568,15 +427,20 @@ if ($isLoggedIn && $userData) {
                     container.html('<p class="text-muted">No se encontraron preguntas respondidas para esta instancia.</p>');
                 }
 
-                // Mostrar modal con Bootstrap 4.
+                // Ahora que todos los datos están listos, mostramos el modal.
                 $('#modalDetalleRespuesta').modal('show');
+
             })
-            .catch(err => {
-                console.error("Error cargando detalle:", err);
-                document.getElementById('errorPreguntas').textContent = 'Error de red o servidor al cargar el detalle.';
+            .catch(error => {
+                console.error('Error en fetch:', error);
+                $('#errorPreguntas').text(`Error de red o conexión: ${error.message}`);
                 $('#preguntasRespondidasContainer').empty();
             });
     }
     </script>
-  </body>
+
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=<?= $google_maps_api_key ?>&callback=initMap">
+    </script>
+</body>
 </html>
