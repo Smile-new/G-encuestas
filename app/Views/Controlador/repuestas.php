@@ -131,28 +131,18 @@
         var mapMarker;
         
         // Función global requerida por Google Maps API para la inicialización
-        window.initMap = function() {
-            // Esta función se mantiene simple y solo se encarga de definir las instancias globales.
-            const defaultCoords = { lat: 19.35, lng: -99.05 }; 
-            const mapDiv = document.getElementById('mapaUbicacion');
-            
-            // La inicialización real del mapa se hará en updateMapUI, pero definimos las variables
-            // aquí si el div existe (aunque esté oculto).
-            if (mapDiv && !mapInstance) {
-                mapInstance = new google.maps.Map(mapDiv, {
-                    center: defaultCoords,
-                    zoom: 10,
-                    mapTypeId: google.maps.MapTypeId.ROADMAP
-                });
-                
-                mapMarker = new google.maps.Marker({
-                    map: mapInstance,
-                    position: defaultCoords,
-                    title: 'Ubicación'
-                });
-                mapMarker.setMap(null); // Ocultar marcador por defecto
-            }
-        };
+        // Función global requerida por Google Maps API
+window.initMap = function() {
+    console.log('Google Maps API cargada correctamente');
+    
+    // Solo inicializar variables globales, el mapa se crea en updateMapUI
+    const mapDiv = document.getElementById('mapaUbicacion');
+    
+    if (mapDiv) {
+        // Limpiar placeholder
+        mapDiv.innerHTML = '<div class="map-placeholder-content">Preparando mapa...</div>';
+    }
+};
         
         /**
          * Función robusta para actualizar el mapa, diseñada para ejecutarse dentro de un modal.
@@ -160,66 +150,116 @@
          * @param {string} lat Latitud.
          * @param {string} lng Longitud.
          */
-        function updateMapUI(direccion, lat, lng) {
-            const mapDiv = document.getElementById('mapaUbicacion');
-            
-            if (!window.google || !window.google.maps) {
-                 mapDiv.innerHTML = `<div class="map-placeholder-content"><p class="text-danger">
-                    <i class="la la-close font-large-2 mb-2"></i><br>
-                    Error: La API de Google Maps no se cargó correctamente.
-                </p></div>`;
-                return;
+        /**
+ * Función robusta para actualizar el mapa
+ */
+function updateMapUI(direccion, lat, lng) {
+    const mapDiv = document.getElementById('mapaUbicacion');
+    
+    // Verificar si Google Maps API está cargada
+    if (!window.google || !window.google.maps) {
+        mapDiv.innerHTML = `<div class="map-placeholder-content">
+            <p class="text-warning">
+                <i class="la la-warning font-large-2 mb-2"></i><br>
+                Cargando API de Google Maps...
+            </p>
+        </div>`;
+        
+        // Reintentar después de 2 segundos
+        setTimeout(() => {
+            if (window.google && window.google.maps) {
+                updateMapUI(direccion, lat, lng);
             }
-            
-            // --- CÓDIGO CRÍTICO DE INICIALIZACIÓN/ACTUALIZACIÓN ---
-            // 1. Si la API cargó pero la instancia aún no existe, la creamos ahora que el div es visible.
-            if (!mapInstance) {
-                // Re-ejecutamos initMap para crear la instancia
-                window.initMap(); 
-            }
-            
-            if (!mapInstance) {
-                // Si aún falla, es un error de API Key.
-                mapDiv.innerHTML = `<div class="map-placeholder-content"><p class="text-danger">
-                    <i class="la la-close font-large-2 mb-2"></i><br>
-                    Error de inicialización de instancias. Revise la consola y su API Key.
-                </p></div>`;
-                return;
-            }
-            // --- FIN CÓDIGO CRÍTICO ---
+        }, 2000);
+        return;
+    }
 
+    // Validar coordenadas
+    if (!lat || !lng || lat === "null" || lng === "null" || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))) {
+        mapDiv.innerHTML = `<div class="map-placeholder-content">
+            <p class="text-info">
+                <i class="la la-map-marker font-large-2 mb-2"></i><br>
+                Ubicación GPS no registrada para esta encuesta.
+            </p>
+        </div>`;
+        return;
+    }
 
-            if (!lat || !lng || lat === "null" || lng === "null") {
-                 mapDiv.innerHTML = `<div class="map-placeholder-content"><p class="text-danger">
-                    <i class="la la-close font-large-2 mb-2"></i><br>
-                    Ubicación GPS de monitoreo no registrada para el encuestador.
-                </p></div>`;
-                mapMarker.setMap(null);
-                return;
-            }
-            
-            const latFloat = parseFloat(lat);
-            const lngFloat = parseFloat(lng);
-            const coords = { lat: latFloat, lng: lngFloat };
-            
-            mapDiv.innerHTML = '';
-            
-            // 1. FORZAR REDIMENSIONAMIENTO (CLAVE)
-            google.maps.event.trigger(mapInstance, 'resize');
-            
-            // 2. Centrar y colocar el marcador
-            mapInstance.setCenter(coords);
-            mapInstance.setZoom(14);
-            mapMarker.setPosition(coords);
-            mapMarker.setTitle(direccion);
-            mapMarker.setMap(mapInstance); 
+    const latFloat = parseFloat(lat);
+    const lngFloat = parseFloat(lng);
+    
+    // Validar rango de coordenadas (ajusta según tu ubicación)
+    if (latFloat < -90 || latFloat > 90 || lngFloat < -180 || lngFloat > 180) {
+        mapDiv.innerHTML = `<div class="map-placeholder-content">
+            <p class="text-danger">
+                <i class="la la-close font-large-2 mb-2"></i><br>
+                Coordenadas GPS inválidas.
+            </p>
+        </div>`;
+        return;
+    }
 
-            // 3. Mostrar InfoWindow
-            const infowindow = new google.maps.InfoWindow({
-                content: `<b>Ubicación GPS:</b><br>Lat: ${lat}, Lng: ${lng}`
+    const coords = { lat: latFloat, lng: lngFloat };
+
+    try {
+        // INICIALIZAR MAPA SI NO EXISTE
+        if (!mapInstance) {
+            mapInstance = new google.maps.Map(mapDiv, {
+                center: coords,
+                zoom: 16,
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                gestureHandling: "greedy"
             });
-            infowindow.open(mapInstance, mapMarker);
+            
+            mapMarker = new google.maps.Marker({
+                map: mapInstance,
+                position: coords,
+                title: 'Ubicación de Encuesta',
+                animation: google.maps.Animation.DROP
+            });
+        } else {
+            // Si ya existe, actualizar posición
+            mapInstance.setCenter(coords);
+            mapInstance.setZoom(16);
+            mapMarker.setPosition(coords);
+            mapMarker.setTitle(direccion || 'Ubicación de Encuesta');
         }
+
+        // Crear o actualizar InfoWindow
+        if (!window.currentInfoWindow) {
+            window.currentInfoWindow = new google.maps.InfoWindow();
+        }
+        
+        window.currentInfoWindow.setContent(`
+            <div style="padding: 10px; max-width: 250px;">
+                <h6 style="margin: 0 0 8px 0; color: #333;">Ubicación GPS Registrada</h6>
+                <p style="margin: 0; font-size: 12px; color: #666;">
+                    <strong>Dirección:</strong> ${direccion || 'No disponible'}<br>
+                    <strong>Coordenadas:</strong><br>
+                    Lat: ${latFloat.toFixed(6)}<br>
+                    Lng: ${lngFloat.toFixed(6)}
+                </p>
+            </div>
+        `);
+        
+        window.currentInfoWindow.open(mapInstance, mapMarker);
+
+        // Disparar evento de resize después de un pequeño delay
+        setTimeout(() => {
+            google.maps.event.trigger(mapInstance, 'resize');
+            mapInstance.setCenter(coords); // Recentrar después del resize
+        }, 100);
+
+    } catch (error) {
+        console.error('Error al inicializar el mapa:', error);
+        mapDiv.innerHTML = `<div class="map-placeholder-content">
+            <p class="text-danger">
+                <i class="la la-close font-large-2 mb-2"></i><br>
+                Error al cargar el mapa: ${error.message}
+            </p>
+        </div>`;
+    }
+}
     </script>
     <!-- [FIN CÓDIGO MAPA] -->
   </head>
