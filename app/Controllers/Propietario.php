@@ -390,39 +390,35 @@ private function _prepareUserData(): array
             ->where('id_encuesta_realizada IS NOT NULL')
             ->groupBy('id_encuesta_realizada');
 
-        // Creamos una consulta principal para aplicar JOINS y PAGINACIÓN al resultado de la subconsulta
-        $query = $db->table('(' . $subquery->getCompiledSelect() . ') AS t1') // <<< USAMOS LA INSTANCIA $db
-            ->select('
-                t1.id_encuesta_realizada,
-                t1.fecha_respuesta,
-                t1.direccion,
-                t1.id_usuario, 
-                t1.id_encuesta,
-                usuarios.usuario AS nombre_encuestador,
-                encuestas.titulo AS nombre_encuesta
-            ')
-            ->join('usuarios', 'usuarios.id_usuario = t1.id_usuario', 'left')
-            ->join('encuestas', 'encuestas.id_encuesta = t1.id_encuesta', 'left')
-            ->orderBy('t1.fecha_respuesta', 'DESC');
-        
-        // Ejecutamos la paginación usando el modelo para manejar el objeto Pager
-        $db = \Config\Database::connect();
-        $builder = $db->table('respuestas');
-        
-        // Re-implementación de paginate para subquery: CodeIgniter no pagina directamente con subqueries en la tabla principal,
-        // así que usamos la paginación manual/simulada. 
-        
-        $totalResults = $query->countAllResults(false);
-        $page = $this->request->getVar('page') ?? 1;
-        $offset = ($page - 1) * $perPage;
+       $sql = '
+    SELECT 
+        t1.id_encuesta_realizada,
+        t1.fecha_respuesta,
+        t1.direccion,
+        t1.id_usuario, 
+        t1.id_encuesta,
+        usuarios.usuario AS nombre_encuestador,
+        encuestas.titulo AS nombre_encuesta
+    FROM (' . $subquery->getCompiledSelect() . ') AS t1
+    LEFT JOIN usuarios ON usuarios.id_usuario = t1.id_usuario
+    LEFT JOIN encuestas ON encuestas.id_encuesta = t1.id_encuesta
+    ORDER BY t1.fecha_respuesta DESC
+';
 
-        $listaRespuestas = $query->limit($perPage, $offset)->get()->getResultArray();
-        
-        // Simulamos el objeto Pager que la vista espera (aunque no es el objeto oficial, proporciona los datos necesarios)
-        // Usamos service('pager') para generar los links
-        $pager = service('pager');
-        $pager->setPath(current_url());
-        $pagerLinks = $pager->makeLinks($page, $perPage, $totalResults);
+// ✅ TOTAL PARA PAGINACIÓN
+$totalResults = count($db->query($sql)->getResultArray());
+
+$page = $this->request->getVar('page') ?? 1;
+$offset = ($page - 1) * $perPage;
+
+// ✅ DATOS PAGINADOS
+$listaRespuestas = $db->query($sql . " LIMIT $perPage OFFSET $offset")->getResultArray();
+
+// ✅ PAGER
+$pager = service('pager');
+$pager->setPath(current_url());
+$pagerLinks = $pager->makeLinks($page, $perPage, $totalResults);
+
 
 
         // Obtenemos la clave de API de Google Maps
