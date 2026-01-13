@@ -6,16 +6,28 @@ use CodeIgniter\Model;
 
 class MonitoreoModel extends Model
 {
-    protected $table            = 'monitoreo_ubicacion';
-    protected $primaryKey       = 'id_usuario';
-    protected $useAutoIncrement = false;
-    protected $returnType       = 'array';
+    // Nombre de la tabla
+    protected $table = 'monitoreo_ubicacion';
 
-    // Estos son los únicos campos que permitiremos que se modifiquen
-    protected $allowedFields    = ['id_usuario', 'latitud', 'longitud'];
+    // CAMBIO CLAVE: Ahora la llave primaria es el ID autoincrementable
+    protected $primaryKey = 'id_monitoreo';
 
-    // Habilitamos las marcas de tiempo para que 'ultima_actualizacion' funcione
+    // CAMBIO CLAVE: Habilitamos el autoincremento para generar IDs únicos por captura
+    protected $useAutoIncrement = true;
+
+    protected $returnType = 'array';
+
+    // Agregamos 'id_monitoreo' a los campos permitidos
+    protected $allowedFields = [
+        'id_monitoreo',
+        'id_usuario',
+        'latitud',
+        'longitud',
+        'ultima_actualizacion'
+    ];
+
+    // Configuración de marcas de tiempo
     protected $useTimestamps = true;
-    protected $createdField  = ''; // No usamos 'created_at'
-    protected $updatedField  = 'ultima_actualizacion'; // Usamos nuestra columna personalizada
+    protected $createdField = '';
+    protected $updatedField = 'ultima_actualizacion'; // Columna personalizada en tu DB
 }

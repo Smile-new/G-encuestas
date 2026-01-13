@@ -26,7 +26,8 @@ class RespuestaModel extends Model
         'id_seccion',
         'id_comunidad',
         'direccion', // <-- Campo para la dirección de texto de Google Maps
-        'id_encuesta_realizada', // <<< CAMPO AÑADIDO PARA IDENTIFICAR LA INSTANCIA DE LA ENCUESTA
+        'id_encuesta_realizada',
+        'id_monitoreo' // <<< CAMPO AÑADIDO PARA IDENTIFICAR LA INSTANCIA DE LA ENCUESTA
     ];
 
     protected $useTimestamps = true;

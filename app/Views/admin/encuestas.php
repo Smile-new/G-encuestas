@@ -94,69 +94,82 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
 <body>
     <div class="container-scroller">
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
-            <div class="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top">
-              <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo.png') ?>" alt="logo" /> </a>
-            </div>
-            <ul class="nav">
-                <li class="nav-item profile">
-                    <div class="profile-desc">
-              <div class="profile-pic">
-                <div class="count-indicator">
-                  <!-- Foto de perfil dinámica en el sidebar -->
-                  <img class="img-xs rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil">
-                  <span class="count bg-success"></span>
-                </div>
-                <div class="profile-name">
-                  <!-- Nombre completo dinámico en el sidebar -->
-                  <h5 class="mb-0 font-weight-normal"><?= $nombreCompleto ?></h5>
-                  <!-- Rol dinámico en el sidebar -->
-                  <span><?= $rolTexto ?></span>
-                </div>
-              </div>
-            </div>
-                </li>
-                <li class="nav-item nav-category">
-                    <span class="nav-link">Navigation</span>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('dashboard') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-speedometer"></i></span>
-                        <span class="menu-title">Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('encuestas') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-playlist-play"></i></span>
-                        <span class="menu-title">Encuestas</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('preguntas') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-table-large"></i></span>
-                        <span class="menu-title">Preguntas</span> </a>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('estadistica') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-chart-bar"></i></span>
-                        <span class="menu-title">Estadisticas</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('usuarios') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-contacts"></i></span>
-                        <span class="menu-title">Usuarios</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-            <a class="nav-link" href="<?= base_url('admin/perfil') ?>">
-              <span class="menu-icon">
-                <i class="mdi mdi-account-circle"></i>
-              </span>
-              <span class="menu-title">Perfil</span>
+        <div class="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top">
+            <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>">
+                <img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo.png') ?>" alt="logo" />
             </a>
-          </li>
-            </ul>
-        </nav>
+        </div>
+
+        <ul class="nav">
+            <li class="nav-item profile">
+                <div class="profile-desc">
+                    <div class="profile-pic">
+                        <div class="count-indicator">
+                            <img class="img-xs rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil">
+                            <span class="count bg-success"></span>
+                        </div>
+                        <div class="profile-name">
+                            <h5 class="mb-0 font-weight-normal"><?= esc($nombreCompleto) ?></h5>
+                            <span><?= esc($rolTexto) ?></span>
+                        </div>
+                    </div>
+                </div>
+            </li>
+
+            <li class="nav-item nav-category">
+                <span class="nav-link">Navigation</span>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('dashboard') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-speedometer"></i></span>
+                    <span class="menu-title">Dashboard</span>
+                </a>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('encuestas') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-playlist-play"></i></span>
+                    <span class="menu-title">Encuestas</span>
+                </a>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('preguntas') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-table-large"></i></span>
+                    <span class="menu-title">Preguntas</span>
+                </a>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('estadistica') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-chart-bar"></i></span>
+                    <span class="menu-title">Estadísticas</span>
+                </a>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('uniones') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-source-branch"></i></span>
+                    <span class="menu-title">Uniones</span>
+                </a>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('usuarios') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-contacts"></i></span>
+                    <span class="menu-title">Usuarios</span>
+                </a>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('admin/perfil') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-account-circle"></i></span>
+                    <span class="menu-title">Perfil</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
         <div class="main-panel">
             <nav class="navbar p-0 fixed-top d-flex flex-row">
                 <div class="navbar-brand-wrapper d-flex d-lg-none align-items-center justify-content-center">

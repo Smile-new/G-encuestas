@@ -32,3 +32,5 @@ class UsuarioModel extends Model
                     ->first();
     }
 }
+
+

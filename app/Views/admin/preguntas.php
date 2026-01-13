@@ -14,11 +14,11 @@ $rutaFotoPerfil = base_url(RECURSOS_ADMIN_IMAGES . '/faces/face15.jpg');
 
 if ($isLoggedIn && is_array($userData)) {
     $nombreCompleto = esc($userData['nombre']) . ' ' .
-                      esc($userData['apellido_paterno']) . ' ' .
-                      esc($userData['apellido_materno']);
+        esc($userData['apellido_paterno']) . ' ' .
+        esc($userData['apellido_materno']);
     $nombreUsuario = esc($userData['usuario']);
-    
-$rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
+
+    $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
 
     if (!empty($userData['foto'])) {
         $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto']));
@@ -28,16 +28,17 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Vota y Opina - <?= esc($title ?? 'Gestión de Preguntas por Encuesta') ?></title>
-    
+
     <!-- Enlaces a recursos CSS de la plantilla original -->
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/mdi/css/materialdesignicons.min.css') ?>">
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_VENDORS . '/css/vendor.bundle.base.css') ?>">
     <link rel="stylesheet" href="<?= base_url(RECURSOS_ADMIN_CSS . '/style.css') ?>">
-    
+
     <!-- Estilos CSS personalizados para el nuevo diseño -->
     <style>
         /* Estilos generales para el contenedor principal de la página */
@@ -45,7 +46,7 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
             background-color: #1a1a1a;
             color: #f8f9fa;
         }
-        
+
         /* Estilos para el selector de encuestas */
         #select-encuesta {
             width: 100%;
@@ -68,7 +69,7 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
             background-color: #343a40;
             color: #e9ecef;
         }
-        
+
         /* Estilos para las tarjetas de preguntas */
         .card-question {
             border: 1px solid #3a3a3a;
@@ -79,12 +80,12 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
         }
-        
+
         .card-question:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-        
+
         .card-question .card-body {
             background-color: #2a2a2a;
             color: #f8f9fa;
@@ -94,7 +95,7 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
         .list-group-flush {
             border-top: 1px solid #3a3a3a;
         }
-        
+
         .list-group-item {
             background-color: transparent !important;
             border: none !important;
@@ -102,7 +103,7 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
             padding: 0.75rem 0;
             font-size: 0.95rem;
         }
-        
+
         .list-group-item:last-child {
             border-bottom: none;
         }
@@ -121,107 +122,125 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
             color: #17a2b8;
             border-color: #17a2b8;
         }
-        
+
         .btn-outline-info:hover {
             background-color: #17a2b8;
             color: #fff;
         }
-        
+
         .btn-outline-danger {
             color: #dc3545;
             border-color: #dc3545;
         }
-        
+
         .btn-outline-danger:hover {
             background-color: #dc3545;
             color: #fff;
         }
-        
+
         /* Estilos para el mensaje inicial y el de carga */
         .initial-message-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 200px; /* Altura mínima para el contenedor */
+            min-height: 200px;
+            /* Altura mínima para el contenedor */
             text-align: center;
             padding: 20px;
         }
-        
-                /* Logo mini más grande en el navbar */
+
+        /* Logo mini más grande en el navbar */
         .navbar .navbar-brand-wrapper .navbar-brand.brand-logo-mini img {
-        width: auto;       /* que respete proporción */
-        max-height: 90px;  /* ajusta según lo que necesites */
-        height: auto;
+            width: auto;
+            /* que respete proporción */
+            max-height: 90px;
+            /* ajusta según lo que necesites */
+            height: auto;
         }
     </style>
 </head>
+
 <body>
     <div class="container-scroller">
         <!-- Sidebar and Navbar as provided by the user -->
-        <!-- ... (código de la barra lateral y la barra de navegación) ... -->
         <nav class="sidebar sidebar-offcanvas" id="sidebar">
-            <div class="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top">
-               <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>"><img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo.png') ?>" alt="logo" /> </a>
-            </div>
-            <ul class="nav">
-                <li class="nav-item profile">
-                    <div class="profile-desc">
-              <div class="profile-pic">
-                <div class="count-indicator">
-                  <img class="img-xs rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil">
-                  <span class="count bg-success"></span>
-                </div>
-                <div class="profile-name">
-                  <h5 class="mb-0 font-weight-normal"><?= $nombreCompleto ?></h5>
-                  <span><?= $rolTexto ?></span>
-                </div>
-              </div>
-            </div>
-                </li>
-                <li class="nav-item nav-category">
-                    <span class="nav-link">Navigation</span>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('dashboard') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-speedometer"></i></span>
-                        <span class="menu-title">Dashboard</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('encuestas') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-playlist-play"></i></span>
-                        <span class="menu-title">Encuestas</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('preguntas') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-table-large"></i></span>
-                        <span class="menu-title">Preguntas</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('estadistica') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-chart-bar"></i></span>
-                        <span class="menu-title">Estadisticas</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-                    <a class="nav-link" href="<?= base_url('usuarios') ?>">
-                        <span class="menu-icon"><i class="mdi mdi-contacts"></i></span>
-                        <span class="menu-title">Usuarios</span>
-                    </a>
-                </li>
-                <li class="nav-item menu-items">
-            <a class="nav-link" href="<?= base_url('admin/perfil') ?>">
-              <span class="menu-icon">
-                <i class="mdi mdi-account-circle"></i>
-              </span>
-              <span class="menu-title">Perfil</span>
+        <div class="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top">
+            <a class="sidebar-brand brand-logo" href="<?= base_url('dashboard') ?>">
+                <img src="<?= base_url(RECURSOS_ADMIN_IMAGES . '/logo.png') ?>" alt="logo" />
             </a>
-          </li>
-            </ul>
-        </nav>
+        </div>
+
+        <ul class="nav">
+            <li class="nav-item profile">
+                <div class="profile-desc">
+                    <div class="profile-pic">
+                        <div class="count-indicator">
+                            <img class="img-xs rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil">
+                            <span class="count bg-success"></span>
+                        </div>
+                        <div class="profile-name">
+                            <h5 class="mb-0 font-weight-normal"><?= esc($nombreCompleto) ?></h5>
+                            <span><?= esc($rolTexto) ?></span>
+                        </div>
+                    </div>
+                </div>
+            </li>
+
+            <li class="nav-item nav-category">
+                <span class="nav-link">Navigation</span>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('dashboard') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-speedometer"></i></span>
+                    <span class="menu-title">Dashboard</span>
+                </a>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('encuestas') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-playlist-play"></i></span>
+                    <span class="menu-title">Encuestas</span>
+                </a>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('preguntas') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-table-large"></i></span>
+                    <span class="menu-title">Preguntas</span>
+                </a>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('estadistica') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-chart-bar"></i></span>
+                    <span class="menu-title">Estadísticas</span>
+                </a>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('uniones') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-source-branch"></i></span>
+                    <span class="menu-title">Uniones</span>
+                </a>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('usuarios') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-contacts"></i></span>
+                    <span class="menu-title">Usuarios</span>
+                </a>
+            </li>
+
+            <li class="nav-item menu-items">
+                <a class="nav-link" href="<?= base_url('admin/perfil') ?>">
+                    <span class="menu-icon"><i class="mdi mdi-account-circle"></i></span>
+                    <span class="menu-title">Perfil</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
 
         <div class="main-panel">
             <nav class="navbar p-0 fixed-top d-flex flex-row">
@@ -231,46 +250,50 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                     </a>
                 </div>
                 <div class="navbar-menu-wrapper flex-grow d-flex align-items-stretch">
-                    <button class="navbar-toggler navbar-toggler align-self-center" type="button" data-toggle="minimize">
+                    <button class="navbar-toggler navbar-toggler align-self-center" type="button"
+                        data-toggle="minimize">
                         <span class="mdi mdi-menu"></span>
                     </button>
                     <ul class="navbar-nav navbar-nav-right">
-              <li class="nav-item dropdown">
-                <a class="nav-link" id="profileDropdown" href="#" data-toggle="dropdown">
-                  <div class="navbar-profile">
-                    <img class="img-xs rounded-circle" src="<?= $rutaFotoPerfil ?>" alt="Foto de perfil">
-                    <p class="mb-0 d-none d-sm-block navbar-profile-name"><?= $nombreCompleto ?></p>
-                    <i class="mdi mdi-menu-down d-none d-sm-block"></i>
-                  </div>
-                </a>
-                <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list" aria-labelledby="profileDropdown">
-                  <h6 class="p-3 mb-0">Perfil</h6>
-                  <div class="dropdown-divider"></div>
-                  <a class="dropdown-item preview-item" href="<?= base_url('settings') ?>">
-                    <div class="preview-thumbnail">
-                      <div class="preview-icon bg-dark rounded-circle">
-                        <i class="mdi mdi-settings text-success"></i>
-                      </div>
-                    </div>
-                    <div class="preview-item-content">
-                      <p class="preview-subject mb-1">Configuración</p>
-                    </div>
-                  </a>
-                  <div class="dropdown-divider"></div>
-                  <a class="dropdown-item preview-item" href="<?= base_url('logout') ?>">
-                    <div class="preview-thumbnail">
-                      <div class="preview-icon bg-dark rounded-circle">
-                        <i class="mdi mdi-logout text-danger"></i>
-                      </div>
-                    </div>
-                    <div class="preview-item-content">
-                      <p class="preview-subject mb-1">Cerrar Sesión</p>
-                    </div>
-                  </a>
-                </div>
-              </li>
-            </ul>
-                    <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link" id="profileDropdown" href="#" data-toggle="dropdown">
+                                <div class="navbar-profile">
+                                    <img class="img-xs rounded-circle" src="<?= $rutaFotoPerfil ?>"
+                                        alt="Foto de perfil">
+                                    <p class="mb-0 d-none d-sm-block navbar-profile-name"><?= $nombreCompleto ?></p>
+                                    <i class="mdi mdi-menu-down d-none d-sm-block"></i>
+                                </div>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list"
+                                aria-labelledby="profileDropdown">
+                                <h6 class="p-3 mb-0">Perfil</h6>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item preview-item" href="<?= base_url('settings') ?>">
+                                    <div class="preview-thumbnail">
+                                        <div class="preview-icon bg-dark rounded-circle">
+                                            <i class="mdi mdi-settings text-success"></i>
+                                        </div>
+                                    </div>
+                                    <div class="preview-item-content">
+                                        <p class="preview-subject mb-1">Configuración</p>
+                                    </div>
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item preview-item" href="<?= base_url('logout') ?>">
+                                    <div class="preview-thumbnail">
+                                        <div class="preview-icon bg-dark rounded-circle">
+                                            <i class="mdi mdi-logout text-danger"></i>
+                                        </div>
+                                    </div>
+                                    <div class="preview-item-content">
+                                        <p class="preview-subject mb-1">Cerrar Sesión</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+                    <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button"
+                        data-toggle="offcanvas">
                         <span class="mdi mdi-format-line-spacing"></span>
                     </button>
                 </div>
@@ -337,7 +360,8 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
 
                 <footer class="footer">
                     <div class="d-sm-flex justify-content-center justify-content-sm-between">
-                        <span class="text-muted d-block text-center text-sm-left d-sm-inline-block">Copyright © 2025 Your Company. All rights reserved.</span>
+                        <span class="text-muted d-block text-center text-sm-left d-sm-inline-block">Copyright © 2025
+                            Your Company. All rights reserved.</span>
                     </div>
                 </footer>
             </div>
@@ -351,19 +375,19 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
         <script src="<?= base_url(RECURSOS_ADMIN_JS . '/misc.js') ?>"></script>
         <script src="<?= base_url(RECURSOS_ADMIN_JS . '/settings.js') ?>"></script>
         <script src="<?= base_url(RECURSOS_ADMIN_JS . '/todolist.js') ?>"></script>
-        
+
         <!-- Script para la carga dinámica de preguntas -->
         <script>
-            $(document).ready(function() {
+            $(document).ready(function () {
                 const baseUrl = "<?= base_url(); ?>";
                 const preguntasContainer = $('#preguntas-container');
 
-                $('#select-encuesta').change(function() {
+                $('#select-encuesta').change(function () {
                     const idEncuesta = $(this).val();
 
                     // Muestra un indicador de carga al inicio de la petición
                     preguntasContainer.html('<div class="initial-message-container"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="text-muted mt-3">Cargando preguntas...</p></div>');
-                    
+
                     if (idEncuesta === "") {
                         preguntasContainer.html('<div class="initial-message-container"><p class="text-muted" id="initial-message">Selecciona una encuesta para ver sus preguntas.</p><i class="mdi mdi-clipboard-text-outline text-muted" style="font-size: 50px;"></i></div>');
                         return;
@@ -374,10 +398,10 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                         url: `${baseUrl}/preguntas/getPreguntasConOpcionesPorEncuesta/${idEncuesta}`,
                         type: 'GET',
                         dataType: 'json',
-                        success: function(data) {
+                        success: function (data) {
                             if (data.length > 0) {
                                 let htmlContent = '<div class="d-flex flex-column gap-3 mt-3">';
-                                $.each(data, function(index, pregunta) {
+                                $.each(data, function (index, pregunta) {
                                     // Genera el HTML para cada tarjeta de pregunta
                                     htmlContent += `
                                         <div class="card card-question">
@@ -410,7 +434,7 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                                 preguntasContainer.html('<div class="initial-message-container"><div class="alert alert-info" role="alert">Esta encuesta no tiene preguntas registradas.</div></div>');
                             }
                         },
-                        error: function(xhr, status, error) {
+                        error: function (xhr, status, error) {
                             console.error("Error al cargar preguntas:", status, error, xhr.responseText);
                             preguntasContainer.html('<div class="initial-message-container"><div class="alert alert-danger" role="alert">Error al cargar las preguntas. Por favor, intente de nuevo.</div></div>');
                         }
@@ -418,5 +442,6 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
                 });
             });
         </script>
-    </body>
+</body>
+
 </html>

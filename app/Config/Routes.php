@@ -140,6 +140,16 @@ $routes->get('controlador/detalleEncuesta', 'Propietario::detalleEncuesta');
 $routes->get('controlador/detalleRespuesta', 'Propietario::detalleRespuesta'); // Auditoría espacial
 
 
+// Ruta para cargar la vista principal de Uniones
+$routes->get('uniones', 'Uniones::index');
+$routes->get('uniones/getDistritosFederales/(:num)', 'Uniones::getDistritosFederales/$1');
+$routes->get('uniones/getDistritosLocales/(:num)', 'Uniones::getDistritosLocales/$1');
+$routes->get('uniones/getMunicipios/(:num)', 'Uniones::getMunicipios/$1');
+$routes->get('uniones/getSecciones/(:num)', 'Uniones::getSecciones/$1');
+$routes->get('uniones/getComunidades/(:num)', 'Uniones::getComunidades/$1');
+$routes->post('uniones/procesar', 'Uniones::procesar');
+$routes->get('uniones/getPreguntas/(:num)', 'Uniones::getPreguntas/$1');
+$routes->get('uniones/getOpcionesPregunta/(:num)', 'Uniones::getOpcionesPregunta/$1');
     //pagina
     $routes->get('/acerca', 'Home::acerca');
 
