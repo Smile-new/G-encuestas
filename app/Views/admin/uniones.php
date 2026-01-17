@@ -501,16 +501,7 @@
                                 <i class="mdi mdi-printer"></i> GENERAR REPORTE (3 PÁGINAS)
                             </button>
 
-
-                            <div id="custom_colors_container" class="row mt-3 mb-3 justify-content-center"
-                                style="display:none;">
-                                <div class="col-12 text-center">
-                                    <h6 class="text-white">Personalizar Colores de Barras</h6>
-                                    <div id="color_pickers_wrapper"
-                                        class="d-flex flex-wrap justify-content-center gap-2">
-                                    </div>
-                                </div>
-                            </div>
+                            
                         </div>
                         <!-- END RIGHT COLUMN -->
                     </div>
@@ -937,85 +928,85 @@
             }
 
 
-            function obtenerHtmlPagina2() {
-                // ============================================================
-                // 1. CÁLCULO DE DENSIDAD PARA AJUSTE AUTOMÁTICO
-                // ============================================================
-                const $filasCriterio = $('.criterio-row').filter(function () {
-                    const pregunta = $(this).find('.select-pregunta option:selected').text().trim();
-                    return pregunta && pregunta !== "Seleccione...";
-                });
+function obtenerHtmlPagina2() {
+    // ============================================================
+    // 1. CÁLCULO DE DENSIDAD PARA AJUSTE AUTOMÁTICO
+    // ============================================================
+    const $filasCriterio = $('.criterio-row').filter(function() {
+        const pregunta = $(this).find('.select-pregunta option:selected').text().trim();
+        return pregunta && pregunta !== "Seleccione...";
+    });
 
-                const totalFilas = $filasCriterio.length;
+    const totalFilas = $filasCriterio.length;
+    
+    // Configuraciones por defecto (Densidad baja)
+    let fontSizeTable = "13px";
+    let fontSizeOptions = "11px";
+    let paddingCell = "10px";
+    let dotSize = "11px";
+    let rowMargin = "8px";
 
-                // Configuraciones por defecto (Densidad baja)
-                let fontSizeTable = "13px";
-                let fontSizeOptions = "11px";
-                let paddingCell = "10px";
-                let dotSize = "11px";
-                let rowMargin = "8px";
+    // Ajuste dinámico según cantidad de datos
+    if (totalFilas > 7 || totalFilas < 12) {
+        fontSizeTable = "11px";
+        fontSizeOptions = "10px";
+        paddingCell = "8px";
+        dotSize = "10px";
+        rowMargin = "4px";
+    } 
+    
+    if (totalFilas >= 12) {
+        fontSizeTable = "10px";
+        fontSizeOptions = "9px";
+        paddingCell = "5px";
+        dotSize = "8px";
+        rowMargin = "2px";
+    }
 
-                // Ajuste dinámico según cantidad de datos
-                if (totalFilas > 7 || totalFilas < 12) {
-                    fontSizeTable = "11px";
-                    fontSizeOptions = "10px";
-                    paddingCell = "8px";
-                    dotSize = "10px";
-                    rowMargin = "4px";
+    const limpiarParaComparar = (str) => {
+        if (!str) return "";
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+    };
+
+    const buscarColorEnGrafica = (textoBusqueda) => {
+        const textoLimpio = limpiarParaComparar(textoBusqueda);
+        let coloresExactos = [];
+        let coloresParciales = [];
+
+        if (window.chartInstance && window.chartInstance.data.datasets.length > 0) {
+            const dataset = window.chartInstance.data.datasets[0];
+            const etiquetasOriginales = dataset.textoCompleto || [];
+            const coloresPaleta = dataset.backgroundColor || [];
+
+            etiquetasOriginales.forEach((label, idx) => {
+                const labelLimpia = limpiarParaComparar(label);
+                const color = coloresPaleta[idx];
+                if (!color) return;
+
+                if (labelLimpia === textoLimpio) {
+                    if (!coloresExactos.includes(color)) coloresExactos.push(color);
+                } else if (labelLimpia.includes(textoLimpio)) {
+                    if (!coloresParciales.includes(color)) coloresParciales.push(color);
                 }
+            });
+        }
+        if (coloresExactos.length > 0) return coloresExactos;
+        return coloresParciales.length > 0 ? coloresParciales : ['#bdc3c7'];
+    };
 
-                if (totalFilas >= 12) {
-                    fontSizeTable = "10px";
-                    fontSizeOptions = "9px";
-                    paddingCell = "5px";
-                    dotSize = "8px";
-                    rowMargin = "2px";
-                }
+    // ============================================================
+    // 2. GENERACIÓN DE FILAS CON ESTILOS DINÁMICOS
+    // ============================================================
+    let filasHtml = '';
 
-                const limpiarParaComparar = (str) => {
-                    if (!str) return "";
-                    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
-                };
+    $filasCriterio.each(function () {
+        const pregunta = $(this).find('.select-pregunta option:selected').text().trim();
+        
+        const opcionesHtml = $(this).find('.select-opcion option:selected').map(function () {
+            const textoOriginal = $(this).text().trim();
+            const colores = buscarColorEnGrafica(textoOriginal);
 
-                const buscarColorEnGrafica = (textoBusqueda) => {
-                    const textoLimpio = limpiarParaComparar(textoBusqueda);
-                    let coloresExactos = [];
-                    let coloresParciales = [];
-
-                    if (window.chartInstance && window.chartInstance.data.datasets.length > 0) {
-                        const dataset = window.chartInstance.data.datasets[0];
-                        const etiquetasOriginales = dataset.textoCompleto || [];
-                        const coloresPaleta = dataset.backgroundColor || [];
-
-                        etiquetasOriginales.forEach((label, idx) => {
-                            const labelLimpia = limpiarParaComparar(label);
-                            const color = coloresPaleta[idx];
-                            if (!color) return;
-
-                            if (labelLimpia === textoLimpio) {
-                                if (!coloresExactos.includes(color)) coloresExactos.push(color);
-                            } else if (labelLimpia.includes(textoLimpio)) {
-                                if (!coloresParciales.includes(color)) coloresParciales.push(color);
-                            }
-                        });
-                    }
-                    if (coloresExactos.length > 0) return coloresExactos;
-                    return coloresParciales.length > 0 ? coloresParciales : ['#bdc3c7'];
-                };
-
-                // ============================================================
-                // 2. GENERACIÓN DE FILAS CON ESTILOS DINÁMICOS
-                // ============================================================
-                let filasHtml = '';
-
-                $filasCriterio.each(function () {
-                    const pregunta = $(this).find('.select-pregunta option:selected').text().trim();
-
-                    const opcionesHtml = $(this).find('.select-opcion option:selected').map(function () {
-                        const textoOriginal = $(this).text().trim();
-                        const colores = buscarColorEnGrafica(textoOriginal);
-
-                        const puntosSimbologia = colores.map(color => `
+            const puntosSimbologia = colores.map(color => `
                 <span style="
                     display:inline-block;
                     width:${dotSize};
@@ -1028,7 +1019,7 @@
                 "></span>
             `).join('');
 
-                        return `
+            return `
                 <div style="display:inline-block; margin-right:12px; margin-bottom:${rowMargin}; vertical-align:middle; line-height: 1;">
                     ${puntosSimbologia}
                     <span style="font-size:${fontSizeOptions}; font-family:Arial; font-weight:bold; color:#000000 !important;">
@@ -1036,9 +1027,9 @@
                     </span>
                 </div>
             `;
-                    }).get().join('');
+        }).get().join('');
 
-                    filasHtml += `
+        filasHtml += `
             <tr style="border:1px solid #000;">
                 <td style="width:35%; padding:${paddingCell}; background-color:#f8f9fa; font-weight:bold; font-family:Arial; font-size:${fontSizeTable}; border:1px solid #000; color:#000000 !important; line-height: 1.2;">
                     ${pregunta}
@@ -1050,9 +1041,9 @@
                 </td>
             </tr>
         `;
-                });
+    });
 
-                return `
+    return `
     <div class="pagina-reporte">
         ${inyectarMarcaAgua()}
         <div class="contenido-superior" style="width: 95%; margin-top: 10mm;">
@@ -1078,7 +1069,7 @@
             </p>
         </div>
     </div>`;
-            }
+}
             function obtenerHtmlPagina3() {
                 const centro = map.getCenter();
                 const zoom = map.getZoom();
