@@ -249,4 +249,86 @@ class Encuestador extends Controller
         session()->destroy();
         return redirect()->to(base_url('/login'))->with('message', 'Sesión cerrada.');
     }
+    // app\Controllers\Encuestador.php
+
+    /**
+ * Muestra la vista del perfil del encuestador
+ * Ruta: GET /perfil
+ */
+public function perfil()
+{
+    $session = session();
+    $userData = $session->get('usuario'); // Recuperamos el array de usuario de la sesión
+    
+    if (!$userData) {
+        return redirect()->to(base_url('login'));
+    }
+
+    $idUsuario = $userData['id_usuario'];
+    
+    // Preparamos los datos base (nombre, fotos, roles) para el layout
+    $data = $this->_prepareUserData(); 
+    
+    // Obtenemos la información más fresca del modelo
+    $data['usuario'] = $this->usuarioModel->find($idUsuario);
+
+    return view('encuestador/perfil', $data);
+}
+
+/**
+ * Procesa la actualización de datos personales y fotografía
+ * Ruta: POST /perfil/actualizar
+ */
+public function actualizarPerfil()
+{
+    $session = session();
+    $userData = $session->get('usuario');
+    $idUsuario = $userData['id_usuario'];
+
+    $usuarioActual = $this->usuarioModel->find($idUsuario);
+    
+    // 1. Definir la ruta de almacenamiento físico
+    $pathRuta = 'public/img_user/'; 
+    $dbFotoName = $usuarioActual['foto']; 
+
+    // 2. Manejo de la subida de imagen (Input name="foto")
+    $file = $this->request->getFile('foto');
+
+    if ($file && $file->isValid() && !$file->hasMoved()) {
+        
+        // Borrar la foto anterior del servidor si existe para ahorrar espacio
+        if (!empty($usuarioActual['foto'])) {
+            $oldPath = FCPATH . $pathRuta . $usuarioActual['foto'];
+            if (file_exists($oldPath)) {
+                unlink($oldPath);
+            }
+        }
+
+        // Generar un nombre aleatorio para evitar problemas de caché en el navegador
+        $dbFotoName = $file->getRandomName();
+        $file->move(FCPATH . $pathRuta, $dbFotoName);
+    }
+
+    // 3. Recopilación de datos del formulario
+    $datosActualizados = [
+        'nombre'           => $this->request->getPost('nombre'),
+        'apellido_paterno' => $this->request->getPost('apellido_paterno'),
+        'apellido_materno' => $this->request->getPost('apellido_materno'),
+        'telefono'         => $this->request->getPost('telefono'),
+        'foto'             => $dbFotoName 
+    ];
+
+    // 4. Actualización en Base de Datos y Sesión
+    if ($this->usuarioModel->update($idUsuario, $datosActualizados)) {
+        
+        // Actualizamos el array de la sesión para que los cambios se vean sin re-loguear
+        $nuevoUserData = array_merge($userData, $datosActualizados);
+        $session->set('usuario', $nuevoUserData);
+
+        return redirect()->to(base_url('perfil'))->with('success', 'Perfil actualizado correctamente.');
+    } else {
+        return redirect()->back()->with('error', 'No se pudieron guardar los cambios.');
+    }
+}
+
 }

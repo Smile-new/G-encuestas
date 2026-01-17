@@ -177,74 +177,107 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
     <script src="<?= base_url(RECURSOS_OPERADOR_JS . '/custom.js') ?>"></script>
     
     <!-- SCRIPT DE GOOGLE MAPS (VERSIÓN FINAL CON ÍCONO CORREGIDO) -->
-    <script>
+<script>
         let map;
         let marker;
         let infoWindow;
+        // ID específico del encuestador que queremos rastrear
         const idEncuestadorMonitoreado = <?= $encuestador['id_usuario'] ?>;
 
         function initMap() {
+            // Inicializamos el mapa en una ubicación neutra, se centrará al recibir datos
             map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 16,
+                zoom: 17,
                 center: { lat: 19.4326, lng: -99.1332 },
-                mapTypeId: 'satellite'
+                mapTypeId: 'satellite',
+                heading: 90,
+                tilt: 45
             });
             infoWindow = new google.maps.InfoWindow();
             
             actualizarUbicacion();
+            // Actualización constante cada 10 segundos
             setInterval(actualizarUbicacion, 5000);
         }
 
         async function actualizarUbicacion() {
-            try {
-                const response = await fetch('<?= base_url('operador_user/obtener_ubicaciones') ?>');
-                const ubicaciones = await response.json();
-                const dataEncuestador = ubicaciones.find(u => u.id_usuario == idEncuestadorMonitoreado);
+    try {
+        // 1. Romper el caché: Añadimos un timestamp (&_t=) para que el navegador no repita la respuesta vieja
+        const timestamp = new Date().getTime();
+        const url = `<?= base_url('operador_user/obtener_ubicaciones') ?>?id_usuario=${idEncuestadorMonitoreado}&_t=${timestamp}`;
 
-                if (dataEncuestador) {
-                    const latLng = new google.maps.LatLng(dataEncuestador.latitud, dataEncuestador.longitud);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Error en la respuesta del servidor");
+        
+        const ubicaciones = await response.json();
+        
+        /**
+         * 2. Selección del punto más reciente:
+         * Como en el controlador corregimos la consulta con orderBy('id_monitoreo', 'DESC'),
+         * el punto más nuevo siempre será el primero de la lista (índice 0).
+         */
+        const dataEncuestador = ubicaciones[0]; 
 
-                    // --- CORRECCIÓN EN LA RUTA DE LA IMAGEN ---
-                    const baseUrl = '<?= base_url() ?>';
-                    const fotoUrl = dataEncuestador.foto 
-                        ? `${baseUrl}/public/img_user/${dataEncuestador.foto}` 
-                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(dataEncuestador.nombre)}+${encodeURIComponent(dataEncuestador.apellido_paterno)}&background=random&color=fff&rounded=true`;
-                    
-                    // Línea de depuración: Abre la consola (F12) para ver la URL exacta de la foto
-                    console.log("Intentando cargar ícono desde:", fotoUrl);
+        if (dataEncuestador) {
+            const latLng = { 
+                lat: parseFloat(dataEncuestador.latitud), 
+                lng: parseFloat(dataEncuestador.longitud) 
+            };
 
-                    if (!marker) {
-                        marker = new google.maps.Marker({
-                            position: latLng,
-                            map: map,
-                            title: `${dataEncuestador.nombre} ${dataEncuestador.apellido_paterno}`,
-                            icon: {
-                                url: fotoUrl,
-                                scaledSize: new google.maps.Size(50, 50),
-                                anchor: new google.maps.Point(25, 25),
-                            }
-                        });
-                        
-                        marker.addListener('click', () => infoWindow.open(map, marker));
-                        map.setCenter(latLng);
-                    } else {
-                        marker.setPosition(latLng);
-                        marker.setIcon({
-                            url: fotoUrl,
-                            scaledSize: new google.maps.Size(50, 50),
-                            anchor: new google.maps.Point(25, 25),
-                        });
-                        map.panTo(latLng);
-                    }
-                    
-                    const contenidoInfo = `<b>${dataEncuestador.nombre} ${dataEncuestador.apellido_paterno}</b><br>Última actualización: ${new Date(dataEncuestador.ultima_actualizacion).toLocaleTimeString()}`;
-                    infoWindow.setContent(contenidoInfo);
-                }
+            // Debug en consola para que veas las coordenadas moviéndose
+            console.log(`Actualizando a: ${latLng.lat}, ${latLng.lng}`);
 
-            } catch (error) {
-                console.error("Error al obtener la ubicación:", error);
+            // 3. Gestión dinámica del avatar
+            const baseUrl = '<?= base_url() ?>';
+            const fotoUrl = dataEncuestador.foto 
+                ? `${baseUrl}/public/img_user/${dataEncuestador.foto}` 
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent(dataEncuestador.nombre)}+${encodeURIComponent(dataEncuestador.apellido_paterno)}&background=F44336&color=fff&rounded=true`;
+
+            if (!marker) {
+                // Crear el marcador por primera vez
+                marker = new google.maps.Marker({
+                    position: latLng,
+                    map: map,
+                    title: `${dataEncuestador.nombre}`,
+                    icon: {
+                        url: fotoUrl,
+                        scaledSize: new google.maps.Size(60, 60),
+                        anchor: new google.maps.Point(30, 30)
+                    },
+                    animation: google.maps.Animation.DROP
+                });
+                
+                marker.addListener('click', () => infoWindow.open(map, marker));
+                map.setCenter(latLng);
+            } else {
+                // ACTUALIZACIÓN DE MOVIMIENTO:
+                // Movemos el marcador a la nueva posición
+                marker.setPosition(latLng);
+                
+                // panTo hace que el mapa siga al encuestador con un deslizamiento suave
+                map.panTo(latLng); 
             }
+            
+            // Actualizar el contenido de la ventana de información
+            const fechaActualizacion = dataEncuestador.ultima_actualizacion 
+                ? new Date(dataEncuestador.ultima_actualizacion).toLocaleTimeString()
+                : "Recién capturado";
+
+            const contenidoInfo = `
+                <div style="color:#333; padding:5px; font-family: Arial, sans-serif;">
+                    <b style="font-size:14px;">${dataEncuestador.nombre} ${dataEncuestador.apellido_paterno}</b><br>
+                    <span style="color:#666;">Última señal: ${fechaActualizacion}</span>
+                </div>`;
+            
+            infoWindow.setContent(contenidoInfo);
+        } else {
+            console.warn("No se encontraron coordenadas para el ID:", idEncuestadorMonitoreado);
         }
+
+    } catch (error) {
+        console.error("Fallo en la conexión de monitoreo:", error);
+    }
+}
     </script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=<?= esc($google_maps_api_key) ?>&callback=initMap"></script>
 </body>

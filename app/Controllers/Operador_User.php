@@ -245,18 +245,33 @@ class Operador_User extends BaseController
     }
 
     public function obtener_ubicaciones()
-    {
-        if (!session()->get('isLoggedIn')) {
-            return $this->response->setStatusCode(403, 'Acceso Prohibido');
-        }
-        
-        $ubicaciones = $this->monitoreoModel
-            ->select('monitoreo_ubicacion.id_usuario, latitud, longitud, ultima_actualizacion, nombre, apellido_paterno, foto')
-            ->join('usuarios', 'usuarios.id_usuario = monitoreo_ubicacion.id_usuario')
-            ->findAll();
-        
-        return $this->response->setJSON($ubicaciones);
+{
+    if (!session()->get('isLoggedIn')) {
+        return $this->response->setStatusCode(403, 'Acceso Prohibido');
     }
+    
+    // CAPTURAR EL ID que enviaremos desde el JavaScript
+    $idEncuestador = $this->request->getGet('id_usuario');
+    $idOperadorActual = session()->get('usuario')['id_usuario'];
+
+    $query = $this->monitoreoModel
+        ->select('monitoreo_ubicacion.id_usuario, latitud, longitud, ultima_actualizacion, nombre, apellido_paterno, foto')
+        ->join('usuarios', 'usuarios.id_usuario = monitoreo_ubicacion.id_usuario')
+        // Seguridad: Solo permitir ver encuestadores creados por este operador
+        ->where('usuarios.creado_por_id', $idOperadorActual);
+
+    // FILTRO CRÍTICO: Si se proporciona un ID, filtramos solo para ese usuario
+    if ($idEncuestador) {
+        $query->where('monitoreo_ubicacion.id_usuario', $idEncuestador);
+    }
+
+    // Ordenar por la actualización más reciente para que el mapa use el punto nuevo
+    $ubicaciones = $query->orderBy('monitoreo_ubicacion.id_monitoreo', 'DESC')
+                         ->findAll();
+    
+    return $this->response->setJSON($ubicaciones)
+                          ->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+}
 
     /**
      * Genera una cadena de texto aleatoria con la longitud especificada.
