@@ -1,8 +1,8 @@
 // Importar Dexie para manejar la base de datos desde el Service Worker
 importScripts('https://cdn.jsdelivr.net/npm/dexie@latest/dist/dexie.js');
 
-const CACHE_NAME = 'encuestador-v1.3'; // Incrementamos a v1.3 para forzar la actualización en el navegador
-const DYNAMIC_CACHE = 'dynamic-encuestador-v1.3';
+const CACHE_NAME = 'encuestador-v1.5'; // Incrementado para forzar la actualización
+const DYNAMIC_CACHE = 'dynamic-encuestador-v1.5';
 const STATIC_ASSETS = [
     '/home',
     '/formularios',
@@ -15,7 +15,7 @@ const STATIC_ASSETS = [
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => {
-            console.log('PWA: Caché estático guardado');
+            console.log('PWA: Caché estático v1.5 guardado');
             return cache.addAll(STATIC_ASSETS);
         })
     );
@@ -54,7 +54,7 @@ self.addEventListener('fetch', event => {
                     return new Response(
                         '<div style="text-align:center; padding:20px; font-family:sans-serif;">' +
                         '<h2>Encuesta no disponible offline</h2>' +
-                        '<p>Debes abrir esta encuesta al menos una vez con internet para que se guarde en tu dispositivo.</p>' +
+                        '<p>Por favor, sincroniza tus encuestas con internet antes de salir al campo.</p>' +
                         '<a href="/formularios" style="color:#f44336; font-weight:bold;">Regresar a la lista</a></div>',
                         { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
                     );
@@ -71,46 +71,58 @@ self.addEventListener('sync', event => {
 });
 
 async function enviarDatosPendientes() {
-    // IMPORTANTE: La versión y los stores deben coincidir exactamente con offline_handler.js
     const db = new Dexie("PanelEncuestadorDB");
-    db.version(2).stores({
+    db.version(3).stores({
         encuestas: '++id, data, timestamp',
-        ubicaciones: '++id, data, timestamp'
+        ubicaciones: '++id, data, timestamp',
+        lista_maestra: 'id_encuesta, titulo, descripcion, activa'
     });
 
-    // Sincronizar Encuestas
-    const encuestas = await db.encuestas.toArray();
-    for (const e of encuestas) {
+    if (!db.isOpen()) await db.open();
+
+    // --- Sincronización de Encuestas (Procesamiento Secuencial) ---
+    const encuestasPendientes = await db.encuestas.toArray();
+    console.log(`PWA: Detectadas ${encuestasPendientes.length} encuestas para sincronizar.`);
+
+    for (const e of encuestasPendientes) {
         try {
             const res = await fetch('/encuestas/guardar', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest' 
+                },
                 body: JSON.stringify(e.data)
             });
+
             if (res.ok) {
+                // Solo eliminamos si el servidor confirma recepción (Status 200)
                 await db.encuestas.delete(e.id);
-                console.log("PWA: Encuesta sincronizada y eliminada de local.");
+                console.log(`PWA: Encuesta #${e.id} sincronizada y eliminada.`);
+            } else {
+                console.warn(`PWA: El servidor rechazó la encuesta #${e.id}. Status: ${res.status}`);
             }
         } catch (err) { 
-            console.error("PWA: Error al sincronizar encuesta:", err); 
+            console.error("PWA: Error de conexión durante el bucle. Reintentando más tarde.", err);
+            return; // Detenemos el bucle si se pierde la conexión a mitad del proceso
         }
     }
 
-    // Sincronizar Ubicaciones (Batch)
-    const ubicaciones = await db.ubicaciones.toArray();
-    if (ubicaciones.length > 0) {
+    // --- Sincronización de Ubicaciones GPS (Envío por lote) ---
+    const puntosGPS = await db.ubicaciones.toArray();
+    if (puntosGPS.length > 0) {
         try {
             const res = await fetch('/encuestador/guardar_ubicacion_monitoreo', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ puntos: ubicaciones.map(u => u.data) })
+                body: JSON.stringify({ puntos: puntosGPS.map(u => u.data) })
             });
             if (res.ok) {
                 await db.ubicaciones.clear();
-                console.log("PWA: Historial GPS sincronizado y limpiado.");
+                console.log("PWA: Historial GPS sincronizado correctamente.");
             }
         } catch (err) { 
-            console.error("PWA: Error al sincronizar GPS:", err); 
+            console.error("PWA: Fallo sincronización GPS:", err); 
         }
     }
 }

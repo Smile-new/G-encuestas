@@ -315,7 +315,8 @@ if ($isLoggedIn && is_array($userData)) {
                 <div class="info-container">
                     <!-- Nombre completo dinámico -->
                     <div class="name" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <?= $nombreCompleto ?></div>
+                        <?= $nombreCompleto ?>
+                    </div>
                     <!-- Nombre de usuario dinámico -->
                     <div class="email"><?= $nombreUsuario ?></div> <!-- CAMBIADO: Muestra el nombre de usuario -->
                     <div class="btn-group user-helper-dropdown">
@@ -381,8 +382,16 @@ if ($isLoggedIn && is_array($userData)) {
 
     <section class="content">
         <div class="container-fluid">
-            <div class="block-header">
+            <div class="block-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h2>ENCUESTAS DISPONIBLES</h2>
+                <div>
+                    <button id="btnSyncEncuestas"
+                        class="btn btn-primary btn-circle-lg waves-effect waves-circle waves-float"
+                        title="Sincronizar para modo offline">
+                        <i class="material-icons">sync</i>
+                    </button>
+                    <div id="sync-status-msg" style="font-size: 11px; text-align: right; margin-top: 5px;"></div>
+                </div>
             </div>
 
             <div class="row clearfix">
@@ -423,7 +432,109 @@ if ($isLoggedIn && is_array($userData)) {
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_JS . '/admin.js') ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/dexie@latest/dist/dexie.js"></script>
     <script src="<?= base_url('js/offline_handler.js') ?>"></script>
+    <script>
+        $(function () {
+            const $btnSync = $('#btnSyncEncuestas');
+            const $status = $('#sync-status-msg');
+
+            $btnSync.on('click', async function () {
+                // 0. Validación de Conexión y Contexto Seguro
+                if (!navigator.onLine) {
+                    alert("No tienes conexión a internet para sincronizar.");
+                    return;
+                }
+
+                // Si no es HTTPS, el celular bloqueará el Service Worker y la sincronización
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                    alert("Error: La sincronización requiere una conexión segura (HTTPS).");
+                    return;
+                }
+
+                $btnSync.addClass('js-animating');
+                $status.text('Sincronizando...').css('color', 'orange');
+
+                try {
+                    // Asegurarse de que la base de datos esté abierta (Versión 3)
+                    if (!db.isOpen()) await db.open();
+
+                    // 1. Limpiar lista antigua para evitar encuestas "fantasma"
+                    await db.lista_maestra.clear();
+
+                    // 2. Escaneo de encuestas actuales en la pantalla
+                    const encuestasParaDescargar = [];
+                    $('.survey-card').each(function () {
+                        const $card = $(this);
+                        const url = $card.find('a').attr('href');
+                        if (url) {
+                            const id = url.split('/').pop();
+                            encuestasParaDescargar.push({
+                                url: url,
+                                id: id,
+                                titulo: $card.find('h2').text(),
+                                desc: $card.find('.survey-description').text()
+                            });
+                        }
+                    });
+
+                    if (encuestasParaDescargar.length === 0) {
+                        throw new Error("No se encontraron encuestas activas en la lista.");
+                    }
+
+                    // 3. Descarga y almacenamiento con manejo de errores individual
+                    for (let i = 0; i < encuestasParaDescargar.length; i++) {
+                        const encuesta = encuestasParaDescargar[i];
+                        $status.text(`Descargando ${i + 1} de ${encuestasParaDescargar.length}...`);
+
+                        try {
+                            // Forzamos la descarga real al caché dinámico
+                            const res = await fetch(encuesta.url, { cache: 'reload' });
+                            if (!res.ok) throw new Error(`Error al descargar encuesta ${encuesta.id}`);
+
+                            // Guardamos en la tabla lista_maestra para modo offline
+                            await db.lista_maestra.put({
+                                id_encuesta: encuesta.id,
+                                titulo: encuesta.titulo,
+                                descripcion: encuesta.desc,
+                                activa: 1
+                            });
+                        } catch (e) {
+                            console.warn(`Error individual: ${e.message}`);
+                        }
+                    }
+
+                    // 4. Actualizar el caché de la propia lista principal
+                    await fetch('<?= base_url('formularios') ?>', { cache: 'reload' });
+
+                    // 5. Notificar al Service Worker para enviar datos pendientes (Sync API)
+                    if ('serviceWorker' in navigator) {
+                        const reg = await navigator.serviceWorker.ready;
+                        if (reg.sync) {
+                            await reg.sync.register('sync-encuestas');
+                        }
+                    }
+
+                    $status.text('¡Sincronización completa!').css('color', 'green');
+
+                    setTimeout(() => {
+                        $btnSync.removeClass('js-animating');
+                        location.reload();
+                    }, 1000);
+
+                } catch (error) {
+                    console.error("Error de sincronización:", error);
+                    $btnSync.removeClass('js-animating');
+
+                    // Mostrar error detallado para depuración en celular
+                    alert("Fallo la sincronización: " + error.message);
+                    $status.text('Error al sincronizar.').css('color', 'red');
+                }
+            });
+        });
+    </script>
+
 
 </body>
+
+
 
 </html>

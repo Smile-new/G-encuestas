@@ -4,11 +4,12 @@
  */
 
 // 1. Configuración de la Base de Datos Local (IndexedDB)
-// Se incrementa a versión 2 para aplicar cambios en el esquema sin errores
+// IMPORTANTE: Se incrementa a versión 3 para incluir la tabla 'lista_maestra'
 const db = new Dexie("PanelEncuestadorDB");
-db.version(2).stores({
-    encuestas: '++id, data, timestamp', // Tabla para formularios
-    ubicaciones: '++id, data, timestamp' // Tabla para historial GPS
+db.version(3).stores({
+    encuestas: '++id, data, timestamp',     // Tabla para formularios guardados offline
+    ubicaciones: '++id, data, timestamp',   // Tabla para historial GPS
+    lista_maestra: 'id_encuesta, titulo, descripcion, activa' // Tabla para sincronizar la lista de formularios
 });
 
 // 2. Registro del Service Worker
@@ -53,7 +54,7 @@ document.addEventListener('submit', async (e) => {
             }
 
             try {
-                // Guardar en la base de datos interna del navegador
+                // Guardar la encuesta en la base de datos interna del navegador
                 await db.encuestas.add({ 
                     data: data, 
                     timestamp: Date.now() 
@@ -89,6 +90,7 @@ async function registrarUbicacionOffline(lat, lng) {
     };
 
     if (navigator.onLine) {
+        // Si hay red, se envía directamente vía fetch
         try {
             await fetch('/encuestador/guardar_ubicacion_monitoreo', {
                 method: 'POST',
@@ -100,6 +102,7 @@ async function registrarUbicacionOffline(lat, lng) {
             respaldarUbicacionLocal(dataUbicacion);
         }
     } else {
+        // Si está offline, respaldar directamente
         respaldarUbicacionLocal(dataUbicacion);
     }
 }
