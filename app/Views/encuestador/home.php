@@ -13,10 +13,10 @@ $rutaFotoPerfil = base_url(RECURSOS_ENCUESTADOR_IMAGES . '/user.png'); // Imagen
 
 if ($isLoggedIn && is_array($userData)) {
     $nombreCompleto = esc($userData['nombre']) . ' ' .
-                      esc($userData['apellido_paterno']) . ' ' .
-                      esc($userData['apellido_materno']);
+        esc($userData['apellido_paterno']) . ' ' .
+        esc($userData['apellido_materno']);
     $nombreUsuario = esc($userData['usuario']); // Usamos el campo 'usuario' del array de sesión
-    
+
     // Si hay una foto de usuario cargada en la sesión, usarla; de lo contrario, usar la por defecto
     if (!empty($userData['foto'])) {
         $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto']));
@@ -32,8 +32,13 @@ if ($isLoggedIn && is_array($userData)) {
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
     <title>Vota y Opina | Panel Encuestador</title>
     <link rel="icon" href="<?= base_url(RECURSOS_ENCUESTADOR_IMAGES . '/favicon.ico') ?>" type="image/x-icon">
+    <link rel="manifest" href="<?= base_url('manifest.json') ?>">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#f44336"> 
 
-    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&subset=latin,cyrillic-ext" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&subset=latin,cyrillic-ext" rel="stylesheet"
+        type="text/css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" type="text/css">
 
     <link href="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/bootstrap/css/bootstrap.css') ?>" rel="stylesheet">
@@ -48,27 +53,32 @@ if ($isLoggedIn && is_array($userData)) {
 
     <link href="<?= base_url(RECURSOS_ENCUESTADOR_CSS . '/themes/all-themes.css') ?>" rel="stylesheet" />
 
-      <style>
-    .logout_sidebar {
-    position: absolute;
-    bottom: 80px; /* queda justo arriba del bloque .legal */
-    width: 100%;
-    text-align: center;
-}
 
-.logout_sidebar a {
-    display: block;
-    padding: 12px;
-    color: #fff; /* texto blanco */
-    background-color: #f44336; /* rojo estilo Material */
-    text-decoration: none;
-    font-weight: bold;
-}
 
-.logout_sidebar a:hover {
-    background-color: #d32f2f;
-}
-  </style>
+    <style>
+        .logout_sidebar {
+            position: absolute;
+            bottom: 80px;
+            /* queda justo arriba del bloque .legal */
+            width: 100%;
+            text-align: center;
+        }
+
+        .logout_sidebar a {
+            display: block;
+            padding: 12px;
+            color: #fff;
+            /* texto blanco */
+            background-color: #f44336;
+            /* rojo estilo Material */
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .logout_sidebar a:hover {
+            background-color: #d32f2f;
+        }
+    </style>
 </head>
 
 <body class="theme-red">
@@ -91,7 +101,7 @@ if ($isLoggedIn && is_array($userData)) {
         $nombreCompleto = trim(($userData['nombre'] ?? '') . ' ' . ($userData['apellido_paterno'] ?? '') . ' ' . ($userData['apellido_materno'] ?? ''));
         $nombreUsuario = $userData['usuario'] ?? 'invitado';
         $nombreBienvenida = $userData['nombre'] ?? 'Usuario';
-        
+
         if (!empty($userData['foto'])) {
             $rutaFotoPerfil = base_url('public/img_user/' . $userData['foto']);
         }
@@ -120,28 +130,32 @@ if ($isLoggedIn && is_array($userData)) {
     <nav class="navbar">
         <div class="container-fluid">
             <div class="navbar-header">
-                <a href="javascript:void(0);" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false"></a>
+                <a href="javascript:void(0);" class="navbar-toggle collapsed" data-toggle="collapse"
+                    data-target="#navbar-collapse" aria-expanded="false"></a>
                 <a href="javascript:void(0);" class="bars"></a>
                 <a class="navbar-brand" href="<?= site_url('home') ?>">VOTA Y OPINA</a>
             </div>
             <div class="collapse navbar-collapse" id="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
-                    <li class="pull-right"><a href="javascript:void(0);" class="js-right-sidebar" data-close="true"><i class="material-icons">more_vert</i></a></li>
+                    <li class="pull-right"><a href="javascript:void(0);" class="js-right-sidebar" data-close="true"><i
+                                class="material-icons">more_vert</i></a></li>
                 </ul>
             </div>
         </div>
     </nav>
     <section>
         <aside id="leftsidebar" class="sidebar">
-             <div class="user-info">
+            <div class="user-info">
                 <div class="image">
                     <img src="<?= $rutaFotoPerfil ?>" width="48" height="48" alt="User" />
                 </div>
                 <div class="info-container">
-                    <div class="name" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><?= $nombreCompleto ?></div>
+                    <div class="name" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <?= $nombreCompleto ?></div>
                     <div class="email"><?= $nombreUsuario ?></div> <!-- Nombre de usuario dinámico -->
                     <div class="btn-group user-helper-dropdown">
-                        <i class="material-icons" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">keyboard_arrow_down</i>
+                        <i class="material-icons" data-toggle="dropdown" aria-haspopup="true"
+                            aria-expanded="true">keyboard_arrow_down</i>
                         <ul class="dropdown-menu pull-right">
                             <li><a href="javascript:void(0);"><i class="material-icons">person</i>Profile</a></li>
                             <li role="seperator" class="divider"></li>
@@ -166,22 +180,22 @@ if ($isLoggedIn && is_array($userData)) {
                             <span>Formularios</span>
                         </a>
                     </li>
-                            <li>
-            <a href="<?= site_url('perfil') ?>">
-                <i class="material-icons">account_circle</i>
-                <span>Perfil</span>
-            </a>
-        </li>
-    </ul>
-</div>
+                    <li>
+                        <a href="<?= site_url('perfil') ?>">
+                            <i class="material-icons">account_circle</i>
+                            <span>Perfil</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
 
-<!-- Botón fijo abajo -->
-<div class="logout_sidebar">
-    <a href="<?= site_url('logout') ?>">
-        <i class="material-icons">input</i>
-        <span>Cerrar Sesión</span>
-    </a>
-</div>
+            <!-- Botón fijo abajo -->
+            <div class="logout_sidebar">
+                <a href="<?= site_url('logout') ?>">
+                    <i class="material-icons">input</i>
+                    <span>Cerrar Sesión</span>
+                </a>
+            </div>
             <div class="legal">
                 <div class="copyright">
                     &copy; <?= date('Y') ?> <a href="javascript:void(0);">Vota y Opina</a>.
@@ -190,7 +204,7 @@ if ($isLoggedIn && is_array($userData)) {
                     <b>Version: </b> 1.0.0
                 </div>
             </div>
-            </aside>
+        </aside>
     </section>
 
     <section class="content">
@@ -205,7 +219,8 @@ if ($isLoggedIn && is_array($userData)) {
                             <h2>Bienvenido, <?= esc($nombreBienvenida) ?>!</h2>
                         </div>
                         <div class="body">
-                            <p>Este es tu panel de control como Encuestador. Aquí podrás acceder a los formularios y otras herramientas.</p>
+                            <p>Este es tu panel de control como Encuestador. Aquí podrás acceder a los formularios y
+                                otras herramientas.</p>
                             <p>Tu rol actual es: <strong><?= esc($rolTexto) ?></strong></p>
                         </div>
                     </div>
@@ -214,7 +229,7 @@ if ($isLoggedIn && is_array($userData)) {
         </div>
     </section>
 
-     <script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/jquery/jquery.min.js') ?>"></script>
+    <script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/jquery/jquery.min.js') ?>"></script>
 
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/bootstrap/js/bootstrap.js') ?>"></script>
 
@@ -243,6 +258,9 @@ if ($isLoggedIn && is_array($userData)) {
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_JS . '/pages/index.js') ?>"></script>
 
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_JS . '/demo.js') ?>"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dexie@latest/dist/dexie.js"></script>
+    <script src="<?= base_url('js/offline_handler.js') ?>"></script>
+
 </body>
 
 </html>

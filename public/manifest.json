@@ -1,0 +1,23 @@
+{
+  "name": "Sistema de Encuestas Offline",
+  "short_name": "Encuestador",
+  "description": "Panel para levantamiento de encuestas con soporte offline",
+  "start_url": "/home", 
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#007bff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/assets/img/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/img/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

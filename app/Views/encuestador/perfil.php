@@ -7,6 +7,11 @@
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
     <title>Vota y Opina | Mi Perfil</title>
 
+    <link rel="manifest" href="<?= base_url('manifest.json') ?>">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#f44336"> 
+
     <!-- Favicon -->
     <link rel="icon" href="<?= base_url('recursos_encuestador/images/favicon.ico') ?>" type="image/x-icon">
 
@@ -342,6 +347,9 @@ if ($userData) {
 <script src="<?= base_url('recursos_encuestador/js/admin.js') ?>"></script>
 <script src="<?= base_url('recursos_encuestador/js/pages/index.js') ?>"></script>
 <script src="<?= base_url('recursos_encuestador/js/demo.js') ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/dexie@latest/dist/dexie.js"></script>
+    <script src="<?= base_url('js/offline_handler.js') ?>"></script>
+
 
 </body>
 </html>

@@ -10,6 +10,10 @@
     <link rel="icon" href="<?= base_url(RECURSOS_ENCUESTADOR_IMAGES . '/favicon.ico') ?>" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&subset=latin,cyrillic-ext" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="manifest" href="<?= base_url('manifest.json') ?>">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#f44336">
 
     <link href="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/bootstrap/css/bootstrap.css') ?>" rel="stylesheet">
     <link href="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/node-waves/waves.css') ?>" rel="stylesheet" />
@@ -439,7 +443,8 @@
                 </div>
                 <div class="info-container">
                     <div class="name" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <?= $nombreCompleto ?></div>
+                        <?= $nombreCompleto ?>
+                    </div>
                     <div class="email"><?= $nombreUsuario ?></div>
                     <div class="btn-group user-helper-dropdown">
                         <i class="material-icons" data-toggle="dropdown" aria-haspopup="true"
@@ -603,7 +608,8 @@
                                                             }
                                                             foreach ($seccionesUnicas as $seccion): ?>
                                                                 <option value="<?= esc($seccion['id_seccion']) ?>">
-                                                                    <?= esc($seccion['nombre_seccion']) ?></option>
+                                                                    <?= esc($seccion['nombre_seccion']) ?>
+                                                                </option>
                                                             <?php endforeach; ?>
                                                         </select>
                                                     </div>
@@ -722,6 +728,9 @@
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/bootstrap/js/bootstrap.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/node-waves/waves.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_JS . '/admin.js') ?>"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dexie@latest/dist/dexie.js"></script>
+    <script src="<?= base_url('js/offline_handler.js') ?>"></script>
+
 
     <script>
         $(function () {
@@ -867,59 +876,100 @@
 
             // --- 4. LÓGICA DE GEOLOCALIZACIÓN ---
 
-            function obtenerUbicacionParaFormulario() {
-                if (!navigator.geolocation) {
-                    $ubicacionStatus.text('Geolocalización no soportada.').addClass('col-red');
-                    $btnEnviarEncuesta.prop('disabled', true);
-                    return;
-                }
+            // --- 4. LÓGICA DE GEOLOCALIZACIÓN ---
 
-                $ubicacionStatus.text('Obteniendo ubicación para el formulario...').addClass('col-orange');
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        $latitudInput.val(position.coords.latitude);
-                        $longitudInput.val(position.coords.longitude);
-                        $ubicacionStatus.html(`<strong><i class="material-icons" style="font-size: 1em; vertical-align: sub;">check_circle</i> Ubicación obtenida.</strong>`).removeClass('col-orange col-red').addClass('col-green');
-                        $btnEnviarEncuesta.prop('disabled', false);
+// Inicializamos la referencia a la base de datos local para el monitoreo
+const dbLocal = new Dexie("PanelEncuestadorDB");
+dbLocal.version(1).stores({ ubicaciones: '++id, data, timestamp' });
+
+function obtenerUbicacionParaFormulario() {
+    if (!navigator.geolocation) {
+        $ubicacionStatus.text('Geolocalización no soportada.').addClass('col-red');
+        $btnEnviarEncuesta.prop('disabled', true);
+        return;
+    }
+
+    $ubicacionStatus.text('Obteniendo ubicación para el formulario...').addClass('col-orange');
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            $latitudInput.val(position.coords.latitude);
+            $longitudInput.val(position.coords.longitude);
+            $ubicacionStatus.html(`<strong><i class="material-icons" style="font-size: 1em; vertical-align: sub;">check_circle</i> Ubicación obtenida.</strong>`).removeClass('col-orange col-red').addClass('col-green');
+            $btnEnviarEncuesta.prop('disabled', false);
+        },
+        (err) => {
+            $btnEnviarEncuesta.prop('disabled', true);
+            let msg = "Error al obtener ubicación. Intente de nuevo.";
+            if (err.code === 1) msg = "Permiso de ubicación denegado.";
+            if (err.code === 2) msg = "Ubicación no disponible. Revise su GPS.";
+            if (err.code === 3) msg = "Tiempo de espera agotado.";
+            $ubicacionStatus.text(msg).removeClass('col-orange col-green').addClass('col-red');
+        },
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+    );
+}
+
+function iniciarMonitoreoContinuo() {
+    if (!navigator.geolocation) {
+        console.warn('Monitoreo no disponible: geolocalización no soportada.');
+        return;
+    }
+
+    const procesarEnvioUbicacion = async (position) => {
+        const coords = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            time: Date.now()
+        };
+
+        // Intentar envío si hay internet
+        if (navigator.onLine) {
+            try {
+                const res = await fetch('<?= base_url('encuestador/guardar_ubicacion_monitoreo') ?>', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-Requested-With': 'XMLHttpRequest' 
                     },
-                    (err) => {
-                        $btnEnviarEncuesta.prop('disabled', true);
-                        let msg = "Error al obtener ubicación. Intente de nuevo.";
-                        if (err.code === 1) msg = "Permiso de ubicación denegado.";
-                        if (err.code === 2) msg = "Ubicación no disponible. Revise su GPS.";
-                        if (err.code === 3) msg = "Tiempo de espera agotado.";
-                        $ubicacionStatus.text(msg).removeClass('col-orange col-green').addClass('col-red');
-                    },
-                    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
-                );
-            }
-
-            function iniciarMonitoreoContinuo() {
-                if (!navigator.geolocation) {
-                    console.warn('Monitoreo no disponible: geolocalización no soportada.');
-                    return;
-                }
-
-                const enviarUbicacion = (position) => {
-                    fetch('<?= base_url('encuestador/guardar_ubicacion_monitoreo') ?>', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                        body: JSON.stringify({
-                            latitud: position.coords.latitude,
-                            longitud: position.coords.longitude
-                        })
+                    body: JSON.stringify({
+                        latitud: coords.lat,
+                        longitud: coords.lng
                     })
-                        .then(res => res.json())
-                        .then(data => data.success ? console.log('Monitoreo: Posición actualizada.') : console.error('Monitoreo:', data.message))
-                        .catch(err => console.error('Monitoreo (Error de Red):', err));
-                };
-
-                navigator.geolocation.watchPosition(
-                    enviarUbicacion,
-                    (err) => console.warn(`Monitoreo (Error de GPS): ${err.message}`),
-                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-                );
+                });
+                const data = await res.json();
+                if (data.success) {
+                    console.log('Monitoreo: Sincronizado en tiempo real.');
+                }
+            } catch (err) {
+                // Si el fetch falla (ej. internet inestable), respaldamos en Dexie
+                console.warn('Fallo envío en vivo, guardando en dispositivo...');
+                await guardarEnLocal(coords);
             }
+        } else {
+            // Modo offline total: Guardar directo en Dexie
+            await guardarEnLocal(coords);
+        }
+    };
+
+    async function guardarEnLocal(coords) {
+        try {
+            await dbLocal.ubicaciones.add({
+                data: coords,
+                timestamp: Date.now()
+            });
+            console.log('Monitoreo: Coordenada guardada localmente (Offline).');
+        } catch (error) {
+            console.error('Error al guardar en Dexie:', error);
+        }
+    }
+
+    // Iniciar el rastreo con watchPosition
+    navigator.geolocation.watchPosition(
+        procesarEnvioUbicacion,
+        (err) => console.warn(`Monitoreo (Error de GPS): ${err.message}`),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+}
 
             // --- 5. EJECUCIÓN INICIAL AL CARGAR LA PÁGINA ---
             populateAllSelects(); // Llama a la función para llenar los selectores
