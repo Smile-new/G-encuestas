@@ -110,17 +110,45 @@ class Uniones extends Controller
             }
 
             /* ==================================================
-               1. APLANAR OPCIONES
+               1. PREPARAR PREGUNTAS, OPCIONES Y PREGUNTA EJE
             ================================================== */
-            $totalPreguntas = count($filtros);
+            $idPreguntasFiltro = array_keys($filtros);
+            $totalPreguntasReq = count($idPreguntasFiltro);
             $opcionesFlat = [];
 
-            foreach ($filtros as $opciones) {
-                $opcionesFlat = array_merge($opcionesFlat, (array) $opciones);
+            $idPreguntaEje = null;
+            $maxOpciones = 0;
+
+            foreach ($filtros as $idPregunta => $arrOpciones) {
+                $arrOpciones = (array) $arrOpciones;
+                $conteo = count($arrOpciones);
+                $opcionesFlat = array_merge($opcionesFlat, $arrOpciones);
+
+                if ($conteo > $maxOpciones) {
+                    $maxOpciones = $conteo;
+                    $idPreguntaEje = $idPregunta;
+                }
+            }
+
+            if (!$idPreguntaEje) {
+                $idPreguntaEje = $idPreguntasFiltro[0];
             }
 
             /* ==================================================
-               2. OBTENER MONITOREOS QUE CUMPLEN TODAS LAS PREGUNTAS
+               2. MAPA DE TEXTOS DE PREGUNTAS (CLAVE DEL FIX)
+            ================================================== */
+            $preguntas = $db->table('preguntas')
+                ->select('id_pregunta, texto_pregunta')
+                ->whereIn('id_pregunta', $idPreguntasFiltro)
+                ->get()->getResultArray();
+
+            $mapPreguntas = [];
+            foreach ($preguntas as $p) {
+                $mapPreguntas[$p['id_pregunta']] = trim($p['texto_pregunta']);
+            }
+
+            /* ==================================================
+               3. BUSCAR PERSONAS QUE CUMPLEN TODOS LOS FILTROS
             ================================================== */
             $builder = $db->table('respuestas')
                 ->select('id_monitoreo')
@@ -128,107 +156,114 @@ class Uniones extends Controller
                 ->whereIn('id_opcion', $opcionesFlat);
 
             $camposGeo = [
-                'id_estado',
-                'id_distrito_federal',
-                'id_distrito_local',
-                'id_municipio',
-                'id_seccion',
-                'id_comunidad'
+                'id_estado' => 'id_estado',
+                'id_distritofederal' => 'id_distrito_federal',
+                'id_distritolocal' => 'id_distrito_local',
+                'id_municipio' => 'id_municipio',
+                'id_seccion' => 'id_seccion',
+                'id_comunidad' => 'id_comunidad'
             ];
 
-            foreach ($camposGeo as $campo) {
-                if (!empty($geo[$campo])) {
-                    $builder->where($campo, $geo[$campo]);
+            foreach ($camposGeo as $postKey => $dbCol) {
+                if (!empty($geo[$postKey])) {
+                    $builder->where($dbCol, $geo[$postKey]);
                 }
             }
 
-            $builder
-                ->groupBy('id_monitoreo')
-                ->having('COUNT(DISTINCT id_pregunta)', $totalPreguntas);
+            $builder->groupBy('id_monitoreo')
+                ->having('COUNT(DISTINCT id_pregunta)', $totalPreguntasReq);
 
-            $idsMonitoreo = array_column(
-                $builder->get()->getResultArray(),
-                'id_monitoreo'
-            );
+            $idsValidos = array_column($builder->get()->getResultArray(), 'id_monitoreo');
 
-            if (empty($idsMonitoreo)) {
+            if (empty($idsValidos)) {
                 return $this->response->setJSON(['status' => 'empty']);
             }
 
             /* ==================================================
-               3. PUNTOS MAPA
-            ================================================== */
-            $puntos = $db->table('monitoreo_ubicacion')
-                ->select('id_monitoreo, latitud, longitud')
-                ->whereIn('id_monitoreo', $idsMonitoreo)
-                ->get()
-                ->getResultArray();
-
-            /* ==================================================
-               4. RESPUESTAS POR PERSONA (ID ÚNICO)
+               4. TRAER RESPUESTAS LIMPIAS
             ================================================== */
             $respuestas = $db->table('respuestas r')
                 ->select('r.id_monitoreo, r.id_pregunta, o.texto_opcion')
                 ->join('opciones o', 'o.id_opcion = r.id_opcion')
-                ->whereIn('r.id_monitoreo', $idsMonitoreo)
+                ->whereIn('r.id_monitoreo', $idsValidos)
+                ->whereIn('r.id_pregunta', $idPreguntasFiltro)
                 ->whereIn('r.id_opcion', $opcionesFlat)
                 ->orderBy('r.id_monitoreo')
-                ->orderBy('r.id_pregunta')
                 ->get()
                 ->getResultArray();
 
             /* ==================================================
-               5. PERFIL REAL POR PERSONA
+               5. MAPA PERSONA → BARRA (PREGUNTA EJE)
             ================================================== */
-            $perfilesPorPersona = [];
+            $personaColorMap = [];
+            foreach ($respuestas as $row) {
+                if ($row['id_pregunta'] == $idPreguntaEje) {
+                    $personaColorMap[$row['id_monitoreo']] = $row['texto_opcion'];
+                }
+            }
+
+            /* ==================================================
+               6. CONTEO PRINCIPAL + RELACIONES CORRECTAS
+            ================================================== */
+            $conteoCaminos = [];
+            $relacionesOpciones = [];
 
             foreach ($respuestas as $row) {
-                $id = $row['id_monitoreo'];
-                $pregunta = $row['id_pregunta'];
-                $opcion = $row['texto_opcion'];
+                $idPersona = $row['id_monitoreo'];
+                $idPregunta = $row['id_pregunta'];
+                $textoOpcion = $row['texto_opcion'];
 
-                $perfilesPorPersona[$id][$pregunta] = $opcion;
-            }
-
-            /* ==================================================
-               6. AGRUPAR CAMINOS
-            ================================================== */
-            $perfilesFinales = [];
-
-            foreach ($perfilesPorPersona as $perfil) {
-                ksort($perfil);
-                $clave = implode(' + ', $perfil);
-
-                if (!isset($perfilesFinales[$clave])) {
-                    $perfilesFinales[$clave] = 0;
+                // Conteo de la gráfica (solo eje)
+                if ($idPregunta == $idPreguntaEje) {
+                    $conteoCaminos[$textoOpcion] = ($conteoCaminos[$textoOpcion] ?? 0) + 1;
                 }
 
-                $perfilesFinales[$clave]++;
+                // Relaciones opción ↔ barras
+                if (isset($personaColorMap[$idPersona])) {
+                    $textoPregunta = $mapPreguntas[$idPregunta] ?? 'Pregunta';
+                    $claveRelacion = $textoPregunta . '|' . $textoOpcion;
+                    $colorKey = $personaColorMap[$idPersona];
+
+                    $relacionesOpciones[$claveRelacion][$colorKey] = true;
+                }
             }
 
             /* ==================================================
-               7. FORMATO GRÁFICA
+               7. LIMPIAR RELACIONES PARA JS
             ================================================== */
-            $resultadoGrafica = [];
-            $i = 1;
+            $relacionesFinal = [];
+            foreach ($relacionesOpciones as $clave => $colores) {
+                $relacionesFinal[$clave] = array_keys($colores);
+            }
 
-            foreach ($perfilesFinales as $perfil => $cantidad) {
+            ksort($conteoCaminos);
+
+            $resultadoGrafica = [];
+            foreach ($conteoCaminos as $texto => $total) {
                 $resultadoGrafica[] = [
-                    'perfil_corto' => 'Camino ' . $i++,
-                    'texto_completo' => $perfil,
-                    'total' => $cantidad
+                    'perfil_corto' => $texto,
+                    'texto_completo' => $texto,
+                    'total' => $total
                 ];
             }
 
             /* ==================================================
-               8. RESPUESTA FINAL
+               8. PUNTOS DEL MAPA
             ================================================== */
+            $puntos = $db->table('monitoreo_ubicacion')
+                ->select('id_monitoreo, latitud, longitud')
+                ->whereIn('id_monitoreo', $idsValidos)
+                ->get()
+                ->getResultArray();
+
             return $this->response->setJSON([
                 'status' => 'success',
                 'desglose' => $resultadoGrafica,
                 'puntos' => $puntos,
+                'relaciones' => $relacionesFinal,
                 'resumen' => [
-                    'coincidencias' => count($idsMonitoreo)
+                    'coincidencias' => count($idsValidos),
+                    'encuesta_nombre' => 'Resultados Filtrados'
                 ]
             ]);
 

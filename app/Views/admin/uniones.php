@@ -501,7 +501,16 @@
                                 <i class="mdi mdi-printer"></i> GENERAR REPORTE (3 PÁGINAS)
                             </button>
 
-                            
+
+                            <div id="custom_colors_container" class="row mt-3 mb-3 justify-content-center"
+                                style="display:none;">
+                                <div class="col-12 text-center">
+                                    <h6 class="text-white">Personalizar Colores de Barras</h6>
+                                    <div id="color_pickers_wrapper"
+                                        class="d-flex flex-wrap justify-content-center gap-2">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <!-- END RIGHT COLUMN -->
                     </div>
@@ -622,18 +631,24 @@
                     }
                 }, function (res) {
                     $('#loader').hide();
+
                     if (res.status === 'success') {
+
                         lastChartData = res;
+                        window.datosGrafica = res; // 🔥🔥 ESTA LÍNEA ARREGLA TODO
+
                         $('.chart-container, #seccion_mapa, #dynamic-legend-container').show();
                         actualizarGrafica(res.desglose, res.resumen);
                         generarSelectoresDeColor(res.desglose);
                         actualizarMapa(res.puntos);
                         actualizarTablaFiltros();
+
                     } else {
                         $('#no_data').show();
                     }
                 });
             });
+
 
             $(document).on('change', '#selector_tipo_grafica', function () {
                 currentChartType = $(this).val();
@@ -928,85 +943,133 @@
             }
 
 
-function obtenerHtmlPagina2() {
-    // ============================================================
-    // 1. CÁLCULO DE DENSIDAD PARA AJUSTE AUTOMÁTICO
-    // ============================================================
-    const $filasCriterio = $('.criterio-row').filter(function() {
-        const pregunta = $(this).find('.select-pregunta option:selected').text().trim();
-        return pregunta && pregunta !== "Seleccione...";
-    });
+            function obtenerHtmlPagina2() {
+                // 1. CÁLCULO DE DENSIDAD
+                const $filasCriterio = $('.criterio-row').filter(function () {
+                    const pregunta = $(this).find('.select-pregunta option:selected').text().trim();
+                    return pregunta && pregunta !== "Seleccione...";
+                });
 
-    const totalFilas = $filasCriterio.length;
-    
-    // Configuraciones por defecto (Densidad baja)
-    let fontSizeTable = "13px";
-    let fontSizeOptions = "11px";
-    let paddingCell = "10px";
-    let dotSize = "11px";
-    let rowMargin = "8px";
+                const totalFilas = $filasCriterio.length;
 
-    // Ajuste dinámico según cantidad de datos
-    if (totalFilas > 7 || totalFilas < 12) {
-        fontSizeTable = "11px";
-        fontSizeOptions = "10px";
-        paddingCell = "8px";
-        dotSize = "10px";
-        rowMargin = "4px";
-    } 
-    
-    if (totalFilas >= 12) {
-        fontSizeTable = "10px";
-        fontSizeOptions = "9px";
-        paddingCell = "5px";
-        dotSize = "8px";
-        rowMargin = "2px";
-    }
+                // Configuraciones por defecto
+                let fontSizeTable = "13px";
+                let fontSizeOptions = "11px";
+                let paddingCell = "10px";
+                let dotSize = "11px";
+                let rowMargin = "8px";
 
-    const limpiarParaComparar = (str) => {
-        if (!str) return "";
-        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
-    };
-
-    const buscarColorEnGrafica = (textoBusqueda) => {
-        const textoLimpio = limpiarParaComparar(textoBusqueda);
-        let coloresExactos = [];
-        let coloresParciales = [];
-
-        if (window.chartInstance && window.chartInstance.data.datasets.length > 0) {
-            const dataset = window.chartInstance.data.datasets[0];
-            const etiquetasOriginales = dataset.textoCompleto || [];
-            const coloresPaleta = dataset.backgroundColor || [];
-
-            etiquetasOriginales.forEach((label, idx) => {
-                const labelLimpia = limpiarParaComparar(label);
-                const color = coloresPaleta[idx];
-                if (!color) return;
-
-                if (labelLimpia === textoLimpio) {
-                    if (!coloresExactos.includes(color)) coloresExactos.push(color);
-                } else if (labelLimpia.includes(textoLimpio)) {
-                    if (!coloresParciales.includes(color)) coloresParciales.push(color);
+                // Ajuste dinámico
+                if (totalFilas > 7 && totalFilas <= 12) {
+                    fontSizeTable = "11px";
+                    fontSizeOptions = "10px";
+                    paddingCell = "8px";
+                    dotSize = "10px";
+                    rowMargin = "4px";
                 }
-            });
-        }
-        if (coloresExactos.length > 0) return coloresExactos;
-        return coloresParciales.length > 0 ? coloresParciales : ['#bdc3c7'];
-    };
 
-    // ============================================================
-    // 2. GENERACIÓN DE FILAS CON ESTILOS DINÁMICOS
-    // ============================================================
-    let filasHtml = '';
+                if (totalFilas >= 12) {
+                    fontSizeTable = "10px";
+                    fontSizeOptions = "9px";
+                    paddingCell = "5px";
+                    dotSize = "8px";
+                    rowMargin = "2px";
+                }
 
-    $filasCriterio.each(function () {
-        const pregunta = $(this).find('.select-pregunta option:selected').text().trim();
-        
-        const opcionesHtml = $(this).find('.select-opcion option:selected').map(function () {
-            const textoOriginal = $(this).text().trim();
-            const colores = buscarColorEnGrafica(textoOriginal);
+                const limpiarParaComparar = (str) => {
+                    if (!str) return "";
+                    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+                };
 
-            const puntosSimbologia = colores.map(color => `
+                // NUEVA FUNCIÓN MEJORADA PARA BUSCAR COLORES
+                const buscarColoresParaOpcion = (textoPregunta, textoOpcion) => {
+                    const clave = textoPregunta + "|" + textoOpcion;
+
+                    // 1. Primero buscar en relaciones filtradas (respuesta del servidor)
+                    if (window.datosGrafica && window.datosGrafica.relaciones) {
+                        if (window.datosGrafica.relaciones[clave]) {
+                            return obtenerColoresPorNombres(window.datosGrafica.relaciones[clave]);
+                        }
+                    }
+
+                    // 2. Si no está en relaciones filtradas, buscar en la gráfica
+                    const textoLimpio = limpiarParaComparar(textoOpcion);
+                    let coloresEncontrados = [];
+
+                    if (window.chartInstance && window.chartInstance.data.datasets.length > 0) {
+                        const dataset = window.chartInstance.data.datasets[0];
+                        const etiquetasOriginales = dataset.textoCompleto || [];
+                        const coloresPaleta = dataset.backgroundColor || [];
+
+                        etiquetasOriginales.forEach((label, idx) => {
+                            const labelLimpia = limpiarParaComparar(label);
+                            const color = coloresPaleta[idx];
+                            if (!color) return;
+
+                            if (labelLimpia === textoLimpio || labelLimpia.includes(textoLimpio)) {
+                                if (!coloresEncontrados.includes(color)) {
+                                    coloresEncontrados.push(color);
+                                }
+                            }
+                        });
+                    }
+
+                    return coloresEncontrados.length > 0 ? coloresEncontrados : ['#bdc3c7'];
+                };
+
+                // Función auxiliar para obtener colores por nombres de opciones
+                const obtenerColoresPorNombres = (nombresOpciones) => {
+                    const colores = [];
+
+                    if (window.chartInstance && window.chartInstance.data.datasets.length > 0) {
+                        const dataset = window.chartInstance.data.datasets[0];
+                        const etiquetasOriginales = dataset.textoCompleto || [];
+                        const coloresPaleta = dataset.backgroundColor || [];
+
+                        nombresOpciones.forEach(nombre => {
+                            const idx = etiquetasOriginales.findIndex(label =>
+                                limpiarParaComparar(label) === limpiarParaComparar(nombre)
+                            );
+                            if (idx !== -1 && coloresPaleta[idx]) {
+                                if (!colores.includes(coloresPaleta[idx])) {
+                                    colores.push(coloresPaleta[idx]);
+                                }
+                            }
+                        });
+                    }
+
+                    return colores.length > 0 ? colores : ['#bdc3c7'];
+                };
+
+                // 2. GENERACIÓN DE FILAS
+                let filasHtml = '';
+
+                $filasCriterio.each(function () {
+                    const pregunta = $(this).find('.select-pregunta option:selected').text().trim();
+                    const idPregunta = $(this).find('.select-pregunta').val();
+
+                    // Obtener TODAS las opciones de esta pregunta (no solo las seleccionadas)
+                    let opcionesParaMostrar = [];
+
+                    // Si tenemos datos del servidor con todas las opciones
+                    if (window.datosGrafica && window.datosGrafica.opciones_por_pregunta &&
+                        window.datosGrafica.opciones_por_pregunta[pregunta]) {
+
+                        opcionesParaMostrar = window.datosGrafica.opciones_por_pregunta[pregunta];
+                    } else {
+                        // Fallback: usar solo las opciones seleccionadas
+                        $(this).find('.select-opcion option:selected').each(function () {
+                            opcionesParaMostrar.push({
+                                texto: $(this).text().trim(),
+                                clave: pregunta + "|" + $(this).text().trim()
+                            });
+                        });
+                    }
+
+                    const opcionesHtml = opcionesParaMostrar.map(opcion => {
+                        const colores = buscarColoresParaOpcion(pregunta, opcion.texto);
+
+                        const puntosSimbologia = colores.map(color => `
                 <span style="
                     display:inline-block;
                     width:${dotSize};
@@ -1019,17 +1082,17 @@ function obtenerHtmlPagina2() {
                 "></span>
             `).join('');
 
-            return `
+                        return `
                 <div style="display:inline-block; margin-right:12px; margin-bottom:${rowMargin}; vertical-align:middle; line-height: 1;">
                     ${puntosSimbologia}
                     <span style="font-size:${fontSizeOptions}; font-family:Arial; font-weight:bold; color:#000000 !important;">
-                        ${textoOriginal}
+                        ${opcion.texto}
                     </span>
                 </div>
             `;
-        }).get().join('');
+                    }).join('');
 
-        filasHtml += `
+                    filasHtml += `
             <tr style="border:1px solid #000;">
                 <td style="width:35%; padding:${paddingCell}; background-color:#f8f9fa; font-weight:bold; font-family:Arial; font-size:${fontSizeTable}; border:1px solid #000; color:#000000 !important; line-height: 1.2;">
                     ${pregunta}
@@ -1041,35 +1104,35 @@ function obtenerHtmlPagina2() {
                 </td>
             </tr>
         `;
-    });
+                });
 
-    return `
-    <div class="pagina-reporte">
-        ${inyectarMarcaAgua()}
-        <div class="contenido-superior" style="width: 95%; margin-top: 10mm;">
-            <div style="text-align: center; width: 100%; margin-bottom: 3mm;">
-                <h1 style="color: #003366; margin: 0; font-size: 24px; text-transform: uppercase; border-bottom: 2px solid #003366; display: inline-block; padding-bottom: 5px;">Datos Filtrados</h1>
-                <p style="color: #666; font-size: 13px; margin-top: 5px;">Detalle de criterios y colores aplicados en el análisis</p>
+                return `
+        <div class="pagina-reporte">
+            ${inyectarMarcaAgua()}
+            <div class="contenido-superior" style="width: 95%; margin-top: 10mm;">
+                <div style="text-align: center; width: 100%; margin-bottom: 3mm;">
+                    <h1 style="color: #003366; margin: 0; font-size: 24px; text-transform: uppercase; border-bottom: 2px solid #003366; display: inline-block; padding-bottom: 5px;">Datos Filtrados</h1>
+                    <p style="color: #666; font-size: 13px; margin-top: 5px;">Detalle de criterios y colores aplicados en el análisis</p>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #000; table-layout: fixed;">
+                    <thead>
+                        <tr style="background-color: #003366; color: #ffffff;">
+                            <th style="width:35%; padding: 10px; border: 1px solid #000; text-align: left; font-size: 13px;">CRITERIO / PREGUNTA</th>
+                            <th style="width:65%; padding: 10px; border: 1px solid #000; text-align: left; font-size: 13px;">SIMBOLOGÍA ASIGNADA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filasHtml}
+                    </tbody>
+                </table>
+
+                <p style="text-align: center; font-size: 9px; color: #999; margin-top: 10px;">
+                    Reporte generado por Vota y Opina
+                </p>
             </div>
-
-            <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #000; table-layout: fixed;">
-                <thead>
-                    <tr style="background-color: #003366; color: #ffffff;">
-                        <th style="width:35%; padding: 10px; border: 1px solid #000; text-align: left; font-size: 13px;">CRITERIO / PREGUNTA</th>
-                        <th style="width:65%; padding: 10px; border: 1px solid #000; text-align: left; font-size: 13px;">SIMBOLOGÍA ASIGNADA</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${filasHtml}
-                </tbody>
-            </table>
-
-            <p style="text-align: center; font-size: 9px; color: #999; margin-top: 10px;">
-                Reporte generado por Vota y Opina
-            </p>
-        </div>
-    </div>`;
-}
+        </div>`;
+            }
             function obtenerHtmlPagina3() {
                 const centro = map.getCenter();
                 const zoom = map.getZoom();
