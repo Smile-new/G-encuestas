@@ -355,21 +355,36 @@ $rolTexto = esc($userData['nombre_rol'] ?? 'Rol desconocido');
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function confirmDelete(id, nombreUsuario) {
-            Swal.fire({
-                title: '¿Estás seguro?',
-                text: "Estás a punto de eliminar al usuario " + nombreUsuario + ". ¡Esta acción es irreversible!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Sí, eliminarlo!',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('deleteForm-' + id).submit();
-                }
-            });
+    // LOG: Verificar que la función recibe los datos correctos
+    console.log("Intentando eliminar usuario:", {id: id, nombre: nombreUsuario});
+
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "Estás a punto de eliminar al usuario " + nombreUsuario + ". ¡Esta acción es irreversible!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminarlo!',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // LOG: Confirmar que el usuario hizo clic en "Sí"
+            console.log("Confirmación recibida. Enviando formulario: deleteForm-" + id);
+            
+            const form = document.getElementById('deleteForm-' + id);
+            if (form) {
+                console.log("Formulario encontrado. URL de destino:", form.action);
+                form.submit();
+            } else {
+                console.error("ERROR: No se encontró el formulario deleteForm-" + id);
+            }
+        } else {
+            // LOG: Ver si el usuario canceló
+            console.log("Eliminación cancelada por el usuario.");
         }
+    });
+}
     </script>
 </body>
 </html>

@@ -1,86 +1,86 @@
 /**
- * PWA Offline Handler para Panel de Encuestador
- * Maneja la persistencia local con Dexie.js y el registro del Service Worker.
+ * PWA Offline Handler - Panel de Encuestador v1.6
+ * Maneja la persistencia local con Dexie.js y el ciclo de vida del Service Worker.
  */
 
 // 1. Configuración de la Base de Datos Local (IndexedDB)
-// IMPORTANTE: Se incrementa a versión 3 para incluir la tabla 'lista_maestra'
+// Mantenemos la versión 3 para asegurar la existencia de 'lista_maestra'
 const db = new Dexie("PanelEncuestadorDB");
 db.version(3).stores({
-    encuestas: '++id, data, timestamp',     // Tabla para formularios guardados offline
-    ubicaciones: '++id, data, timestamp',   // Tabla para historial GPS
-    lista_maestra: 'id_encuesta, titulo, descripcion, activa' // Tabla para sincronizar la lista de formularios
+    encuestas: '++id, data, timestamp',     // Formularios guardados sin internet
+    ubicaciones: '++id, data, timestamp',   // Historial de coordenadas GPS
+    lista_maestra: 'id_encuesta, titulo, descripcion, activa' // Lista oficial de encuestas
 });
 
-// 2. Registro del Service Worker
+// 2. Registro y Control del Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        // Registro desde la raíz para control total del scope
         navigator.serviceWorker.register('/sw.js')
             .then(reg => {
-                console.log("PWA: Service Worker registrado con éxito. Scope:", reg.scope);
+                console.log("PWA: Service Worker activo. Scope:", reg.scope);
                 
-                // Intentar sincronización inicial al cargar si hay red
+                /**
+                 * TRUCO DE ACTUALIZACIÓN:
+                 * Fuerza al navegador a revisar si hay una versión nueva (v1.6) 
+                 * en el servidor cada vez que se carga la página.
+                 */
+                reg.update();
+
+                // Intentar sincronización de fondo si el navegador lo soporta
                 if (navigator.onLine && reg.sync) {
                     reg.sync.register('sync-encuestas');
                 }
             })
-            .catch(err => {
-                console.error("PWA: Error Crítico al registrar Service Worker:", err);
-            });
+            .catch(err => console.error("PWA: Error al registrar SW:", err));
     });
-} else {
-    console.error("PWA: Los Service Workers no son compatibles o el sitio no es seguro (Falta HTTPS).");
 }
 
-// 3. Interceptor Universal de Formularios
+// 3. Interceptor de Formularios (Guardado Offline)
 document.addEventListener('submit', async (e) => {
-    // Verificamos que sea el formulario de guardar encuestas
+    // Detectamos la ruta de guardado de CodeIgniter 4
     if (e.target.action.includes('encuestas/guardar')) {
         
-        // Si no hay conexión, procesamos de forma local
         if (!navigator.onLine) {
             e.preventDefault(); 
             
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
 
-            /** * Captura del ID de usuario: Aseguramos que el ID vaya en el paquete,
-             * ya que la sesión puede expirar durante la sincronización de fondo.
-             */
+            // Adjuntar ID de usuario desde el campo oculto para evitar pérdida de sesión
             const idUsuarioElement = document.getElementById('id_usuario_sesion');
             if (idUsuarioElement) {
                 data.id_usuario = idUsuarioElement.value;
             }
 
             try {
-                // Guardar la encuesta en la base de datos interna del navegador
+                // Guardar en Dexie (Almacenamiento local persistente)
                 await db.encuestas.add({ 
                     data: data, 
                     timestamp: Date.now() 
                 });
 
-                // Notificar al Service Worker para sincronizar al recuperar señal
+                // Registrar evento de sincronización para cuando vuelva el internet
                 const reg = await navigator.serviceWorker.ready;
                 if (reg.sync) {
                     await reg.sync.register('sync-encuestas');
                 }
 
-                alert("¡Modo Offline! Encuesta guardada en el dispositivo. Se enviará automáticamente al detectar internet.");
+                alert("¡Guardado localmente! La encuesta se enviará automáticamente cuando recuperes la conexión.");
                 
-                // Redirección suave a la lista de formularios
+                // Redirección a la lista para seguir trabajando
                 window.location.href = '/formularios';
                 
             } catch (error) {
-                console.error("PWA: Error al guardar en Dexie:", error);
-                alert("Hubo un error al guardar los datos localmente.");
+                console.error("PWA: Error en IndexedDB:", error);
+                alert("Error crítico: No se pudo guardar la encuesta en el dispositivo.");
             }
         }
     }
 });
 
 /**
- * 4. Funciones para el monitoreo GPS Offline
+ * 4. Gestión de Geolocalización Offline
+ * Captura y almacena coordenadas incluso sin señal de red.
  */
 async function registrarUbicacionOffline(lat, lng) {
     const dataUbicacion = {
@@ -90,19 +90,17 @@ async function registrarUbicacionOffline(lat, lng) {
     };
 
     if (navigator.onLine) {
-        // Si hay red, se envía directamente vía fetch
         try {
+            // Intento de envío en tiempo real
             await fetch('/encuestador/guardar_ubicacion_monitoreo', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dataUbicacion)
             });
         } catch (e) {
-            // Si el fetch falla por inestabilidad de red, respaldar en Dexie
             respaldarUbicacionLocal(dataUbicacion);
         }
     } else {
-        // Si está offline, respaldar directamente
         respaldarUbicacionLocal(dataUbicacion);
     }
 }
@@ -113,8 +111,8 @@ async function respaldarUbicacionLocal(data) {
             data: data,
             timestamp: Date.now()
         });
-        console.log("PWA: Coordenada GPS respaldada en Dexie (Offline).");
+        console.log("PWA: Coordenada GPS guardada en el dispositivo (Modo Offline).");
     } catch (err) {
-        console.error("PWA: Error al respaldar ubicación:", err);
+        console.error("PWA: Error al respaldar GPS localmente:", err);
     }
 }

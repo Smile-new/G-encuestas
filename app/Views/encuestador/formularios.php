@@ -395,32 +395,31 @@ if ($isLoggedIn && is_array($userData)) {
             </div>
 
             <div class="row clearfix">
-                <div class="col-lg-12">
-                    <?php if (empty($encuestas)): ?>
-                        <div class="card no-surveys-message">
-                            <i class="material-icons">info_outline</i>
-                            <h2>No hay encuestas activas disponibles en este momento.</h2>
-                            <p>Por favor, revisa más tarde o contacta al administrador.</p>
-                        </div>
-                    <?php else: ?>
-                        <?php foreach ($encuestas as $encuesta): ?>
-                            <div class="card survey-card">
-                                <div class="header">
-                                    <h2><?= esc($encuesta['titulo']) ?></h2>
-                                    <?php if (isset($encuesta['fecha_creacion'])): ?>
-                                        <span class="survey-date">Creada el:
-                                            <?= date('d/m/Y', strtotime(esc($encuesta['fecha_creacion']))) ?></span>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="body">
-                                    <p class="survey-description"><?= esc($encuesta['descripcion']) ?></p>
-                                    <!-- Botón habilitado y como enlace, usando id_encuesta -->
-                                    <a href="<?= base_url('encuestador/verEncuesta/' . esc($encuesta['id_encuesta'])) ?>"
-                                        class="btn waves-effect m-t-15">Ver Encuesta</a>
-                                </div>
+                <div class="col-lg-12" id="survey-main-container">
+                    <div id="online-survey-list">
+                        <?php if (empty($encuestas)): ?>
+                            <div class="card no-surveys-message">
+                                <i class="material-icons">info_outline</i>
+                                <h2>No hay encuestas activas disponibles.</h2>
                             </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                        <?php else: ?>
+                            <?php foreach ($encuestas as $encuesta): ?>
+                                <div class="card survey-card">
+                                    <div class="header">
+                                        <h2><?= esc($encuesta['titulo']) ?></h2>
+                                    </div>
+                                    <div class="body">
+                                        <p class="survey-description"><?= esc($encuesta['descripcion']) ?></p>
+                                        <a href="<?= base_url('encuestador/verEncuesta/' . esc($encuesta['id_encuesta'])) ?>"
+                                            class="btn waves-effect m-t-15">Ver Encuesta</a>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <div id="offline-survey-list" style="display: none;">
+                    </div>
                 </div>
             </div>
         </div>
@@ -432,106 +431,161 @@ if ($isLoggedIn && is_array($userData)) {
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_JS . '/admin.js') ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/dexie@latest/dist/dexie.js"></script>
     <script src="<?= base_url('js/offline_handler.js') ?>"></script>
+    
     <script>
-        $(function () {
-            const $btnSync = $('#btnSyncEncuestas');
-            const $status = $('#sync-status-msg');
+    $(function () {
+        const $btnSync = $('#btnSyncEncuestas');
+        const $status = $('#sync-status-msg');
 
-            $btnSync.on('click', async function () {
-                // 0. Validación de Conexión y Contexto Seguro
-                if (!navigator.onLine) {
-                    alert("No tienes conexión a internet para sincronizar.");
-                    return;
-                }
-
-                // Si no es HTTPS, el celular bloqueará el Service Worker y la sincronización
-                if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                    alert("Error: La sincronización requiere una conexión segura (HTTPS).");
-                    return;
-                }
-
-                $btnSync.addClass('js-animating');
-                $status.text('Sincronizando...').css('color', 'orange');
-
+        /**
+         * 1. FUNCIÓN DE RENDERIZADO HÍBRIDO
+         * Esta función asegura que, si no hay internet, la lista se construya 
+         * usando los datos guardados en la base de datos local (Dexie).
+         */
+        async function renderizarEncuestasOffline() {
+            if (!navigator.onLine) {
                 try {
-                    // Asegurarse de que la base de datos esté abierta (Versión 3)
                     if (!db.isOpen()) await db.open();
+                    
+                    // Obtenemos las encuestas de la tabla lista_maestra (Versión 3)
+                    const encuestasLocal = await db.lista_maestra.toArray();
 
-                    // 1. Limpiar lista antigua para evitar encuestas "fantasma"
-                    await db.lista_maestra.clear();
+                    if (encuestasLocal.length > 0) {
+                        // Ocultamos la lista vacía de PHP y mostramos la de JS
+                        $('#online-survey-list').hide();
+                        const $offlineList = $('#offline-survey-list');
+                        $offlineList.empty().show();
 
-                    // 2. Escaneo de encuestas actuales en la pantalla
-                    const encuestasParaDescargar = [];
-                    $('.survey-card').each(function () {
-                        const $card = $(this);
-                        const url = $card.find('a').attr('href');
-                        if (url) {
-                            const id = url.split('/').pop();
-                            encuestasParaDescargar.push({
-                                url: url,
-                                id: id,
-                                titulo: $card.find('h2').text(),
-                                desc: $card.find('.survey-description').text()
-                            });
-                        }
-                    });
-
-                    if (encuestasParaDescargar.length === 0) {
-                        throw new Error("No se encontraron encuestas activas en la lista.");
+                        encuestasLocal.forEach(encuesta => {
+                            const cardHtml = `
+                                <div class="card survey-card">
+                                    <div class="header" style="background-color: #FF3D00;">
+                                        <h2 style="color:white;">${encuesta.titulo} (Modo Offline)</h2>
+                                    </div>
+                                    <div class="body">
+                                        <p class="survey-description">${encuesta.descripcion}</p>
+                                        <a href="<?= base_url('encuestador/verEncuesta/') ?>/${encuesta.id_encuesta}" 
+                                           class="btn waves-effect m-t-15" 
+                                           style="background-color: #FF3D00 !important; width:100%; color:white; display:block; text-align:center; padding:10px; border-radius:6px; text-decoration:none;">
+                                           VER ENCUESTA
+                                        </a>
+                                    </div>
+                                </div>`;
+                            $offlineList.append(cardHtml);
+                        });
                     }
-
-                    // 3. Descarga y almacenamiento con manejo de errores individual
-                    for (let i = 0; i < encuestasParaDescargar.length; i++) {
-                        const encuesta = encuestasParaDescargar[i];
-                        $status.text(`Descargando ${i + 1} de ${encuestasParaDescargar.length}...`);
-
-                        try {
-                            // Forzamos la descarga real al caché dinámico
-                            const res = await fetch(encuesta.url, { cache: 'reload' });
-                            if (!res.ok) throw new Error(`Error al descargar encuesta ${encuesta.id}`);
-
-                            // Guardamos en la tabla lista_maestra para modo offline
-                            await db.lista_maestra.put({
-                                id_encuesta: encuesta.id,
-                                titulo: encuesta.titulo,
-                                descripcion: encuesta.desc,
-                                activa: 1
-                            });
-                        } catch (e) {
-                            console.warn(`Error individual: ${e.message}`);
-                        }
-                    }
-
-                    // 4. Actualizar el caché de la propia lista principal
-                    await fetch('<?= base_url('formularios') ?>', { cache: 'reload' });
-
-                    // 5. Notificar al Service Worker para enviar datos pendientes (Sync API)
-                    if ('serviceWorker' in navigator) {
-                        const reg = await navigator.serviceWorker.ready;
-                        if (reg.sync) {
-                            await reg.sync.register('sync-encuestas');
-                        }
-                    }
-
-                    $status.text('¡Sincronización completa!').css('color', 'green');
-
-                    setTimeout(() => {
-                        $btnSync.removeClass('js-animating');
-                        location.reload();
-                    }, 1000);
-
-                } catch (error) {
-                    console.error("Error de sincronización:", error);
-                    $btnSync.removeClass('js-animating');
-
-                    // Mostrar error detallado para depuración en celular
-                    alert("Fallo la sincronización: " + error.message);
-                    $status.text('Error al sincronizar.').css('color', 'red');
+                } catch (err) {
+                    console.error("Error al renderizar offline:", err);
                 }
-            });
-        });
-    </script>
+            }
+        }
 
+        // Ejecutar renderizado al cargar la página
+        renderizarEncuestasOffline();
+
+        /**
+         * 2. AUTO-ACTUALIZACIÓN DEL SERVICE WORKER (v1.6)
+         * Fuerza al navegador a buscar cambios en el sw.js cada vez que se abre la app.
+         */
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+                reg.update(); // Busca actualizaciones v1.6
+            });
+        }
+
+        /**
+         * 3. LÓGICA DEL BOTÓN DE SINCRONIZACIÓN
+         * Descarga las encuestas actuales y las prepara para el uso sin internet.
+         */
+        $btnSync.on('click', async function () {
+            // Validación de Conexión y Contexto Seguro (HTTPS)
+            if (!navigator.onLine) {
+                alert("No tienes conexión a internet para sincronizar.");
+                return;
+            }
+
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                alert("Error: La sincronización requiere una conexión segura (HTTPS).");
+                return;
+            }
+
+            $btnSync.addClass('js-animating');
+            $status.text('Sincronizando...').css('color', 'orange');
+
+            try {
+                // Asegurarse de que la base de datos esté abierta
+                if (!db.isOpen()) await db.open();
+
+                // 1. Limpiar lista antigua para evitar encuestas "fantasmas"
+                await db.lista_maestra.clear();
+
+                // 2. Escaneo de encuestas actuales en la pantalla (renderizadas por PHP)
+                const encuestasParaDescargar = [];
+                $('.survey-card').each(function () {
+                    const $card = $(this);
+                    const url = $card.find('a').attr('href');
+                    if (url) {
+                        const id = url.split('/').pop();
+                        encuestasParaDescargar.push({
+                            url: url,
+                            id: id,
+                            titulo: $card.find('h2').text(),
+                            desc: $card.find('.survey-description').text()
+                        });
+                    }
+                });
+
+                if (encuestasParaDescargar.length === 0) {
+                    throw new Error("No se encontraron encuestas activas en la lista.");
+                }
+
+                // 3. Descarga y almacenamiento individual
+                for (let i = 0; i < encuestasParaDescargar.length; i++) {
+                    const encuesta = encuestasParaDescargar[i];
+                    $status.text(`Descargando ${i + 1} de ${encuestasParaDescargar.length}...`);
+
+                    try {
+                        // Forzamos la descarga real al caché dinámico (v1.6)
+                        const res = await fetch(encuesta.url, { cache: 'reload' });
+                        if (!res.ok) throw new Error(`Error al descargar encuesta ${encuesta.id}`);
+
+                        // Guardamos en la tabla lista_maestra para el renderizado offline
+                        await db.lista_maestra.put({
+                            id_encuesta: encuesta.id,
+                            titulo: encuesta.titulo,
+                            descripcion: encuesta.desc,
+                            activa: 1
+                        });
+                    } catch (e) {
+                        console.warn(`Error individual en encuesta ${encuesta.id}: ${e.message}`);
+                    }
+                }
+
+                // 4. Actualizar el caché de la lista de formularios
+                await fetch('<?= base_url('formularios') ?>', { cache: 'reload' });
+
+                // 5. Notificar al Service Worker (Background Sync API)
+                const reg = await navigator.serviceWorker.ready;
+                if (reg.sync) {
+                    await reg.sync.register('sync-encuestas');
+                }
+
+                $status.text('¡Sincronización completa!').css('color', 'green');
+
+                setTimeout(() => {
+                    $btnSync.removeClass('js-animating');
+                    location.reload(); // Recargar para aplicar los datos frescos
+                }, 1000);
+
+            } catch (error) {
+                console.error("Error de sincronización:", error);
+                $btnSync.removeClass('js-animating');
+                alert("Fallo la sincronización: " + error.message);
+                $status.text('Error al sincronizar.').css('color', 'red');
+            }
+        });
+    });
+</script>
 
 </body>
 

@@ -110,7 +110,7 @@ class Uniones extends Controller
             }
 
             /* ==================================================
-               1. APLANAR OPCIONES (OR por pregunta)
+               1. APLANAR OPCIONES
             ================================================== */
             $totalPreguntas = count($filtros);
             $opcionesFlat = [];
@@ -120,102 +120,94 @@ class Uniones extends Controller
             }
 
             /* ==================================================
-               2. INTERSECCIÓN AND ENTRE PREGUNTAS
+               2. OBTENER MONITOREOS QUE CUMPLEN TODAS LAS PREGUNTAS
             ================================================== */
             $builder = $db->table('respuestas')
-                ->select('referencias')
+                ->select('id_monitoreo')
                 ->where('id_encuesta', $idEncuesta)
                 ->whereIn('id_opcion', $opcionesFlat);
 
             $camposGeo = [
                 'id_estado',
-                'id_distrito_federal', 
-                'id_distrito_local',   
+                'id_distrito_federal',
+                'id_distrito_local',
                 'id_municipio',
                 'id_seccion',
                 'id_comunidad'
             ];
 
-
             foreach ($camposGeo as $campo) {
                 if (!empty($geo[$campo])) {
-                    $builder->where("respuestas.$campo", $geo[$campo]);
+                    $builder->where($campo, $geo[$campo]);
                 }
             }
 
             $builder
-                ->groupBy('referencias')
+                ->groupBy('id_monitoreo')
                 ->having('COUNT(DISTINCT id_pregunta)', $totalPreguntas);
 
-            $folios = array_column(
+            $idsMonitoreo = array_column(
                 $builder->get()->getResultArray(),
-                'referencias'
+                'id_monitoreo'
             );
 
-            if (empty($folios)) {
+            if (empty($idsMonitoreo)) {
                 return $this->response->setJSON(['status' => 'empty']);
             }
 
             /* ==================================================
-               3. PUNTOS PARA MAPA
+               3. PUNTOS MAPA
             ================================================== */
-            $puntos = $db->table('respuestas')
-                ->select('respuestas.referencias, MU.latitud, MU.longitud')
-                ->join(
-                    'monitoreo_ubicacion AS MU',
-                    'MU.id_monitoreo = respuestas.id_monitoreo'
-                )
-                ->whereIn('respuestas.referencias', $folios)
-                ->groupBy('respuestas.referencias')
+            $puntos = $db->table('monitoreo_ubicacion')
+                ->select('id_monitoreo, latitud, longitud')
+                ->whereIn('id_monitoreo', $idsMonitoreo)
                 ->get()
                 ->getResultArray();
 
             /* ==================================================
-               4. OBTENER RESPUESTAS POR PERSONA (CLAVE)
+               4. RESPUESTAS POR PERSONA (ID ÚNICO)
             ================================================== */
             $respuestas = $db->table('respuestas r')
-                ->select('r.referencias, r.id_pregunta, o.texto_opcion')
+                ->select('r.id_monitoreo, r.id_pregunta, o.texto_opcion')
                 ->join('opciones o', 'o.id_opcion = r.id_opcion')
-                ->whereIn('r.referencias', $folios)
+                ->whereIn('r.id_monitoreo', $idsMonitoreo)
                 ->whereIn('r.id_opcion', $opcionesFlat)
-                ->orderBy('r.referencias')
+                ->orderBy('r.id_monitoreo')
                 ->orderBy('r.id_pregunta')
                 ->get()
                 ->getResultArray();
 
             /* ==================================================
-               5. CONSTRUIR PERFIL REAL POR PERSONA
-               (1 opción por pregunta)
+               5. PERFIL REAL POR PERSONA
             ================================================== */
             $perfilesPorPersona = [];
 
             foreach ($respuestas as $row) {
-                $folio = $row['referencias'];
+                $id = $row['id_monitoreo'];
                 $pregunta = $row['id_pregunta'];
                 $opcion = $row['texto_opcion'];
 
-                // Garantiza solo una opción por pregunta
-                $perfilesPorPersona[$folio][$pregunta] = $opcion;
+                $perfilesPorPersona[$id][$pregunta] = $opcion;
             }
 
             /* ==================================================
-               6. AGRUPAR CAMINOS IDÉNTICOS
+               6. AGRUPAR CAMINOS
             ================================================== */
             $perfilesFinales = [];
 
             foreach ($perfilesPorPersona as $perfil) {
-                ksort($perfil); // orden fijo
-                $clavePerfil = implode(' + ', $perfil);
+                ksort($perfil);
+                $clave = implode(' + ', $perfil);
 
-                if (!isset($perfilesFinales[$clavePerfil])) {
-                    $perfilesFinales[$clavePerfil] = 0;
+                if (!isset($perfilesFinales[$clave])) {
+                    $perfilesFinales[$clave] = 0;
                 }
 
-                $perfilesFinales[$clavePerfil]++;
+                $perfilesFinales[$clave]++;
             }
 
             /* ==================================================
-               7. FORMATO PARA GRÁFICA
+               7. FORMATO GRÁFICA
             ================================================== */
             $resultadoGrafica = [];
             $i = 1;
@@ -236,7 +228,7 @@ class Uniones extends Controller
                 'desglose' => $resultadoGrafica,
                 'puntos' => $puntos,
                 'resumen' => [
-                    'coincidencias' => count($folios)
+                    'coincidencias' => count($idsMonitoreo)
                 ]
             ]);
 
