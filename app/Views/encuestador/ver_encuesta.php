@@ -398,6 +398,26 @@
         .logout_sidebar a:hover {
             background-color: #d32f2f;
         }
+
+
+        /* Convertir Checkbox en apariencia de Radio Botón */
+        .chk-multi-radio.filled-in+label:after {
+            border-radius: 50% !important;
+            /* Esto lo hace círculo */
+            border: 2px solid #555 !important;
+        }
+
+        .chk-multi-radio.filled-in:checked+label:after {
+            border: 2px solid var(--primary-red) !important;
+            background-color: var(--primary-red) !important;
+        }
+
+        .chk-multi-radio.filled-in:checked+label:before {
+            border-right: 2px solid #fff !important;
+            border-bottom: 2px solid #fff !important;
+            border-radius: 0 !important;
+            /* Mantiene el check blanco adentro */
+        }
     </style>
 
 </head>
@@ -684,11 +704,14 @@
                                                     <ul class="options-list">
                                                         <?php foreach ($pregunta['opciones'] as $opcion): ?>
                                                             <li>
-                                                                <input type="radio" name="respuesta_<?= esc($pregunta['id_pregunta']) ?>"
+                                                                <input type="checkbox"
+                                                                    name="respuesta_<?= esc($pregunta['id_pregunta']) ?>[]"
                                                                     id="opcion_<?= esc($opcion['id_opcion']) ?>"
-                                                                    value="<?= esc($opcion['id_opcion']) ?>" required>
-                                                                <label
-                                                                    for="opcion_<?= esc($opcion['id_opcion']) ?>"><?= esc($opcion['texto_opcion']) ?></label>
+                                                                    value="<?= esc($opcion['id_opcion']) ?>"
+                                                                    class="filled-in chk-multi-radio"> <label
+                                                                    for="opcion_<?= esc($opcion['id_opcion']) ?>">
+                                                                    <?= esc($opcion['texto_opcion']) ?>
+                                                                </label>
                                                             </li>
                                                         <?php endforeach; ?>
                                                     </ul>
@@ -878,98 +901,98 @@
 
             // --- 4. LÓGICA DE GEOLOCALIZACIÓN ---
 
-// Inicializamos la referencia a la base de datos local para el monitoreo
-const dbLocal = new Dexie("PanelEncuestadorDB");
-dbLocal.version(1).stores({ ubicaciones: '++id, data, timestamp' });
+            // Inicializamos la referencia a la base de datos local para el monitoreo
+            const dbLocal = new Dexie("PanelEncuestadorDB");
+            dbLocal.version(1).stores({ ubicaciones: '++id, data, timestamp' });
 
-function obtenerUbicacionParaFormulario() {
-    if (!navigator.geolocation) {
-        $ubicacionStatus.text('Geolocalización no soportada.').addClass('col-red');
-        $btnEnviarEncuesta.prop('disabled', true);
-        return;
-    }
-
-    $ubicacionStatus.text('Obteniendo ubicación para el formulario...').addClass('col-orange');
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            $latitudInput.val(position.coords.latitude);
-            $longitudInput.val(position.coords.longitude);
-            $ubicacionStatus.html(`<strong><i class="material-icons" style="font-size: 1em; vertical-align: sub;">check_circle</i> Ubicación obtenida.</strong>`).removeClass('col-orange col-red').addClass('col-green');
-            $btnEnviarEncuesta.prop('disabled', false);
-        },
-        (err) => {
-            $btnEnviarEncuesta.prop('disabled', true);
-            let msg = "Error al obtener ubicación. Intente de nuevo.";
-            if (err.code === 1) msg = "Permiso de ubicación denegado.";
-            if (err.code === 2) msg = "Ubicación no disponible. Revise su GPS.";
-            if (err.code === 3) msg = "Tiempo de espera agotado.";
-            $ubicacionStatus.text(msg).removeClass('col-orange col-green').addClass('col-red');
-        },
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
-    );
-}
-
-function iniciarMonitoreoContinuo() {
-    if (!navigator.geolocation) {
-        console.warn('Monitoreo no disponible: geolocalización no soportada.');
-        return;
-    }
-
-    const procesarEnvioUbicacion = async (position) => {
-        const coords = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            time: Date.now()
-        };
-
-        // Intentar envío si hay internet
-        if (navigator.onLine) {
-            try {
-                const res = await fetch('<?= base_url('encuestador/guardar_ubicacion_monitoreo') ?>', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json', 
-                        'X-Requested-With': 'XMLHttpRequest' 
-                    },
-                    body: JSON.stringify({
-                        latitud: coords.lat,
-                        longitud: coords.lng
-                    })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    console.log('Monitoreo: Sincronizado en tiempo real.');
+            function obtenerUbicacionParaFormulario() {
+                if (!navigator.geolocation) {
+                    $ubicacionStatus.text('Geolocalización no soportada.').addClass('col-red');
+                    $btnEnviarEncuesta.prop('disabled', true);
+                    return;
                 }
-            } catch (err) {
-                // Si el fetch falla (ej. internet inestable), respaldamos en Dexie
-                console.warn('Fallo envío en vivo, guardando en dispositivo...');
-                await guardarEnLocal(coords);
+
+                $ubicacionStatus.text('Obteniendo ubicación para el formulario...').addClass('col-orange');
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        $latitudInput.val(position.coords.latitude);
+                        $longitudInput.val(position.coords.longitude);
+                        $ubicacionStatus.html(`<strong><i class="material-icons" style="font-size: 1em; vertical-align: sub;">check_circle</i> Ubicación obtenida.</strong>`).removeClass('col-orange col-red').addClass('col-green');
+                        $btnEnviarEncuesta.prop('disabled', false);
+                    },
+                    (err) => {
+                        $btnEnviarEncuesta.prop('disabled', true);
+                        let msg = "Error al obtener ubicación. Intente de nuevo.";
+                        if (err.code === 1) msg = "Permiso de ubicación denegado.";
+                        if (err.code === 2) msg = "Ubicación no disponible. Revise su GPS.";
+                        if (err.code === 3) msg = "Tiempo de espera agotado.";
+                        $ubicacionStatus.text(msg).removeClass('col-orange col-green').addClass('col-red');
+                    },
+                    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+                );
             }
-        } else {
-            // Modo offline total: Guardar directo en Dexie
-            await guardarEnLocal(coords);
-        }
-    };
 
-    async function guardarEnLocal(coords) {
-        try {
-            await dbLocal.ubicaciones.add({
-                data: coords,
-                timestamp: Date.now()
-            });
-            console.log('Monitoreo: Coordenada guardada localmente (Offline).');
-        } catch (error) {
-            console.error('Error al guardar en Dexie:', error);
-        }
-    }
+            function iniciarMonitoreoContinuo() {
+                if (!navigator.geolocation) {
+                    console.warn('Monitoreo no disponible: geolocalización no soportada.');
+                    return;
+                }
 
-    // Iniciar el rastreo con watchPosition
-    navigator.geolocation.watchPosition(
-        procesarEnvioUbicacion,
-        (err) => console.warn(`Monitoreo (Error de GPS): ${err.message}`),
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
-}
+                const procesarEnvioUbicacion = async (position) => {
+                    const coords = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        time: Date.now()
+                    };
+
+                    // Intentar envío si hay internet
+                    if (navigator.onLine) {
+                        try {
+                            const res = await fetch('<?= base_url('encuestador/guardar_ubicacion_monitoreo') ?>', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: JSON.stringify({
+                                    latitud: coords.lat,
+                                    longitud: coords.lng
+                                })
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                console.log('Monitoreo: Sincronizado en tiempo real.');
+                            }
+                        } catch (err) {
+                            // Si el fetch falla (ej. internet inestable), respaldamos en Dexie
+                            console.warn('Fallo envío en vivo, guardando en dispositivo...');
+                            await guardarEnLocal(coords);
+                        }
+                    } else {
+                        // Modo offline total: Guardar directo en Dexie
+                        await guardarEnLocal(coords);
+                    }
+                };
+
+                async function guardarEnLocal(coords) {
+                    try {
+                        await dbLocal.ubicaciones.add({
+                            data: coords,
+                            timestamp: Date.now()
+                        });
+                        console.log('Monitoreo: Coordenada guardada localmente (Offline).');
+                    } catch (error) {
+                        console.error('Error al guardar en Dexie:', error);
+                    }
+                }
+
+                // Iniciar el rastreo con watchPosition
+                navigator.geolocation.watchPosition(
+                    procesarEnvioUbicacion,
+                    (err) => console.warn(`Monitoreo (Error de GPS): ${err.message}`),
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                );
+            }
 
             // --- 5. EJECUCIÓN INICIAL AL CARGAR LA PÁGINA ---
             populateAllSelects(); // Llama a la función para llenar los selectores

@@ -388,7 +388,7 @@
                                                     <option value="line">Gráfica de Líneas</option>
                                                     <option value="radar">Gráfica de Radar</option>
                                                     <option value="polarArea">Gráfica de Área Polar</option>
-                                                    <option value="scatter">Gráfica de Puntos</option>
+
                                                 </select>
                                             </div>
                                             <div class="form-group col-md-3">
@@ -652,7 +652,7 @@
                             title: nombrePregunta,
                             labels: Object.keys(datosMapeados),
                             datasets: [{
-                                label: 'Total de Respuestas',
+                                label: 'Resultados',
                                 data: Object.values(datosMapeados),
                                 backgroundColor: Object.values(datosMapeados).map((_, i) => colores[i % colores.length]),
                                 borderColor: Object.values(datosMapeados).map((_, i) => colores[i % colores.length]),
@@ -857,275 +857,368 @@
       * @returns {object} - Un objeto con { type, data, options } para crear una instancia de Chart.js.
       */
             function crearConfiguracionGrafico(dataSet, chartType, ctx) {
-                // --- FUNCIONES Y VARIABLES DE DISEÑO INTERNAS ---
-                function hexToRgba(hex, alpha = 1) { const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return `rgba(${r}, ${g}, ${b}, ${alpha})`; }
-                function adjustColor(colorHex, percent) { let r = parseInt(colorHex.slice(1, 3), 16), g = parseInt(colorHex.slice(3, 5), 16), b = parseInt(colorHex.slice(5, 7), 16); r = parseInt(r * (100 + percent) / 100); g = parseInt(g * (100 + percent) / 100); b = parseInt(b * (100 + percent) / 100); r = (r < 255) ? r : 255; g = (g < 255) ? g : 255; b = (b < 255) ? b : 255; r = (r > 0) ? r : 0; g = (g > 0) ? g : 0; b = (b > 0) ? b : 0; const rr = ((r.toString(16).length === 1) ? "0" + r.toString(16) : r.toString(16)), gg = ((g.toString(16).length === 1) ? "0" + g.toString(16) : g.toString(16)), bb = ((b.toString(16).length === 1) ? "0" + b.toString(16) : b.toString(16)); return `#${rr}${gg}${bb}`; }
+                // --- FUNCIONES AUXILIARES DE COLOR ---
+                function hexToRgba(hex, alpha = 1) {
+                    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                }
+                // Función para aclarar (+) u oscurecer (-) un color
+                function adjustColor(colorHex, percent) {
+                    let r = parseInt(colorHex.slice(1, 3), 16), g = parseInt(colorHex.slice(3, 5), 16), b = parseInt(colorHex.slice(5, 7), 16);
+                    r = parseInt(r * (100 + percent) / 100); g = parseInt(g * (100 + percent) / 100); b = parseInt(b * (100 + percent) / 100);
+                    r = (r < 255) ? r : 255; g = (g < 255) ? g : 255; b = (b < 255) ? b : 255;
+                    r = (r > 0) ? r : 0; g = (g > 0) ? g : 0; b = (b > 0) ? b : 0;
+                    const rr = ((r.toString(16).length === 1) ? "0" + r.toString(16) : r.toString(16));
+                    const gg = ((g.toString(16).length === 1) ? "0" + g.toString(16) : g.toString(16));
+                    const bb = ((b.toString(16).length === 1) ? "0" + b.toString(16) : b.toString(16));
+                    return `#${rr}${gg}${bb}`;
+                }
 
-                // Paleta de colores más saturados
+                // --- PLUGINS VISUALES PERSONALIZADOS ---
+
+                // 1. Sombra para Gráficos Circulares (Flotar)
+                const circularShadowPlugin = {
+                    id: 'circularShadow',
+                    beforeDraw: (chart) => {
+                        if (['doughnut', 'pie', 'polarArea'].includes(chart.config.type)) {
+                            const { ctx } = chart;
+                            ctx.save();
+                            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)'; // Sombra oscura
+                            ctx.shadowBlur = 20; // Muy difusa
+                            ctx.shadowOffsetX = 5;
+                            ctx.shadowOffsetY = 10;
+                        }
+                    },
+                    afterDraw: (chart) => {
+                        if (['doughnut', 'pie', 'polarArea'].includes(chart.config.type)) {
+                            chart.ctx.restore();
+                        }
+                    }
+                };
+
+                // 2. Sombra para Puntos (Línea/Scatter)
+                const pointShadowPlugin = {
+                    id: 'pointShadow',
+                    beforeDatasetsDraw: (chart) => {
+                        if (['line', 'scatter'].includes(chart.config.type)) {
+                            const { ctx } = chart;
+                            ctx.save();
+                            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                            ctx.shadowBlur = 8;
+                            ctx.shadowOffsetY = 4;
+                        }
+                    },
+                    afterDatasetsDraw: (chart) => {
+                        if (['line', 'scatter'].includes(chart.config.type)) {
+                            chart.ctx.restore();
+                        }
+                    }
+                };
+
+                // Registro condicional de plugins (para no duplicar)
+                if (!Chart.registry.plugins.get('circularShadow')) Chart.register(circularShadowPlugin);
+                if (!Chart.registry.plugins.get('pointShadow')) Chart.register(pointShadowPlugin);
+
+
+                // --- CONFIGURACIÓN BASE ---
                 const colores = ['#1E88E5', '#43A047', '#FFB300', '#E53935', '#8E24AA', '#00ACC1', '#FDD835', '#6D4C41'];
-                const colorTextoGraficaPrincipal = '#000000';
-                const colorTextoGraficaSecundario = '#333333'; // Gris más oscuro para mejor contraste
+                const colorTextoPrincipal = '#000000';
+                const colorTextoSecundario = '#555555';
                 const totalDatosGlobal = dataSet.datasets[0].data.reduce((a, b) => a + b, 0);
 
-
                 let finalType = chartType;
-                console.log("🛠️ Configurando opciones de diseño...");
-
                 let finalData = JSON.parse(JSON.stringify(dataSet));
 
+                // Asignación de Colores Base
                 finalData.datasets[0].backgroundColor = finalData.labels.map((label, i) => {
-                    if (customBarColors[label]) {
-                        console.log(`Aplicando color guardado para [${label}]: ${customBarColors[label]}`);
+                    if (typeof customBarColors !== 'undefined' && customBarColors[label]) {
                         return customBarColors[label];
                     }
                     return colores[i % colores.length];
                 });
-                finalData.datasets[0].borderColor = finalData.datasets[0].backgroundColor.map(color => adjustColor(color, -25)); // Borde más oscuro
-                finalData.datasets[0].borderWidth = 1.5; // Borde ligeramente más grueso
 
+                // Opciones Globales de Diseño
                 let chartOptions = {
                     maintainAspectRatio: false,
                     responsive: true,
-                    animation: { duration: 1000, easing: 'easeOutCubic' }, // Animación más rápida y suave
+                    animation: { duration: 1200, easing: 'easeOutQuart' }, // Animación más lujosa
+                    layout: {
+                        padding: { top: 30, bottom: 20, left: 30, right: 30 } // Padding para sombras y etiquetas
+                    },
                     plugins: {
                         legend: {
                             position: 'bottom',
                             labels: {
-                                color: colorTextoGraficaSecundario,
-                                font: { size: 14, weight: 'bold' }, // Leyenda más grande
-                                boxWidth: 25,
-                                padding: 30 // Más espacio para la leyenda
+                                color: colorTextoSecundario,
+                                font: { size: 13, weight: '600', family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif" },
+                                boxWidth: 18,
+                                boxHeight: 18,
+                                padding: 25,
+                                usePointStyle: true, // Puntos en lugar de cuadrados en la leyenda
+                                pointStyle: 'circle'
                             }
                         },
+                        // Configuración base DataLabels (se sobrescribe según el tipo)
                         datalabels: {
-                            color: colorTextoGraficaPrincipal,
-                            font: { weight: 'bold', size: 14 },
-                            formatter: (value, context) => { // Formatter base, se ajusta por tipo
-                                const val = typeof value === 'object' ? value.y : value; // Manejar scatter
-                                const total = totalDatosGlobal; // Usar total global por defecto
-                                const percentage = total > 0 ? `${((val / total) * 100).toFixed(1)}%` : '0%';
-                                return `${val}\n(${percentage})`; // Mostrar valor y porcentaje
-                            }
+                            color: colorTextoPrincipal,
+                            font: { weight: 'bold', size: 13 },
+                            clamp: false,
+                            clip: false,
+                            // --- CAMBIOS: Eliminar sombras y efectos ---
+                            textShadowBlur: 0,              // Desenfoque a 0
+                            textShadowColor: 'transparent', // Color transparente
+                            textStrokeWidth: 0              // Sin borde alrededor de la letra
                         },
+                        // Tooltip Premium (Glassmorphism)
                         tooltip: {
-                            backgroundColor: 'rgba(0,0,0,0.85)',
-                            titleColor: '#fff',
-                            bodyColor: '#fff',
-                            bodyFont: { size: 14 },
-                            padding: 12,
-                            cornerRadius: 8,
+                            enabled: true,
+                            backgroundColor: 'rgba(40, 44, 52, 0.9)', // Fondo oscuro semitransparente
+                            titleColor: '#ffffff',
+                            bodyColor: '#dee2e6',
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            padding: 16,
+                            cornerRadius: 12, // Bordes muy redondeados
+                            boxPadding: 8,
+                            borderColor: 'rgba(255,255,255,0.1)', // Borde sutil
+                            borderWidth: 1,
                             displayColors: true,
-                            boxPadding: 6,
-                            borderColor: 'rgba(255,255,255,0.2)',
-                            borderWidth: 1
+                            usePointStyle: true,
+                            callbacks: {
+                                labelColor: function (context) {
+                                    return {
+                                        borderColor: 'transparent',
+                                        backgroundColor: context.dataset.backgroundColor[context.dataIndex] || context.dataset.backgroundColor,
+                                        borderWidth: 0,
+                                        borderRadius: 6
+                                    };
+                                }
+                            }
                         }
                     },
                     scales: {
-                        y: { beginAtZero: true, ticks: { precision: 0, color: colorTextoGraficaSecundario, font: { size: 12 } }, grid: { color: 'rgba(0, 0, 0, 0.12)', borderWidth: 1 } },
-                        x: { ticks: { color: colorTextoGraficaSecundario, maxRotation: 45, minRotation: 0, font: { size: 12 } }, grid: { color: 'rgba(0, 0, 0, 0.12)', borderWidth: 1 } }
+                        y: { display: false }, // Ocultar Eje Y por defecto
+                        x: { display: false }  // Ocultar Eje X por defecto
                     }
                 };
 
-                // --- LÓGICA DE ESTILOS DETALLADA POR TIPO ---
+                // --- ESTILOS ESPECÍFICOS POR TIPO ---
 
+                // 1. BARRAS (Con Gradientes, Bordes Redondeados y Sombra 3D)
                 if (chartType === 'bar') {
+                    chartOptions.scales.x = {
+                        display: true,
+                        ticks: { color: colorTextoSecundario, font: { weight: 'bold' } },
+                        grid: { display: false }
+                    };
+
                     const originalColors = finalData.datasets[0].backgroundColor;
+                    // Crear Gradientes Lujosos
                     finalData.datasets[0].backgroundColor = originalColors.map(color => {
-                        const gradient = ctx.createLinearGradient(0, 0, 0, 400); // 400 es un valor de altura aprox.
-                        gradient.addColorStop(0, adjustColor(color, 25)); // Más claro arriba
-                        gradient.addColorStop(0.5, color);                 // Color original en el medio
-                        gradient.addColorStop(1, adjustColor(color, -25)); // Más oscuro abajo
+                        const gradient = ctx.createLinearGradient(0, 0, 0, 500);
+                        gradient.addColorStop(0, adjustColor(color, 30));  // Luz arriba
+                        gradient.addColorStop(1, adjustColor(color, -20)); // Sombra abajo
                         return gradient;
                     });
-                    finalData.datasets[0].borderColor = originalColors.map(color => adjustColor(color, -50)); // Borde muy oscuro
-                    finalData.datasets[0].hoverBackgroundColor = originalColors.map(color => adjustColor(color, 40));
-                    finalData.datasets[0].hoverBorderColor = originalColors.map(color => adjustColor(color, -60));
+
+                    finalData.datasets[0].borderColor = originalColors.map(color => adjustColor(color, -10));
                     finalData.datasets[0].borderWidth = 2;
-                    finalData.datasets[0].borderRadius = 10; // Bordes más redondeados
-                    finalData.datasets[0].barPercentage = 0.75; // Barras un poco más anchas
-                    finalData.datasets[0].categoryPercentage = 0.7;
+                    finalData.datasets[0].borderRadius = 20; // ¡Esquinas muy redondeadas!
+                    finalData.datasets[0].borderSkipped = false; // Redondear también la base
+                    finalData.datasets[0].barPercentage = 0.65;
+                    finalData.datasets[0].hoverBackgroundColor = originalColors.map(color => adjustColor(color, 50)); // Brillar al pasar el mouse
 
-                    // Añadir una sombra sutil debajo de la barra
-                    const barShadowPlugin = {
-                        id: 'barShadow',
-                        // --- CAMBIO AQUÍ: Usar beforeDatasetsDraw en lugar de afterDraw ---
+                    // DataLabels Barras
+                    chartOptions.plugins.datalabels = {
+                        ...chartOptions.plugins.datalabels, // Heredar base
+                        anchor: 'end',
+                        align: 'end',
+                        offset: -2,
+                        formatter: (value) => totalDatosGlobal > 0 ? `${((value / totalDatosGlobal) * 100).toFixed(1)}%` : '0%'
+                    };
+
+                    // Plugin Sombra 3D para Barras
+                    const bar3DShadowPlugin = {
+                        id: 'bar3DShadow',
                         beforeDatasetsDraw: (chart) => {
-                            if (chart.config.type === 'bar') {
-                                const { ctx } = chart;
-                                // Aplicar sombra solo al dataset principal (índice 0 o el que tenga tus barras)
-                                chart.getDatasetMeta(0).data.forEach(bar => {
-                                    ctx.save();
-                                    ctx.shadowColor = 'rgba(0, 0, 0, 0.25)'; // Sombra un poco más oscura
-                                    ctx.shadowBlur = 10;                     // Más difusa
-                                    ctx.shadowOffsetX = 3;                   // Mayor desplazamiento X
-                                    ctx.shadowOffsetY = 5;                   // Mayor desplazamiento Y
-                                    // Dibujar un rectángulo simple donde irá la barra, esto será la sombra
-                                    // Usamos el color de fondo como base, pero podría ser un gris oscuro
-                                    ctx.fillStyle = 'rgba(0,0,0,0.1)'; // Sombra grisácea
-                                    ctx.fillRect(bar.x - bar.width / 2, bar.y, bar.width, bar.height);
-                                    ctx.restore();
-                                });
-                            }
+                            const { ctx } = chart;
+                            chart.getDatasetMeta(0).data.forEach(bar => {
+                                ctx.save();
+                                // Sombra suave y desplazada
+                                ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+                                ctx.shadowBlur = 12;
+                                ctx.shadowOffsetX = 4;
+                                ctx.shadowOffsetY = 6;
+                                // Dibujar una "falsa barra" detrás para proyectar la sombra
+                                ctx.fillStyle = '#ffffff'; // Color irrelevante, solo importa la sombra
+                                // Ajustamos un poco la posición y tamaño para que la sombra se vea realista
+                                const x = bar.x - bar.width / 2 + 2;
+                                const y = bar.y + 2;
+                                const w = bar.width - 4;
+                                const h = bar.height - 2;
+                                if (h > 0 && w > 0) { // Evitar errores con barras de valor 0
+                                    ctx.roundRect(x, y, w, h, 15); // Usar roundRect si el navegador lo soporta para coincidir con borderRadius
+                                    ctx.fill();
+                                }
+                                ctx.restore();
+                            });
                         }
                     };
+                    // Registrar este plugin localmente solo para esta instancia si es barras
+                    chartOptions.plugins.bar3DShadow = bar3DShadowPlugin;
 
-                    chartOptions.scales.y.grid = { display: false };
-                    chartOptions.scales.x.grid = { display: false };
-                    chartOptions.plugins.legend.display = false;
-                    chartOptions.plugins.datalabels = {
-                        color: '#0f0f0fff', // White text
-                        anchor: 'center',
-                        align: 'center',
-                        font: {
-                            weight: 'bold',
-                            size: 16 // Slightly larger font
-                        },
-                        // Add a subtle shadow for better readability on different segment colors
-                        textShadowColor: 'rgba(255, 255, 255, 1)',
-                        textShadowBlur: 4,
-                        formatter: (value, context) => {
-                            // Get the specific dataset's data
-                            const dataset = context.chart.data.datasets[context.datasetIndex];
-                            // Calculate the total SUM for THIS dataset (crucial for accurate percentages in Pie/Doughnut/Polar)
-                            const total = dataset.data.reduce((sum, dataValue) => sum + dataValue, 0);
-                            // Calculate the percentage based on the dataset's total
-                            const percentage = total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%';
-
-                            // Return only the percentage for cleaner look on circular charts
-                            return percentage;
-                            // Or, if you still want value AND percentage:
-                            // return `${value}\n(${percentage})`; 
-                        }
-                    };
-                } else {
-                    // Desregistrar sombra de barras si no es tipo bar
-                    if (Chart.registry.plugins.get('barShadow')) {
-                        Chart.unregister(Chart.registry.plugins.get('barShadow'));
-                    }
                 }
 
-                // Plugin para sombra en gráficos circulares (ya estaba bien)
-                const dropShadowPlugin = { id: 'dropShadow', beforeDraw: (chart) => { if (['doughnut', 'pie', 'polarArea'].includes(chart.config.type)) { const { ctx } = chart; ctx.save(); ctx.shadowColor = 'rgba(0, 0, 0, 0.35)'; ctx.shadowBlur = 12; ctx.shadowOffsetX = 6; ctx.shadowOffsetY = 6; } }, afterDraw: (chart) => { if (['doughnut', 'pie', 'polarArea'].includes(chart.config.type)) { chart.ctx.restore(); } } };
-                if (!Chart.registry.plugins.get('dropShadow')) Chart.register(dropShadowPlugin);
 
-
+                // 2. CIRCULARES (Dona, Pastel) - Efecto Flotante y Separadores
                 if (['doughnut', 'pie', 'polarArea'].includes(chartType)) {
-                    delete chartOptions.scales;
-                    chartOptions.plugins.datalabels = {
-                        color: '#fff', // Blanco
-                        textShadowColor: 'rgba(0,0,0,0.8)',
-                        textShadowBlur: 5,
-                        font: { weight: 'bold', size: 16 },
-                        formatter: (value, context) => { // Corrección aquí también
-                            const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%';
-                            return percentage;
-                        }
-                    };
-                    finalData.datasets[0].borderColor = '#ffffff';
-                    finalData.datasets[0].borderWidth = 5; // Borde más grueso
-                    if (chartType === 'doughnut') {
-                        chartOptions.cutout = '65%'; // Ligeramente más grueso
-                        chartOptions.plugins.datalabels.display = true;
-                        chartOptions.plugins.legend.display = true;
-                    }
-                    if (chartType === 'polarArea') {
-                        chartOptions.scales = { r: { grid: { color: 'rgba(0,0,0,0.1)' }, ticks: { color: colorTextoGraficaSecundario, backdropColor: 'transparent', font: { size: 12 } } } };
-                        chartOptions.plugins.legend.display = true;
-                        // --- CORRECCIÓN POLAR AREA DATALABELS ---
-                        // Usar el formatter específico que ya solo muestra porcentaje
-                        chartOptions.plugins.datalabels.color = '#111111ff'; // Mantener blanco
-                        chartOptions.plugins.datalabels.textShadowColor = 'rgba(255, 244, 244, 0)'; // Mantener sombra
-                        chartOptions.plugins.datalabels.textShadowBlur = 5;
+                    finalData.datasets[0].borderColor = '#ffffff'; // Separador blanco
+                    finalData.datasets[0].borderWidth = 4;         // Separador grueso
+                    finalData.datasets[0].hoverBorderColor = '#ffffff';
+                    finalData.datasets[0].hoverBorderWidth = 5;
 
+                    // DataLabels Circulares (Afuera)
+                    chartOptions.plugins.datalabels = {
+                        ...chartOptions.plugins.datalabels, // Heredar base
+                        anchor: 'end',
+                        align: 'end',
+                        offset: 15, // Más lejos del centro
+                        formatter: (value) => totalDatosGlobal > 0 ? `${((value / totalDatosGlobal) * 100).toFixed(1)}%` : '0%'
+                    };
+
+                    if (chartType === 'doughnut') {
+                        chartOptions.cutout = '60%'; // Grosor de la dona
+                        chartOptions.hoverOffset = 15; // Las rebanadas "saltan" mucho al pasar el mouse
+                    } else if (chartType === 'pie') {
+                        chartOptions.hoverOffset = 15;
+                    } else if (chartType === 'polarArea') {
+                        chartOptions.scales.r = {
+                            grid: { color: 'rgba(0,0,0,0.05)', circular: true }, // Rejilla circular muy sutil
+                            ticks: { display: false, backdropColor: 'transparent' },
+                            angleLines: { color: 'rgba(0,0,0,0.05)' }
+                        };
+                        chartOptions.hoverOffset = 10;
+                        finalData.datasets[0].backgroundColor = finalData.datasets[0].backgroundColor.map(c => hexToRgba(c, 0.8)); // Un poco transparentes
                     }
                 }
 
-                if (chartType === 'line') {
-                    const firstColor = finalData.datasets[0].backgroundColor[0];
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 400); // Usar altura fija para consistencia
-                    gradient.addColorStop(0, hexToRgba(firstColor, 0.7)); // Más opaco arriba
-                    gradient.addColorStop(1, hexToRgba(firstColor, 0.1)); // Más transparente abajo
+
+                // 3. LÍNEA Y DISPERSIÓN (Puntos Brillantes y Líneas Suaves)
+                if (['line', 'scatter'].includes(chartType)) {
+                    const isScatter = chartType === 'scatter';
+                    chartOptions.scales.x.display = !isScatter; // Mostrar X solo si es línea
+                    if (!isScatter) chartOptions.scales.x.grid = { display: false, drawBorder: false };
+                    chartOptions.plugins.legend.display = false; // Ocultar leyenda (suele ser un solo color)
+
+                    const baseColor = finalData.datasets[0].backgroundColor[0];
+                    const lineColor = isScatter ? '#666' : adjustColor(baseColor, 10);
+
+                    // Estilo de Línea
+                    finalData.datasets[0].tension = 0.45; // Curva muy suave
+                    finalData.datasets[0].borderColor = lineColor;
+                    finalData.datasets[0].borderWidth = 4;
+
+                    // Relleno (Solo para línea)
+                    if (!isScatter) {
+                        finalData.datasets[0].fill = true;
+                        const gradient = ctx.createLinearGradient(0, 0, 0, 450);
+                        gradient.addColorStop(0, hexToRgba(baseColor, 0.5)); // Semitransparente arriba
+                        gradient.addColorStop(1, hexToRgba(baseColor, 0.0)); // Transparente abajo
+                        finalData.datasets[0].backgroundColor = gradient;
+                    }
+
+                    // Estilo de Puntos Premium (Usan el plugin 'pointShadow' activado arriba)
+                    finalData.datasets[0].pointRadius = 8;
+                    finalData.datasets[0].pointBackgroundColor = isScatter ? originalColors : adjustColor(baseColor, 30); // Centro brillante
+                    finalData.datasets[0].pointBorderColor = '#ffffff'; // Borde blanco grueso
+                    finalData.datasets[0].pointBorderWidth = 3;
+                    finalData.datasets[0].pointHoverRadius = 12; // Crecen mucho al pasar el mouse
+                    finalData.datasets[0].pointHoverBorderWidth = 4;
+
+                    // DataLabels Puntos
+                    chartOptions.plugins.datalabels = {
+                        ...chartOptions.plugins.datalabels, // Heredar base
+                        display: true,
+                        align: 'top',
+                        offset: 12,
+                        formatter: (value) => {
+                            const val = (typeof value === 'object') ? value.y : value;
+                            return totalDatosGlobal > 0 ? `${((val / totalDatosGlobal) * 100).toFixed(1)}%` : '0%';
+                        }
+                    };
+
+                    if (isScatter) {
+                        // Adaptar datos scatter
+                        finalData.datasets[0].data = finalData.labels.map((label, i) => ({ x: label, y: finalData.datasets[0].data[i] }));
+                        chartOptions.scales.x = { type: 'category', labels: finalData.labels, grid: { display: false } };
+                        finalData.datasets[0].showLine = true;
+                        finalData.datasets[0].pointBackgroundColor = finalData.datasets[0].backgroundColor; // Usar colores variados
+                    }
+                }
+
+
+                // 4. RADAR (Estilo Telaraña Moderna)
+                if (chartType === 'radar') {
+                    const radarColor = finalData.datasets[0].backgroundColor[0];
+
+                    // --- Estilos Visuales ---
                     finalData.datasets[0].fill = true;
-                    finalData.datasets[0].backgroundColor = gradient;
-                    finalData.datasets[0].borderColor = adjustColor(firstColor, -15); // Borde más oscuro
-                    finalData.datasets[0].borderWidth = 4; // Línea más gruesa
-                    finalData.datasets[0].tension = 0.4;
-                    finalData.datasets[0].pointRadius = 7; // Puntos más grandes
-                    finalData.datasets[0].pointBackgroundColor = adjustColor(firstColor, 35); // Puntos más brillantes
+                    finalData.datasets[0].backgroundColor = hexToRgba(radarColor, 0.2);
+                    finalData.datasets[0].borderColor = adjustColor(radarColor, 10);
+                    finalData.datasets[0].borderWidth = 3;
+                    finalData.datasets[0].pointRadius = 6;
+                    finalData.datasets[0].pointBackgroundColor = adjustColor(radarColor, 30);
                     finalData.datasets[0].pointBorderColor = '#fff';
                     finalData.datasets[0].pointBorderWidth = 2;
-                    finalData.datasets[0].hoverRadius = 9;
-                    finalData.datasets[0].hoverBorderWidth = 3;
-                    chartOptions.plugins.datalabels.display = false;
-                    chartOptions.scales.y.grid.borderDash = [4, 4]; // Punteado más fino
-                    chartOptions.scales.x.grid.display = false; // Ocultar rejilla vertical
-                    chartOptions.plugins.tooltip.mode = 'index';
-                    chartOptions.plugins.tooltip.intersect = false;
-                }
+                    finalData.datasets[0].pointHoverRadius = 10;
 
-                if (chartType === 'scatter') {
-                    const originalScatterColors = finalData.datasets[0].backgroundColor;
-                    finalData.datasets[0].data = finalData.labels.map((label, i) => ({ x: label, y: finalData.datasets[0].data[i] }));
-                    chartOptions.scales.x = { type: 'category', labels: finalData.labels, ticks: { color: colorTextoGraficaSecundario }, grid: { color: 'rgba(0, 0, 0, 0.1)' } };
-                    chartOptions.scales.y.grid = { color: 'rgba(0, 0, 0, 0.1)' };
+                    // --- Configuración de Escala ---
+                    chartOptions.scales.r = {
+                        angleLines: { color: 'rgba(0,0,0,0.1)' },
+                        grid: { color: 'rgba(0,0,0,0.1)', circular: true },
 
-                    // --- CAMBIO: CONECTAR LOS PUNTOS ---
-                    finalData.datasets[0].showLine = true; // ¡Conectar los puntos!
-                    finalData.datasets[0].tension = 0.4; // Curva suave
-                    finalData.datasets[0].borderColor = originalScatterColors[0] ? adjustColor(originalScatterColors[0], -10) : '#888'; // Usar el primer color para la línea
-                    finalData.datasets[0].borderWidth = 3; // Grosor de la línea
+                        // Separación de los nombres (Morena, PAN, etc.) respecto a la gráfica
+                        pointLabels: {
+                            color: colorTextoPrincipal,
+                            font: { size: 12, weight: 'bold' },
+                            backdropColor: 'transparent',
+                            padding: 25 // <--- MÁS SEPARACIÓN AQUÍ
+                        },
 
-                    finalData.datasets[0].pointRadius = 10; // Puntos grandes
-                    finalData.datasets[0].pointBorderWidth = 3;
-                    finalData.datasets[0].pointBackgroundColor = originalScatterColors.map(color => adjustColor(color, 25)); // Puntos más brillantes
-                    finalData.datasets[0].pointBorderColor = originalScatterColors.map(color => adjustColor(color, -25)); // Borde más oscuro
-                    finalData.datasets[0].hoverRadius = 12;
+                        // Sin números de escala (anillos limpios)
+                        ticks: {
+                            display: false,
+                            beginAtZero: true
+                        }
+                    };
 
-                    // Datalabels encima de los puntos
+                    // --- DATALABELS EN EL PUNTO ---
                     chartOptions.plugins.datalabels = {
-                        color: colorTextoGraficaPrincipal,
-                        anchor: 'end',         // etiqueta encima del punto
-                        align: 'bottom-right',
-                        offset: 20,             // separación
-                        clamp: true,           // evita que se salga del área visible
-                        clip: false,           // evita recorte fuera del canvas
-                        font: { weight: 'bold', size: 13 },
+                        display: true,
+                        color: colorTextoPrincipal, // Negro
+                        font: { weight: 'bold', size: 11 },
+
+                        // --- AQUÍ ESTÁ EL TRUCO PARA QUE NO SE PEGUEN ---
+                        anchor: 'center', // El texto se ancla al CENTRO del punto
+                        align: 'top',     // Se coloca justo ENCIMA del punto (como un sombrero)
+                        offset: 0,        // Pegado al punto, sin empujarlo hacia afuera
+
+                        // Sin sombras ni fondos (limpio)
+                        textShadowBlur: 0,
+                        textShadowColor: 'transparent',
+                        backgroundColor: 'transparent',
+                        borderWidth: 0,
+
                         formatter: (value) => {
                             const percentage = totalDatosGlobal > 0
-                                ? `${((value.y / totalDatosGlobal) * 100).toFixed(1)}%`
+                                ? `${((value / totalDatosGlobal) * 100).toFixed(1)}%`
                                 : '0%';
-                            return `${value.y} (${percentage})`;
+                            return percentage;
                         }
                     };
 
-                    chartOptions.plugins.tooltip.callbacks = { label: function (context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += `${context.label}: ${context.parsed.y}`; } return label; } };
-                    chartOptions.plugins.legend.display = false; // La línea usa un solo color, leyenda no necesaria
+                    chartOptions.plugins.legend.display = false;
                 }
-
-                if (chartType === 'radar') {
-                    delete chartOptions.scales;
-                    const radarColor = finalData.datasets[0].backgroundColor[0];
-                    chartOptions.elements = {
-                        line: { borderWidth: 4, borderColor: adjustColor(radarColor, -10), tension: 0.3 }, // Línea más gruesa
-                        point: { radius: 6, backgroundColor: adjustColor(radarColor, 20), borderWidth: 2, borderColor: '#fff' }
-                    };
-                    finalData.datasets[0].fill = true;
-                    finalData.datasets[0].backgroundColor = hexToRgba(radarColor, 0.5); // Relleno más saturado
-                    chartOptions.scales = {
-                        r: {
-                            angleLines: { color: 'rgba(0, 0, 0, 0.25)' }, // Líneas más visibles
-                            grid: { color: 'rgba(0, 0, 0, 0.25)' },       // Rejilla más visible
-                            pointLabels: { color: colorTextoGraficaPrincipal, font: { size: 13, weight: 'bold' } }, // Etiquetas más grandes
-                            ticks: { backdropColor: 'transparent', color: colorTextoGraficaSecundario, showLabelBackdrop: false, font: { size: 11 } }
-                        }
-                    };
-                    chartOptions.plugins.datalabels.display = false;
-                    chartOptions.plugins.legend.display = false; // Leyenda usualmente no necesaria en radar de un solo dataset
-                }
-
-
-                // --- RETORNO DE LA CONFIGURACIÓN ---
                 return {
                     type: finalType,
                     data: finalData,
@@ -1219,7 +1312,7 @@
                     doc.setFont("helvetica", "bold");
                     doc.setFontSize(22);
                     doc.setTextColor('#000000'); // Asegurar que el título principal sea negro
-                    doc.text("Reporte de Resultados de Encuesta", pageWidth / 2, 20, { align: "center" });
+                    doc.text("Resultados de Encuesta", pageWidth / 2, 20, { align: "center" });
 
                     doc.setDrawColor(180);
                     doc.setLineWidth(0.5);
@@ -1230,24 +1323,37 @@
                     const municipioName = municipioSelect.value ? municipioSelect.options[municipioSelect.selectedIndex].text : 'Todos';
                     const seccionName = seccionSelect.value ? seccionSelect.options[seccionSelect.selectedIndex].text : 'Todas';
                     const comunidadName = comunidadSelect.value ? comunidadSelect.options[comunidadSelect.selectedIndex].text : 'Todas';
-                    const filtroText = `Encuesta: ${encuestaTitle}  |  Municipio: ${municipioName}  |  Sección: ${seccionName}  |  Comunidad: ${comunidadName}`;
+
+                    const textoEncuesta = `${encuestaTitle}`;
+                    const textoUbicacion = `Municipio: ${municipioName}  |  Sección: ${seccionName}  |  Comunidad: ${comunidadName}`;
 
                     doc.setFont("helvetica", "normal");
                     doc.setFontSize(10);
 
-                    // ¡CAMBIO AQUÍ! Se establece el color del texto a un rojo intenso
-                    doc.setTextColor('#FF0000'); // Rojo Intenso 🔴
+                    // 1. Línea de Encuesta (Rojo)
+                    doc.setTextColor('#FF0000');
+                    doc.text(textoEncuesta, pageWidth / 2, 34, { align: "center" });
 
-                    doc.text(filtroText, pageWidth / 2, 35, { align: "center" });
+                    // 2. Línea de Municipio y demás (Gris fuerte)
+                    doc.setTextColor('#4A4A4A'); // Tono gris oscuro (#4A4A4A)
+                    doc.text(textoUbicacion, pageWidth / 2, 39, { align: "center" });
 
-                    // ¡CAMBIO AQUÍ! Se restaura el color del texto a negro para el resto del documento
+                    // Restaurar el color a negro para la pregunta
                     doc.setTextColor('#000000');
 
-                    // --- Título de la Pregunta ---
+                    // --- Título de la Pregunta (Con ajuste de márgenes) ---
                     doc.setFont("helvetica", "bold");
                     doc.setFontSize(16);
-                    const yPosPregunta = 48;
-                    doc.text(dataSet.title, pageWidth / 2, yPosPregunta, { align: "center" });
+
+                    // Definimos un ancho máximo permitido para el texto (ancho total menos un margen de 20 a cada lado)
+                    const maxAnchoTexto = pageWidth - 40;
+
+                    // splitTextToSize divide el texto en un arreglo de líneas si es muy largo
+                    const lineasPregunta = doc.splitTextToSize(dataSet.title, maxAnchoTexto);
+
+                    const yPosPregunta = 49;
+                    // Al pasarle el arreglo de líneas, jsPDF las imprime una debajo de la otra centradas
+                    doc.text(lineasPregunta, pageWidth / 2, yPosPregunta, { align: "center" });
 
                     // --- GENERACIÓN DE LA GRÁFICA ---
                     const tempCanvas = document.createElement('canvas');

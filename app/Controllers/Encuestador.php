@@ -139,7 +139,7 @@ class Encuestador extends Controller
         $longitud = $dataInput['longitud'] ?? null;
         $referenciasTexto = $dataInput['referencias_texto'] ?? '';
 
-        // --- Lógica de guardado (se mantiene tu estructura original) ---
+        // --- Lógica de guardado ---
 
         // 1. Registro de Ubicación
         $monitoreoData = [
@@ -163,28 +163,41 @@ class Encuestador extends Controller
         $distritoFederal = $this->distritoFederalModel->find($distritoLocal['id_distrito_federal']);
         $estado = $this->estadoModel->find($distritoFederal['id_estado']);
 
-        // 3. Loop de respuestas
+        // 3. Loop de respuestas CORREGIDO para selección múltiple
         foreach ($dataInput as $key => $value) {
             if (strpos($key, 'respuesta_') === 0) {
                 $idPregunta = str_replace('respuesta_', '', $key);
 
-                $insertData = [
-                    'id_usuario' => $idUsuario,
-                    'id_encuesta' => $idEncuesta,
-                    'id_pregunta' => $idPregunta,
-                    'id_opcion' => $value,
-                    'referencias' => $referenciasTexto,
-                    'id_monitoreo' => $idMonitoreoUnico,
-                    'id_encuesta_realizada' => $idEncuestaRealizada,
-                    'id_comunidad' => $idComunidad,
-                    'id_seccion' => $seccion['id_seccion'],
-                    'id_municipio' => $municipio['id_municipio'],
-                    'id_distritolocal' => $distritoLocal['id_distrito_local'],
-                    'id_distritofederal' => $distritoFederal['id_distrito_federal'],
-                    'id_estado' => $estado['id_estado'],
-                    'direccion' => $direccionTexto
-                ];
-                $this->respuestaModel->insert($insertData);
+                /** * CAMBIO CLAVE:
+                 * Si $value es un array (porque usamos name="...[]" en el HTML), 
+                 * lo recorremos. Si es un valor único, lo metemos en un array para 
+                 * usar el mismo foreach.
+                 */
+                $opcionesSeleccionadas = is_array($value) ? $value : [$value];
+
+                foreach ($opcionesSeleccionadas as $idOpcion) {
+                    // Si la opción está vacía (por ejemplo, el placeholder del select), la saltamos
+                    if (empty($idOpcion))
+                        continue;
+
+                    $insertData = [
+                        'id_usuario' => $idUsuario,
+                        'id_encuesta' => $idEncuesta,
+                        'id_pregunta' => $idPregunta,
+                        'id_opcion' => $idOpcion,
+                        'referencias' => $referenciasTexto,
+                        'id_monitoreo' => $idMonitoreoUnico,
+                        'id_encuesta_realizada' => $idEncuestaRealizada,
+                        'id_comunidad' => $idComunidad,
+                        'id_seccion' => $seccion['id_seccion'],
+                        'id_municipio' => $municipio['id_municipio'],
+                        'id_distritolocal' => $distritoLocal['id_distrito_local'],
+                        'id_distritofederal' => $distritoFederal['id_distrito_federal'],
+                        'id_estado' => $estado['id_estado'],
+                        'direccion' => $direccionTexto
+                    ];
+                    $this->respuestaModel->insert($insertData);
+                }
             }
         }
 
@@ -196,39 +209,39 @@ class Encuestador extends Controller
     }
 
     public function guardarUbicacionMonitoreo()
-{
-    $json = $this->request->getJSON(true);
-    $idUsuario = session()->get('usuario')['id_usuario'] ?? ($json['id_usuario'] ?? null);
+    {
+        $json = $this->request->getJSON(true);
+        $idUsuario = session()->get('usuario')['id_usuario'] ?? ($json['id_usuario'] ?? null);
 
-    if (!$idUsuario) {
-        return $this->response->setStatusCode(403)->setJSON(['success' => false]);
-    }
-
-    // Caso A: Sincronización masiva desde Dexie (PWA)
-    if (isset($json['puntos']) && is_array($json['puntos'])) {
-        foreach ($json['puntos'] as $punto) {
-            $this->monitoreoModel->save([
-                'id_usuario' => $idUsuario,
-                'latitud'    => $punto['lat'],
-                'longitud'   => $punto['lng'],
-                'created_at' => date('Y-m-d H:i:s', $punto['time'] / 1000) // Convertir timestamp de JS
-            ]);
+        if (!$idUsuario) {
+            return $this->response->setStatusCode(403)->setJSON(['success' => false]);
         }
-        return $this->response->setJSON(['success' => true]);
-    }
 
-    // Caso B: Envío individual (AJAX Online)
-    $data = [
-        'id_usuario' => $idUsuario,
-        'latitud'    => $json['latitud'] ?? $json['lat'],
-        'longitud'   => $json['longitud'] ?? $json['lng'],
-    ];
+        // Caso A: Sincronización masiva desde Dexie (PWA)
+        if (isset($json['puntos']) && is_array($json['puntos'])) {
+            foreach ($json['puntos'] as $punto) {
+                $this->monitoreoModel->save([
+                    'id_usuario' => $idUsuario,
+                    'latitud' => $punto['lat'],
+                    'longitud' => $punto['lng'],
+                    'created_at' => date('Y-m-d H:i:s', $punto['time'] / 1000) // Convertir timestamp de JS
+                ]);
+            }
+            return $this->response->setJSON(['success' => true]);
+        }
 
-    if ($this->monitoreoModel->save($data)) {
-        return $this->response->setJSON(['success' => true]);
+        // Caso B: Envío individual (AJAX Online)
+        $data = [
+            'id_usuario' => $idUsuario,
+            'latitud' => $json['latitud'] ?? $json['lat'],
+            'longitud' => $json['longitud'] ?? $json['lng'],
+        ];
+
+        if ($this->monitoreoModel->save($data)) {
+            return $this->response->setJSON(['success' => true]);
+        }
+        return $this->response->setStatusCode(500)->setJSON(['success' => false]);
     }
-    return $this->response->setStatusCode(500)->setJSON(['success' => false]);
-}
 
     /* --- AUXILIARES --- */
 

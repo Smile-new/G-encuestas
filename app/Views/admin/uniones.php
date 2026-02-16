@@ -43,12 +43,35 @@
             z-index: 10;
         }
 
-        .chart-container {
-            min-height: 400px;
-            background: #191c24;
+        /* Contenedor con scroll para la gráfica */
+        #wrapper_grafica_scrollable {
+            max-height: 650px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            /* CAMBIO PRINCIPAL: Fondo blanco */
+            background: #ffffff !important;
+            /* CAMBIO: Borde más claro para que combine con el fondo blanco */
+            border: 1px solid #d1d3e2;
             border-radius: 8px;
-            padding: 20px;
-            border: 1px solid #2c2e33;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            /* Sombra suave opcional */
+        }
+
+        /* Clase para cuando se exporta a PDF (mantiene el fondo blanco) */
+        .exporting-pdf #wrapper_grafica_scrollable {
+            max-height: none !important;
+            height: auto !important;
+            overflow: visible !important;
+            background: #ffffff !important;
+        }
+
+        .chart-container {
+            background: transparent;
+            /* El fondo lo da el wrapper */
+            border: none;
+            padding: 15px;
+            /* Un poco más de padding se ve mejor en blanco */
+            width: 100%;
         }
 
         #mapa_uniones {
@@ -432,11 +455,12 @@
                                             <div class="btn-group">
                                                 <select
                                                     class="form-control-sm selector-tipo-maestro bg-dark text-white border-secondary"
-                                                    id="selector_tipo_grafica" style="cursor: pointer;">
+                                                    id="selector_tipo_grafica">
                                                     <option value="bar" selected>Barras Horizontales</option>
                                                     <option value="bar_v">Barras Verticales</option>
                                                     <option value="pie">Pastel</option>
                                                     <option value="doughnut">Dona</option>
+                                                    <option value="line">Gráfica de Puntos / Línea</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -453,9 +477,11 @@
                                         <p class="mt-2 text-white">Calculando intersecciones...</p>
                                     </div>
 
-                                    <div class="chart-container" id="contenedor_grafica_principal"
-                                        style="display:none; position: relative; height:450px;">
-                                        <canvas id="canvasUniones"></canvas>
+                                    <div id="wrapper_grafica_scrollable">
+                                        <div class="chart-container" id="contenedor_grafica_principal"
+                                            style="display:none; position: relative;">
+                                            <canvas id="canvasUniones"></canvas>
+                                        </div>
                                     </div>
 
                                     <div id="no_data" class="text-center p-5">
@@ -498,7 +524,7 @@
 
                             <button type="button" class="btn btn-success btn-lg btn-block mt-3"
                                 id="btn_imprimir_reporte">
-                                <i class="mdi mdi-printer"></i> GENERAR REPORTE (3 PÁGINAS)
+                                <i class="mdi mdi-printer"></i> GENERAR REPORTE
                             </button>
 
 
@@ -655,142 +681,218 @@
                 if (lastChartData) actualizarGrafica(lastChartData.desglose, lastChartData.resumen);
             });
 
-            /* ==========================================
-               4. VISUALIZACIÓN Y FUNCIONES FALTANTES
-            ========================================== */
-            /* ==========================================
-    4. VISUALIZACIÓN MEJORADA (SILUETAS Y SOMBRAS)
- ========================================== */
-            /* ==========================================
-   4. VISUALIZACIÓN PRO (Borde de Alta Definición y Sombra Profunda)
-========================================== */
+
             function actualizarGrafica(desglose, resumen) {
+
                 const canvas = document.getElementById('canvasUniones');
                 const ctx = canvas.getContext('2d');
 
-                // 1. ELIMINAR DUPLICADOS: Destrucción total de la instancia y limpieza de pixeles
                 if (window.chartInstance) {
                     window.chartInstance.destroy();
                 }
-                // Limpieza manual del canvas para eliminar cualquier rastro visual previo
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // CONFIGURACIÓN DE TIPO Y ORIENTACIÓN
-                let targetType = currentChartType;
-                let indexAxis = 'y';
+                let targetType = typeof currentChartType !== 'undefined' ? currentChartType : 'bar';
+                let indexAxis = (targetType === 'bar_v' || targetType === 'line') ? 'x' : 'y';
 
-                if (targetType === 'bar_v') {
-                    targetType = 'bar';
-                    indexAxis = 'x';
+                if (targetType === 'bar_v' || targetType === 'line') {
+                    targetType = (targetType === 'line') ? 'line' : 'bar';
                 }
 
                 const isCircular = ['pie', 'doughnut'].includes(targetType);
+                const isLine = targetType === 'line';
+                const numElementos = desglose.length;
 
-                // CÁLCULOS Y COLORES
-                const totalReal = desglose.reduce((sum, d) => sum + parseInt(d.total), 0);
-                const backgroundColors = desglose.map((d, index) => {
+                const $contenedor = $('#contenedor_grafica_principal');
+
+                // Ajuste de altura dinámica
+                const alturaBase = !isCircular && indexAxis === 'y'
+                    ? Math.max(600, (numElementos * 50) + 100)
+                    : 650;
+
+                $contenedor.css('height', alturaBase + 'px');
+
+                const totalPersonas = resumen.coincidencias ||
+                    desglose.reduce((sum, d) => sum + parseInt(d.total), 0);
+
+                // --- 1. LÓGICA DE COLORES CORREGIDA ---
+                // Ahora usa barColorsMap y PALETA_PRO para sincronizarse con los inputs de color
+                const rawColors = desglose.map((d, i) => {
                     const key = d.texto_completo || d.texto_opcion;
-                    return barColorsMap[key] || PALETA_PRO[index % PALETA_PRO.length];
+
+                    // Si ya existe un color seleccionado/guardado, úsalo
+                    if (barColorsMap[key]) {
+                        return barColorsMap[key];
+                    } else {
+                        // Si no, asigna uno de PALETA_PRO y guárdalo para que el input nazca con este color
+                        const colorAsignado = PALETA_PRO[i % PALETA_PRO.length];
+                        barColorsMap[key] = colorAsignado;
+                        return colorAsignado;
+                    }
                 });
 
-                // PLUGIN DE SOMBRA (Solo para el cuerpo de la gráfica)
-                const highDetailShadowPlugin = {
-                    id: 'highDetailShadow',
-                    beforeDatasetsDraw: (chart) => {
+                // --- Patrones ---
+                const createPattern = (color) => {
+                    const pc = document.createElement('canvas');
+                    pc.width = 14;
+                    pc.height = 14;
+                    const pctx = pc.getContext('2d');
+                    pctx.fillStyle = color;
+                    pctx.fillRect(0, 0, 14, 14);
+                    pctx.strokeStyle = 'rgba(255,255,255,0.35)';
+                    pctx.lineWidth = 2;
+                    pctx.beginPath();
+                    pctx.moveTo(0, 14);
+                    pctx.lineTo(14, 0);
+                    pctx.stroke();
+                    return ctx.createPattern(pc, 'repeat');
+                };
+
+                // --- Estilos Visuales ---
+                let finalBackground;
+                if (isLine) {
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                    gradient.addColorStop(0, 'rgba(220, 53, 69, 0.6)');
+                    gradient.addColorStop(1, 'rgba(220, 53, 69, 0.05)');
+                    finalBackground = gradient;
+                } else {
+                    finalBackground = rawColors.map(c => createPattern(c));
+                }
+
+                const borderColor = isLine ? '#dc3545' : '#ffffff';
+                const pointBgColor = isLine ? '#ffffff' : undefined;
+                const pointBorderColor = isLine ? '#dc3545' : undefined;
+
+                const superDetailPlugin = {
+                    id: 'superDetail',
+                    beforeDatasetDraw(chart) {
                         const { ctx } = chart;
                         ctx.save();
-                        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-                        ctx.shadowBlur = 15;
-                        ctx.shadowOffsetX = 8;
-                        ctx.shadowOffsetY = 8;
+                        ctx.shadowColor = 'rgba(0,0,0,0.25)';
+                        ctx.shadowBlur = 10;
+                        ctx.shadowOffsetX = 4;
+                        ctx.shadowOffsetY = 4;
                     },
-                    afterDatasetsDraw: (chart) => {
+                    afterDatasetDraw(chart) {
                         chart.ctx.restore();
                     }
                 };
 
-                // 2. CREACIÓN DE LA NUEVA GRÁFICA CORREGIDA
                 window.chartInstance = new Chart(ctx, {
                     type: targetType,
                     data: {
-                        // Mantenemos los porcentajes en las etiquetas del eje/leyenda
-                        labels: desglose.map(d => `${Math.round(d.total)} pers. (${((d.total / totalReal) * 100).toFixed(1)}%)`),
+                        labels: desglose.map(d => d.perfil_corto),
                         datasets: [{
                             data: desglose.map(d => Math.round(d.total)),
-                            backgroundColor: backgroundColors,
-                            borderColor: '#ffffff',
-                            borderWidth: 5,
-                            borderRadius: 18,
+                            backgroundColor: finalBackground,
+                            borderColor: borderColor,
+                            borderWidth: isCircular ? 6 : (isLine ? 3 : 4),
+                            borderRadius: isCircular ? 0 : 22,
                             borderSkipped: false,
-                            hoverOffset: isCircular ? 30 : 10,
-                            hoverBorderWidth: 2,
-                            textoCompleto: desglose.map(d => d.texto_completo || d.texto_opcion)
+                            spacing: isCircular ? 8 : 0,
+
+                            pointRadius: isLine ? 6 : 0,
+                            pointHoverRadius: isLine ? 8 : 0,
+                            pointBackgroundColor: pointBgColor,
+                            pointBorderColor: pointBorderColor,
+                            pointBorderWidth: 3,
+
+                            tension: 0.4,
+                            fill: isLine,
+                            barThickness: isCircular ? null : (indexAxis === 'y' ? 25 : (numElementos > 15 ? 22 : 48)),
+                            hoverOffset: 15
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         indexAxis: indexAxis,
+
                         layout: {
-                            padding: { top: 30, right: 40, bottom: 40, left: 30 }
-                        },
-                        scales: {
-                            y: {
-                                display: !isCircular,
-                                beginAtZero: true,
-                                grid: { display: false },
-                                ticks: {
-                                    font: { weight: 'bold' },
-                                    stepSize: 1,
-                                    precision: 0
-                                }
-                            },
-                            x: {
-                                display: !isCircular,
-                                beginAtZero: true,
-                                grid: { display: false },
-                                ticks: {
-                                    font: { weight: 'bold' },
-                                    stepSize: 1,
-                                    precision: 0
-                                }
+                            padding: {
+                                top: 60,
+                                bottom: isCircular ? 140 : 60,
+                                left: 20,
+                                right: 80
                             }
                         },
+
                         plugins: {
+                            datalabels: {
+                                color: '#000',
+                                font: { weight: 'bold', size: 13 },
+                                // Rotación: 0 si es horizontal, -90 si es vertical/circular
+                                rotation: indexAxis === 'y' ? 0 : -90,
+                                anchor: isCircular ? 'end' : 'end',
+                                align: isCircular ? 'end' : (indexAxis === 'y' ? 'right' : 'end'),
+                                offset: isCircular ? 4 : 8,
+                                display: true,
+                                formatter: (value) => {
+                                    const pct = ((value / totalPersonas) * 100).toFixed(1);
+                                    return `${pct}%`;
+                                },
+                                textStrokeColor: '#fff',
+                                textStrokeWidth: 4
+                            },
                             legend: {
                                 display: isCircular,
                                 position: 'bottom',
-                                align: 'center',
-                                labels: {
-                                    usePointStyle: true,
-                                    pointStyle: 'circle',
-                                    // AJUSTE DINÁMICO: Si hay muchos datos, apretamos los elementos
-                                    padding: desglose.length > 8 ? 12 : 25,
-                                    boxWidth: desglose.length > 8 ? 8 : 12,
-                                    font: {
-                                        // Reducimos fuente si hay más de 10 elementos para que quepan en 4 columnas
-                                        size: desglose.length > 10 ? 10 : 13,
-                                        weight: '500'
-                                    }
-                                }
-                            },
-                            // --- AQUÍ ELIMINAMOS LOS DATOS DENTRO DE LA GRÁFICA ---
-                            datalabels: {
-                                display: false // Desactivado para quitar el número duplicado/encimado
-                            },
-                            tooltip: {
-                                enabled: true,
-                                backgroundColor: 'rgba(20, 20, 30, 0.9)',
-                                titleFont: { size: 16 },
-                                padding: 15,
-                                cornerRadius: 10
+                                labels: { padding: 30, usePointStyle: true }
                             }
                         },
-                        cutout: targetType === 'doughnut' ? '65%' : '0%'
+
+                        scales: {
+                            x: {
+                                display: !isCircular,
+                                grid: { display: false, drawBorder: false },
+                                grace: '15%',
+                                ticks: {
+                                    display: indexAxis === 'x',
+                                    autoSkip: false,
+                                    minRotation: 90,
+                                    maxRotation: 90,
+                                    font: { weight: 'bold' }
+                                }
+                            },
+                            y: {
+                                display: !isCircular,
+                                grid: { display: false, drawBorder: false },
+                                grace: '15%',
+                                ticks: {
+                                    display: indexAxis === 'y',
+                                    autoSkip: false,
+                                    minRotation: 0,
+                                    maxRotation: 0,
+                                    font: { weight: 'bold' },
+                                    crossAlign: 'near'
+                                },
+                                afterFit: function (scaleInstance) {
+                                    if (indexAxis === 'y') {
+                                        scaleInstance.width = 160;
+                                    }
+                                }
+                            }
+                        },
+
+                        cutout: targetType === 'doughnut' ? '50%' : 0
                     },
-                    // Mantenemos los plugins registrados pero datalabels ya no dibujará nada
-                    plugins: [ChartDataLabels, highDetailShadowPlugin]
+                    plugins: [ChartDataLabels, superDetailPlugin]
                 });
+            }
+
+            // Helper simple por si no existe en tu entorno
+            function hexToRgba(hex, alpha) {
+                let r = 0, g = 0, b = 0;
+                if (hex.length == 4) {
+                    r = "0x" + hex[1] + hex[1];
+                    g = "0x" + hex[2] + hex[2];
+                    b = "0x" + hex[3] + hex[3];
+                } else if (hex.length == 7) {
+                    r = "0x" + hex[1] + hex[2];
+                    g = "0x" + hex[3] + hex[4];
+                    b = "0x" + hex[5] + hex[6];
+                }
+                return "rgba(" + +r + "," + +g + "," + +b + "," + alpha + ")";
             }
             // --- FUNCIÓN FALTANTE 1: Selectores de color dinámicos ---
             function generarSelectoresDeColor(desglose) {
@@ -818,10 +920,7 @@
                 });
             }
             // --- FUNCIÓN FALTANTE 2: Convertidor HEX a RGBA ---
-            function hexToRgba(hex, alpha) {
-                const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-            }
+
 
             /* ==========================================
                5. FUNCIONES DE MAPA Y TABLA
@@ -855,39 +954,52 @@
                 map.fitBounds(bounds);
             }
 
-            function actualizarTablaFiltros() {
-                const $body = $('#tabla_filtros_body').empty();
-                $('.criterio-row').each(function () {
-                    const q = $(this).find('.select-pregunta option:selected').text();
-                    const opts = $(this).find('.select-opcion option:selected').map((i, e) => $(e).text()).get();
-                    if (q !== "Seleccione..." && opts.length > 0) {
-                        $body.append(`<tr><td class="py-2"><strong>${q}</strong></td>
-                    <td>${opts.map(o => `<span class="badge badge-outline-info mr-1">${o}</span>`).join('')}</td>
-                    <td class="text-center"><label class="badge badge-success">Activo</label></td></tr>`);
-                    }
-                });
-                $('#seccion_tabla_detalles').fadeIn();
-            }
+
 
             // ASISTENTE DE IMAGEN
             /**
  * PÁGINA 1: Genera el HTML para la Gráfica con tamaño controlado
  */
             function obtenerImagenGrafica(idCanvas) {
-                const canvas = document.getElementById(idCanvas);
-                if (!canvas) return '';
+                const chart = window.chartInstance;
+                if (!chart) return '';
 
+                // 1. APLICAR ESTILO NEGRO CON BORDE BLANCO PARA EL PDF
+                chart.options.plugins.datalabels.color = '#000000'; // Letra Negra
+                chart.options.plugins.datalabels.textStrokeColor = '#ffffff'; // Borde Blanco
+                chart.options.plugins.datalabels.textStrokeWidth = 3; // Grosor del borde
+
+                // Cambiar también los ejes y leyenda a negro para el fondo blanco del PDF
+                if (chart.options.scales.x) chart.options.scales.x.ticks.color = '#000000';
+                if (chart.options.scales.y) chart.options.scales.y.ticks.color = '#000000';
+                if (chart.options.plugins.legend) chart.options.plugins.legend.labels.color = '#000000';
+
+                chart.update({ duration: 0 }); // Actualizar sin animaciones
+
+                // 2. CAPTURAR EN EL LIENZO TEMPORAL
+                const canvas = document.getElementById(idCanvas);
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = canvas.width;
                 tempCanvas.height = canvas.height;
-                const ctx = tempCanvas.getContext('2d');
+                const tempCtx = tempCanvas.getContext('2d');
 
-                // Fondo blanco para evitar transparencias
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                ctx.drawImage(canvas, 0, 0);
+                tempCtx.fillStyle = '#ffffff';
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.drawImage(canvas, 0, 0);
+                const imgData = tempCanvas.toDataURL('image/jpeg', 1.0);
 
-                return tempCanvas.toDataURL('image/jpeg', 1.0);
+                // 3. REGRESAR TODO A BLANCO PARA EL DASHBOARD OSCURO
+                chart.options.plugins.datalabels.color = '#ffffff';
+                chart.options.plugins.datalabels.textStrokeColor = 'transparent';
+                chart.options.plugins.datalabels.textStrokeWidth = 0;
+
+                if (chart.options.scales.x) chart.options.scales.x.ticks.color = '#ffffff';
+                if (chart.options.scales.y) chart.options.scales.y.ticks.color = '#ffffff';
+                if (chart.options.plugins.legend) chart.options.plugins.legend.labels.color = '#ffffff';
+
+                chart.update({ duration: 0 });
+
+                return imgData;
             }
 
 
@@ -899,15 +1011,7 @@
                 return `<img src="${rutaLogo}" class="marca-agua" crossorigin="anonymous">`;
             }
 
-            /**
-   * PÁGINA 1: Gráfica Gigante y Centrada
-   */
-            /**
- * PÁGINA 1: Portada con Nombre de Encuesta, Resumen Geográfico y Gráfica
- */
-            /**
- * PÁGINA 1: Portada con Datos Geográficos Dinámicos y Gráfica
- */
+
             /**
              * PÁGINA 1: Portada con Títulos, Filtros Geográficos y Barra de Resumen (Cápsula)
              */
@@ -939,200 +1043,10 @@
                     ? lastChartData.resumen.coincidencias
                     : 0;
 
-                return `<div class="pagina-reporte">${inyectarMarcaAgua()}<div class="contenido-superior"><div style="text-align: center; width: 100%; margin-bottom: 5mm;"><h1 style="color: #003366; margin: 0; font-size: 30px; text-transform: uppercase;">Reporte de Uniones</h1><h2 style="color: #444; margin: 5px 0; font-size: 18px; font-weight: normal;">${nombreEncuesta}</h2><div style="margin-top: 5px; padding: 5px; background-color: rgba(0,0,0,0.03); border-radius: 5px; font-size: 13px; color: #333;">${filtrosGeo || "<i>Análisis Global (Sin filtros geográficos)</i>"}</div></div><div style="width: 100%; display: flex; align-items: center; justify-content: space-around; background-color: #f0f5f9; border: 1.5px solid #003366; border-radius: 15px; padding: 12px 0; margin-bottom: 15px;"><div style="text-align: center; flex: 1;"><span style="display: block; font-size: 11px; color: #003366; font-weight: bold; text-transform: uppercase;">TOTAL DE REGISTROS</span><span style="font-size: 22px; font-weight: bold; color: #000;">${totalRegistros}</span></div><div style="text-align: center; flex: 1; border-left: 1.5px solid #003366; border-right: 1.5px solid #003366;"><span style="display: block; font-size: 11px; color: #003366; font-weight: bold; text-transform: uppercase;">PUNTOS GEOGRÁFICOS</span><span style="font-size: 22px; font-weight: bold; color: #000;">${markers.length} Puntos</span></div><div style="text-align: center; flex: 1;"><span style="display: block; font-size: 11px; color: #003366; font-weight: bold; text-transform: uppercase;">FECHA</span><span style="font-size: 22px; font-weight: bold; color: #000;">${new Date().toLocaleDateString()}</span></div></div><div class="contenedor-grafica-full" style="width: 100%; display: flex; justify-content: center; align-items: center; flex-grow: 1;"><img src="${imgData}" class="grafica-img-full" style="max-height: 400px; width: auto; object-fit: contain;"></div><p style="text-align: center; font-size: 10px; color: #999; margin-top: 10px;">www.votayopina.com</p></div></div>`;
+                return `<div class="pagina-reporte">${inyectarMarcaAgua()}<div class="contenido-superior"><div style="text-align: center; width: 100%; margin-bottom: 5mm;"><h1 style="color: #003366; margin: 0; font-size: 30px; text-transform: uppercase;">Reporte de Uniones</h1><h2 style="color: #444; margin: 5px 0; font-size: 18px; font-weight: normal;">${nombreEncuesta}</h2><div style="margin-top: 5px; padding: 5px; background-color: rgba(0,0,0,0.03); border-radius: 5px; font-size: 13px; color: #333;">${filtrosGeo || "<i>Análisis Global (Sin filtros geográficos)</i>"}</div></div><div style="width: 100%; display: flex; align-items: center; justify-content: space-around; background-color: #f0f5f9; border: 1.5px solid #003366; border-radius: 15px; padding: 12px 0; margin-bottom: 15px;"><div style="text-align: center; flex: 1;"><span style="display: block; font-size: 11px; color: #003366; font-weight: bold; text-transform: uppercase;">TOTAL DE REGISTROS</span><span style="font-size: 22px; font-weight: bold; color: #000;">${totalRegistros}</span></div><div style="text-align: center; flex: 1; border-left: 1.5px solid #003366; border-right: 1.5px solid #003366;"><span style="display: block; font-size: 11px; color: #003366; font-weight: bold; text-transform: uppercase;">PUNTOS GEOGRÁFICOS</span><span style="font-size: 22px; font-weight: bold; color: #000;">${markers.length} Puntos</span></div><div style="text-align: center; flex: 1;"><span style="display: block; font-size: 11px; color: #003366; font-weight: bold; text-transform: uppercase;">FECHA</span><span style="font-size: 22px; font-weight: bold; color: #000;">${new Date().toLocaleDateString()}</span></div></div><div class="contenedor-grafica-full" style="width: 80%; display: flex; justify-content: center; align-items: center; flex-grow: 1;"><img src="${imgData}" class="grafica-img-full" style="width: 80%; max-height: 470px; object-fit: contain;"></div></div></div>`;
             }
 
 
-            function obtenerHtmlPagina2() {
-                // 1. CÁLCULO DE DENSIDAD
-                const $filasCriterio = $('.criterio-row').filter(function () {
-                    const pregunta = $(this).find('.select-pregunta option:selected').text().trim();
-                    return pregunta && pregunta !== "Seleccione...";
-                });
-
-                const totalFilas = $filasCriterio.length;
-
-                // Configuraciones por defecto
-                let fontSizeTable = "13px";
-                let fontSizeOptions = "11px";
-                let paddingCell = "10px";
-                let dotSize = "11px";
-                let rowMargin = "8px";
-
-                // Ajuste dinámico
-                if (totalFilas > 7 && totalFilas <= 12) {
-                    fontSizeTable = "11px";
-                    fontSizeOptions = "10px";
-                    paddingCell = "8px";
-                    dotSize = "10px";
-                    rowMargin = "4px";
-                }
-
-                if (totalFilas >= 12) {
-                    fontSizeTable = "10px";
-                    fontSizeOptions = "9px";
-                    paddingCell = "5px";
-                    dotSize = "8px";
-                    rowMargin = "2px";
-                }
-
-                const limpiarParaComparar = (str) => {
-                    if (!str) return "";
-                    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "").trim();
-                };
-
-                // NUEVA FUNCIÓN MEJORADA PARA BUSCAR COLORES
-                const buscarColoresParaOpcion = (textoPregunta, textoOpcion) => {
-                    const clave = textoPregunta + "|" + textoOpcion;
-
-                    // 1. Primero buscar en relaciones filtradas (respuesta del servidor)
-                    if (window.datosGrafica && window.datosGrafica.relaciones) {
-                        if (window.datosGrafica.relaciones[clave]) {
-                            return obtenerColoresPorNombres(window.datosGrafica.relaciones[clave]);
-                        }
-                    }
-
-                    // 2. Si no está en relaciones filtradas, buscar en la gráfica
-                    const textoLimpio = limpiarParaComparar(textoOpcion);
-                    let coloresEncontrados = [];
-
-                    if (window.chartInstance && window.chartInstance.data.datasets.length > 0) {
-                        const dataset = window.chartInstance.data.datasets[0];
-                        const etiquetasOriginales = dataset.textoCompleto || [];
-                        const coloresPaleta = dataset.backgroundColor || [];
-
-                        etiquetasOriginales.forEach((label, idx) => {
-                            const labelLimpia = limpiarParaComparar(label);
-                            const color = coloresPaleta[idx];
-                            if (!color) return;
-
-                            if (labelLimpia === textoLimpio || labelLimpia.includes(textoLimpio)) {
-                                if (!coloresEncontrados.includes(color)) {
-                                    coloresEncontrados.push(color);
-                                }
-                            }
-                        });
-                    }
-
-                    return coloresEncontrados.length > 0 ? coloresEncontrados : ['#bdc3c7'];
-                };
-
-                // Función auxiliar para obtener colores por nombres de opciones
-                const obtenerColoresPorNombres = (nombresOpciones) => {
-                    const colores = [];
-
-                    if (window.chartInstance && window.chartInstance.data.datasets.length > 0) {
-                        const dataset = window.chartInstance.data.datasets[0];
-                        const etiquetasOriginales = dataset.textoCompleto || [];
-                        const coloresPaleta = dataset.backgroundColor || [];
-
-                        nombresOpciones.forEach(nombre => {
-                            const idx = etiquetasOriginales.findIndex(label =>
-                                limpiarParaComparar(label) === limpiarParaComparar(nombre)
-                            );
-                            if (idx !== -1 && coloresPaleta[idx]) {
-                                if (!colores.includes(coloresPaleta[idx])) {
-                                    colores.push(coloresPaleta[idx]);
-                                }
-                            }
-                        });
-                    }
-
-                    return colores.length > 0 ? colores : ['#bdc3c7'];
-                };
-
-                // 2. GENERACIÓN DE FILAS
-                let filasHtml = '';
-
-                $filasCriterio.each(function () {
-                    const pregunta = $(this).find('.select-pregunta option:selected').text().trim();
-                    const idPregunta = $(this).find('.select-pregunta').val();
-
-                    // Obtener TODAS las opciones de esta pregunta (no solo las seleccionadas)
-                    let opcionesParaMostrar = [];
-
-                    // Si tenemos datos del servidor con todas las opciones
-                    if (window.datosGrafica && window.datosGrafica.opciones_por_pregunta &&
-                        window.datosGrafica.opciones_por_pregunta[pregunta]) {
-
-                        opcionesParaMostrar = window.datosGrafica.opciones_por_pregunta[pregunta];
-                    } else {
-                        // Fallback: usar solo las opciones seleccionadas
-                        $(this).find('.select-opcion option:selected').each(function () {
-                            opcionesParaMostrar.push({
-                                texto: $(this).text().trim(),
-                                clave: pregunta + "|" + $(this).text().trim()
-                            });
-                        });
-                    }
-
-                    const opcionesHtml = opcionesParaMostrar.map(opcion => {
-                        const colores = buscarColoresParaOpcion(pregunta, opcion.texto);
-
-                        const puntosSimbologia = colores.map(color => `
-                <span style="
-                    display:inline-block;
-                    width:${dotSize};
-                    height:${dotSize};
-                    border-radius:50%;
-                    background-color:${color};
-                    border:1px solid #000;
-                    margin-right:4px;
-                    vertical-align:middle;
-                "></span>
-            `).join('');
-
-                        return `
-                <div style="display:inline-block; margin-right:12px; margin-bottom:${rowMargin}; vertical-align:middle; line-height: 1;">
-                    ${puntosSimbologia}
-                    <span style="font-size:${fontSizeOptions}; font-family:Arial; font-weight:bold; color:#000000 !important;">
-                        ${opcion.texto}
-                    </span>
-                </div>
-            `;
-                    }).join('');
-
-                    filasHtml += `
-            <tr style="border:1px solid #000;">
-                <td style="width:35%; padding:${paddingCell}; background-color:#f8f9fa; font-weight:bold; font-family:Arial; font-size:${fontSizeTable}; border:1px solid #000; color:#000000 !important; line-height: 1.2;">
-                    ${pregunta}
-                </td>
-                <td style="width:65%; padding:${paddingCell}; background-color:#ffffff; border:1px solid #000; vertical-align:middle;">
-                    <div style="display: flex; flex-wrap: wrap; align-items: center;">
-                        ${opcionesHtml}
-                    </div>
-                </td>
-            </tr>
-        `;
-                });
-
-                return `
-        <div class="pagina-reporte">
-            ${inyectarMarcaAgua()}
-            <div class="contenido-superior" style="width: 95%; margin-top: 10mm;">
-                <div style="text-align: center; width: 100%; margin-bottom: 3mm;">
-                    <h1 style="color: #003366; margin: 0; font-size: 24px; text-transform: uppercase; border-bottom: 2px solid #003366; display: inline-block; padding-bottom: 5px;">Datos Filtrados</h1>
-                    <p style="color: #666; font-size: 13px; margin-top: 5px;">Detalle de criterios y colores aplicados en el análisis</p>
-                </div>
-
-                <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #000; table-layout: fixed;">
-                    <thead>
-                        <tr style="background-color: #003366; color: #ffffff;">
-                            <th style="width:35%; padding: 10px; border: 1px solid #000; text-align: left; font-size: 13px;">CRITERIO / PREGUNTA</th>
-                            <th style="width:65%; padding: 10px; border: 1px solid #000; text-align: left; font-size: 13px;">SIMBOLOGÍA ASIGNADA</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${filasHtml}
-                    </tbody>
-                </table>
-
-                <p style="text-align: center; font-size: 9px; color: #999; margin-top: 10px;">
-                    Reporte generado por Vota y Opina
-                </p>
-            </div>
-        </div>`;
-            }
             function obtenerHtmlPagina3() {
                 const centro = map.getCenter();
                 const zoom = map.getZoom();
@@ -1159,7 +1073,7 @@
 
                 const container = document.createElement('div');
                 // Concatenamos y aplicamos .trim() para asegurar que no hay espacios al inicio
-                container.innerHTML = (obtenerHtmlPagina1() + obtenerHtmlPagina2() + obtenerHtmlPagina3()).trim();
+                container.innerHTML = (obtenerHtmlPagina1() + obtenerHtmlPagina3()).trim();
 
                 const opt = {
                     margin: 0,
