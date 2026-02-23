@@ -10,50 +10,50 @@ use App\Models\RespuestaModel;
 use App\Models\PreguntaModel;
 use App\Models\OpcionModel;
 use App\Models\MonitoreoModel;
-use Config\Google; 
+use Config\Google;
 
 class Propietario extends BaseController
 {
-    protected $usuarioModel; 
+    protected $usuarioModel;
 
     public function __construct()
     {
         $this->usuarioModel = new UsuarioModel();
     }
 
-private function _prepareUserData(): array
-{
-    $session = session();
-    $userData = $session->get('usuario');
-    $data = [];
+    private function _prepareUserData(): array
+    {
+        $session = session();
+        $userData = $session->get('usuario');
+        $data = [];
 
-    $data['isLoggedIn'] = $session->get('isLoggedIn');
-    $data['nombreCompleto'] = "Invitado";
-    $data['nombreUsuario'] = "invitado";
-    $data['rutaFotoPerfil'] = base_url(RECURSOS_ENCUESTADOR_IMAGES . '/user.png');
-    $data['rolTexto'] = "Rol desconocido";
+        $data['isLoggedIn'] = $session->get('isLoggedIn');
+        $data['nombreCompleto'] = "Invitado";
+        $data['nombreUsuario'] = "invitado";
+        $data['rutaFotoPerfil'] = base_url(RECURSOS_ENCUESTADOR_IMAGES . '/user.png');
+        $data['rolTexto'] = "Rol desconocido";
 
-    if ($data['isLoggedIn'] && is_array($userData)) {
-        // Obtener usuario actualizado con JOIN al rol
-        $usuarioConRol = $this->usuarioModel->getUsuarioConRol($userData['id_usuario']);
+        if ($data['isLoggedIn'] && is_array($userData)) {
+            // Obtener usuario actualizado con JOIN al rol
+            $usuarioConRol = $this->usuarioModel->getUsuarioConRol($userData['id_usuario']);
 
-        if ($usuarioConRol) {
-            $data['userData'] = $usuarioConRol;
-            $data['nombreCompleto'] = trim(esc($usuarioConRol['nombre'] ?? '') . ' ' .
-                esc($usuarioConRol['apellido_paterno'] ?? '') . ' ' .
-                esc($usuarioConRol['apellido_materno'] ?? ''));
-            $data['nombreUsuario'] = esc($usuarioConRol['usuario'] ?? '');
-            $data['rolTexto'] = esc($usuarioConRol['nombre_rol']);
+            if ($usuarioConRol) {
+                $data['userData'] = $usuarioConRol;
+                $data['nombreCompleto'] = trim(esc($usuarioConRol['nombre'] ?? '') . ' ' .
+                    esc($usuarioConRol['apellido_paterno'] ?? '') . ' ' .
+                    esc($usuarioConRol['apellido_materno'] ?? ''));
+                $data['nombreUsuario'] = esc($usuarioConRol['usuario'] ?? '');
+                $data['rolTexto'] = esc($usuarioConRol['nombre_rol']);
 
-            if (!empty($usuarioConRol['foto'])) {
-                $data['rutaFotoPerfil'] = base_url('public/img_user/' . esc($usuarioConRol['foto']));
+                if (!empty($usuarioConRol['foto'])) {
+                    $data['rutaFotoPerfil'] = base_url('public/img_user/' . esc($usuarioConRol['foto']));
+                }
             }
         }
+
+        return $data;
     }
 
-    return $data;
-}
-    
     /**
      * [NUEVO INDEX] Muestra la vista principal del panel (Controlador/panel).
      */
@@ -66,17 +66,17 @@ private function _prepareUserData(): array
     /**
      * [NUEVA GRÁFICAS] Contiene la lógica completa de obtención y preparación de datos para las gráficas y KPIs.
      */
-     public function graficas()
+    public function graficas()
     {
         // 1. Instanciamos los modelos
-        $usuarioModel   = new UsuarioModel();
-        $encuestaModel  = new EncuestaModel();
+        $usuarioModel = new UsuarioModel();
+        $encuestaModel = new EncuestaModel();
         $respuestaModel = new RespuestaModel();
 
         // 2. Obtenemos los conteos totales para las tarjetas (KPIs)
-        $totalUsuarios   = $usuarioModel->countAllResults();
-        $totalEncuestas  = $encuestaModel->countAllResults();
-        
+        $totalUsuarios = $usuarioModel->countAllResults();
+        $totalEncuestas = $encuestaModel->countAllResults();
+
         // --- Contar ENCUESTAS contestadas (INSTANCIAS ÚNICAS) ---
         $conteoEncuestasData = $respuestaModel
             ->select('COUNT(DISTINCT id_encuesta_realizada) as total_encuestas')
@@ -94,16 +94,16 @@ private function _prepareUserData(): array
             ->findAll();
 
         $graficaRolesLabels = array_column($usuariosPorRol, 'nombre_rol');
-        $graficaRolesData   = array_column($usuariosPorRol, 'total');
-        
+        $graficaRolesData = array_column($usuariosPorRol, 'total');
+
         // 4. GRÁFICA DE PASTEL: Estado de las Encuestas (Activas vs. Inactivas)
         $estadoEncuestas = $encuestaModel
             ->select('CASE WHEN activa = 1 THEN "Activas" ELSE "Inactivas" END as estado, COUNT(id_encuesta) as total', false)
             ->groupBy('estado')
             ->findAll();
-        
+
         $graficaEncuestasStatusLabels = array_column($estadoEncuestas, 'estado');
-        $graficaEncuestasStatusData   = array_column($estadoEncuestas, 'total');
+        $graficaEncuestasStatusData = array_column($estadoEncuestas, 'total');
 
         // 5. GRÁFICA DE LÍNEA DE PICOS: Actividad general de los últimos 30 días 
         $actividad30Dias = $respuestaModel
@@ -116,29 +116,29 @@ private function _prepareUserData(): array
 
         $actividadMap = array_column($actividad30Dias, 'total', 'fecha');
         $graficaActividadLabels = [];
-        $graficaActividadData   = [];
+        $graficaActividadData = [];
         for ($i = 29; $i >= 0; $i--) {
             $currentDate = date('Y-m-d', strtotime("-$i days"));
             $graficaActividadLabels[] = $currentDate;
-            $graficaActividadData[]   = $actividadMap[$currentDate] ?? 0;
+            $graficaActividadData[] = $actividadMap[$currentDate] ?? 0;
         }
 
         // 6. Pasamos todos los datos a la vista 
         $data = [
-            'totalUsuarios'              => $totalUsuarios,
-            'totalEncuestas'             => $totalEncuestas,
-            'totalRespuestas'            => $totalRespuestas, // Ahora es el total de INSTANCIAS de encuestas
-            'graficaRolesLabels'         => json_encode($graficaRolesLabels),
-            'graficaRolesData'           => json_encode($graficaRolesData),
+            'totalUsuarios' => $totalUsuarios,
+            'totalEncuestas' => $totalEncuestas,
+            'totalRespuestas' => $totalRespuestas, // Ahora es el total de INSTANCIAS de encuestas
+            'graficaRolesLabels' => json_encode($graficaRolesLabels),
+            'graficaRolesData' => json_encode($graficaRolesData),
             'graficaEncuestasStatusLabels' => json_encode($graficaEncuestasStatusLabels),
-            'graficaEncuestasStatusData'   => json_encode($graficaEncuestasStatusData),
-            'graficaActividadLabels'     => json_encode($graficaActividadLabels),
-            'graficaActividadData'       => json_encode($graficaActividadData),
+            'graficaEncuestasStatusData' => json_encode($graficaEncuestasStatusData),
+            'graficaActividadLabels' => json_encode($graficaActividadLabels),
+            'graficaActividadData' => json_encode($graficaActividadData),
         ];
 
         return view('Controlador/graficas', $data);
     }
-    
+
     /**
      * [FUNCIÓN AJAX]
      * Devuelve los datos de actividad de una encuesta específica en formato JSON.
@@ -147,7 +147,7 @@ private function _prepareUserData(): array
     {
         $encuestaId = $this->request->getGet('id');
         $respuestaModel = new RespuestaModel();
-        
+
         $query = $respuestaModel
             // Se utiliza COUNT(DISTINCT id_encuesta_realizada) para reflejar la actividad basada en encuestas finalizadas.
             ->select('DATE(fecha_respuesta) as fecha, COUNT(DISTINCT id_encuesta_realizada) as total')
@@ -163,11 +163,11 @@ private function _prepareUserData(): array
         $actividadMap = array_column($actividad, 'total', 'fecha');
 
         $labels = [];
-        $data   = [];
+        $data = [];
         for ($i = 29; $i >= 0; $i--) {
             $currentDate = date('Y-m-d', strtotime("-$i days"));
             $labels[] = $currentDate;
-            $data[]   = $actividadMap[$currentDate] ?? 0;
+            $data[] = $actividadMap[$currentDate] ?? 0;
         }
 
         return $this->response->setJSON(['labels' => $labels, 'data' => $data]);
@@ -211,7 +211,7 @@ private function _prepareUserData(): array
 
         return view('Controlador/usuarios', $data);
     }
-    
+
     /**
      * [FUNCIÓN AJAX ESPECIAL]
      * Devuelve todos los datos de perfil de un usuario específico en JSON.
@@ -259,7 +259,7 @@ private function _prepareUserData(): array
 
         return $this->response->setJSON($response);
     }
-    
+
     /**
      * [FUNCIÓN ESPECIAL]
      * Muestra la vista de auditoría para ver los usuarios creados por un usuario específico.
@@ -267,11 +267,11 @@ private function _prepareUserData(): array
     public function auditoriaPorCreador(int $creadorId)
     {
         $usuarioModel = new UsuarioModel();
-        
+
         $creador = $usuarioModel->select('nombre, apellido_paterno, usuario')->find($creadorId);
 
         if (!$creador) {
-             return redirect()->back()->with('error', 'Creador no encontrado.');
+            return redirect()->back()->with('error', 'Creador no encontrado.');
         }
 
         $usuariosCreados = $usuarioModel
@@ -296,7 +296,7 @@ private function _prepareUserData(): array
 
         return view('Controlador/auditoria_creados', $data);
     }
-    
+
     /**
      * [FUNCIÓN PRINCIPAL]
      * Muestra la interfaz de supervisión de encuestas con los datos resumidos.
@@ -308,8 +308,8 @@ private function _prepareUserData(): array
         $listaEncuestas = $encuestaModel->orderBy('fecha_creacion', 'DESC')->findAll();
 
         foreach ($listaEncuestas as &$encuesta) {
-            $encuesta['descripcion_corta'] = strlen($encuesta['descripcion']) > 100 
-                ? substr($encuesta['descripcion'], 0, 100) . '...' 
+            $encuesta['descripcion_corta'] = strlen($encuesta['descripcion']) > 100
+                ? substr($encuesta['descripcion'], 0, 100) . '...'
                 : $encuesta['descripcion'];
         }
 
@@ -343,11 +343,11 @@ private function _prepareUserData(): array
         }
 
         $preguntas = $preguntaModel->where('id_encuesta', $encuestaId)->findAll();
-        
+
         foreach ($preguntas as $key => $pregunta) {
             $preguntas[$key]['opciones'] = $opcionModel->where('id_pregunta', $pregunta['id_pregunta'])->findAll();
         }
-        
+
         $response = [
             'encuesta' => $encuesta,
             'preguntas' => $preguntas
@@ -366,73 +366,67 @@ private function _prepareUserData(): array
      */
     public function respuestas()
     {
-        $respuestaModel = new RespuestaModel();
+        $db = \Config\Database::connect();
         $usuarioModel = new UsuarioModel();
         $encuestaModel = new EncuestaModel();
 
-        // --- Lógica de Paginación ---
-        $perPage = 50; // Definimos el límite de 50 resultados por página
-        
-        // 1. Instancia de la Base de Datos (Corrección del error Undefined property: $db)
-        $db = \Config\Database::connect(); // <<< CORRECCIÓN CLAVE
-        
-        // 2. Consulta para OBTENER UNA SOLA FILA por cada INSTANCIA de encuesta completada.
-        // Usamos el id_encuesta_realizada para agrupar.
-        $subquery = $db->table('respuestas') // <<< USAMOS LA INSTANCIA $db
-            ->select('
-                id_encuesta_realizada,
-                MAX(fecha_respuesta) as fecha_respuesta,
-                MIN(id_respuesta) as id_respuesta_referencia,
-                id_usuario,
-                id_encuesta,
-                direccion
-            ')
+        // 1. Capturar los filtros de la URL
+        $filtroEncuesta = $this->request->getVar('f_encuesta');
+        $filtroUsuario = $this->request->getVar('f_usuario');
+
+        $perPage = 50;
+        $page = $this->request->getVar('page') ?? 1;
+        $offset = ($page - 1) * $perPage;
+
+        // 2. Construir la Subquery base
+        $subqueryBuilder = $db->table('respuestas')
+            ->select('id_encuesta_realizada, MAX(fecha_respuesta) as fecha_respuesta, id_usuario, id_encuesta, direccion')
             ->where('id_encuesta_realizada IS NOT NULL')
             ->groupBy('id_encuesta_realizada');
 
-       $sql = '
-    SELECT 
-        t1.id_encuesta_realizada,
-        t1.fecha_respuesta,
-        t1.direccion,
-        t1.id_usuario, 
-        t1.id_encuesta,
-        usuarios.usuario AS nombre_encuestador,
-        encuestas.titulo AS nombre_encuesta
-    FROM (' . $subquery->getCompiledSelect() . ') AS t1
-    LEFT JOIN usuarios ON usuarios.id_usuario = t1.id_usuario
-    LEFT JOIN encuestas ON encuestas.id_encuesta = t1.id_encuesta
-    ORDER BY t1.fecha_respuesta DESC
-';
+        // Filtro por encuesta (se aplica en la subquery para eficiencia)
+        if (!empty($filtroEncuesta)) {
+            $subqueryBuilder->where('id_encuesta', $filtroEncuesta);
+        }
 
-// ✅ TOTAL PARA PAGINACIÓN
-$totalResults = count($db->query($sql)->getResultArray());
+        $subquerySql = $subqueryBuilder->getCompiledSelect();
 
-$page = $this->request->getVar('page') ?? 1;
-$offset = ($page - 1) * $perPage;
+        // 3. Consulta Principal con JOINs y Filtro de Nombre Completo
+        $mainQuery = $db->table('(' . $subquerySql . ') AS t1')
+            ->select('t1.*, usuarios.nombre, usuarios.apellido_paterno, usuarios.apellido_materno, usuarios.usuario AS nombre_encuestador, encuestas.titulo AS nombre_encuesta')
+            ->join('usuarios', 'usuarios.id_usuario = t1.id_usuario', 'left')
+            ->join('encuestas', 'encuestas.id_encuesta = t1.id_encuesta', 'left');
 
-// ✅ DATOS PAGINADOS
-$listaRespuestas = $db->query($sql . " LIMIT $perPage OFFSET $offset")->getResultArray();
+        // Filtro por Nombre Completo del Usuario
+        if (!empty($filtroUsuario)) {
+            $mainQuery->groupStart()
+                ->like('CONCAT(usuarios.nombre, " ", usuarios.apellido_paterno, " ", usuarios.apellido_materno)', $filtroUsuario)
+                ->orLike('usuarios.usuario', $filtroUsuario)
+                ->groupEnd();
+        }
 
-// ✅ PAGER
-$pager = service('pager');
-$pager->setPath(current_url());
-$pagerLinks = $pager->makeLinks($page, $perPage, $totalResults);
+        $mainQuery->orderBy('t1.fecha_respuesta', 'DESC');
 
+        // 4. Obtener Totales y Resultados Paginados
+        $totalResults = $mainQuery->countAllResults(false); // false para no resetear el query
+        $listaRespuestas = $mainQuery->get($perPage, $offset)->getResultArray();
 
+        // 5. Configurar Pager con los filtros para que no se pierdan al cambiar de página
+        $pager = service('pager');
+        $pager->setPath(current_url());
+        $pagerLinks = $pager->makeLinks($page, $perPage, $totalResults, 'default_full', 0, 'default');
 
-        // Obtenemos la clave de API de Google Maps
         $googleConfig = config(\Config\Google::class);
-        $google_maps_api_key = $googleConfig->apiKey;
 
         $data = [
             'listaRespuestas' => $listaRespuestas,
-            'pager' => $pagerLinks, // Usamos la paginación simulada (links HTML)
-            'perPage' => $perPage,
+            'pager' => $pagerLinks,
             'totalRespuestas' => $totalResults,
-            'google_maps_api_key' => $google_maps_api_key, 
-            'listaEncuestadores' => $usuarioModel->select('id_usuario, nombre, usuario')->findAll(),
+            'google_maps_api_key' => $googleConfig->apiKey,
             'listaEncuestas' => $encuestaModel->select('id_encuesta, titulo')->findAll(),
+            // Enviamos los filtros actuales de vuelta a la vista
+            'f_encuesta' => $filtroEncuesta,
+            'f_usuario' => $filtroUsuario
         ];
 
         return view('Controlador/repuestas', $data);
@@ -446,11 +440,11 @@ $pagerLinks = $pager->makeLinks($page, $perPage, $totalResults);
     public function detalleRespuesta()
     {
         $idInstancia = $this->request->getGet('id_instancia');
-        
+
         if (!$idInstancia) {
             return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de instancia de encuesta requerido.']);
         }
-        
+
         $db = \Config\Database::connect();
         $respuestaModel = new RespuestaModel();
         $preguntaModel = new PreguntaModel();
@@ -465,17 +459,17 @@ $pagerLinks = $pager->makeLinks($page, $perPage, $totalResults);
             ->where('respuestas.id_encuesta_realizada', $idInstancia)
             // Agregamos un ORDER BY para consistencia, si la tabla preguntas tiene una columna 'orden_pregunta'
             // Si 'orden_pregunta' no existe, quita la siguiente línea
-            ->orderBy('preguntas.id_pregunta', 'ASC') 
+            ->orderBy('preguntas.id_pregunta', 'ASC')
             ->findAll();
 
         if (empty($respuestasInstancia)) {
             return $this->response->setStatusCode(404)->setJSON(['error' => 'Detalle de encuesta contestada no encontrado.']);
         }
-        
+
         // 2. Estructurar el detalle de la encuesta para la vista
         $detalle = [];
         $preguntasRespondidas = [];
-        
+
         foreach ($respuestasInstancia as $respuesta) {
             // Datos del encabezado (tomados de la primera respuesta)
             if (empty($detalle)) {
@@ -496,7 +490,7 @@ $pagerLinks = $pager->makeLinks($page, $perPage, $totalResults);
                 $detalle['latitud'] = $ubicacionMonitoreo['latitud'] ?? null;
                 $detalle['longitud'] = $ubicacionMonitoreo['longitud'] ?? null;
             }
-            
+
             $preguntasRespondidas[] = [
                 'texto_pregunta' => $respuesta['texto_pregunta'],
                 'respuesta_seleccionada' => $respuesta['texto_opcion'],
@@ -525,48 +519,50 @@ $pagerLinks = $pager->makeLinks($page, $perPage, $totalResults);
         return view('Controlador/perfil', $data);
     }
 
-/** * Actualizar datos del perfil del operador */ 
-public function actualizarPerfil() { 
-    $session = session(); 
-    $user = $session->get('usuario'); 
-    // ✅ Reglas de validación 
-    $rules = [ 
-        'nombre' => 'required|min_length[3]|max_length[50]', 
-        'apellido_paterno' => 'required|min_length[3]|max_length[50]', 
-        'apellido_materno' => 'permit_empty|max_length[50]', 
-        'telefono' => 'permit_empty|min_length[7]|max_length[15]',
-        'foto' => 'permit_empty|is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]', 
-    ]; 
-    
-    if (!$this->validate($rules)) { 
-        return redirect()->back()->withInput()->with('errors', $this->validator->getErrors()); 
-    } 
-    
-    // ✅ Preparar datos a actualizar 
-    $dataUpdate = [ 
-        'nombre' => $this->request->getPost('nombre'), 
-        'apellido_paterno' => $this->request->getPost('apellido_paterno'), 
-        'apellido_materno' => $this->request->getPost('apellido_materno'), 
-        'telefono' => $this->request->getPost('telefono'),
-    ]; 
-    
-    // ✅ Procesar la foto si fue subida 
-    $fotoFile = $this->request->getFile('foto');
-    if ($fotoFile && $fotoFile->isValid() && !$fotoFile->hasMoved()) { 
-        $nombreFoto = time() . '_' . $fotoFile->getName(); 
-        $fotoFile->move(FCPATH . 'public/img_user', $nombreFoto); 
-        $dataUpdate['foto'] = $nombreFoto; 
-        
-        // Actualizar la sesión con nueva foto 
-        $user['foto'] = $nombreFoto; } 
-        
+    /** * Actualizar datos del perfil del operador */
+    public function actualizarPerfil()
+    {
+        $session = session();
+        $user = $session->get('usuario');
+        // ✅ Reglas de validación 
+        $rules = [
+            'nombre' => 'required|min_length[3]|max_length[50]',
+            'apellido_paterno' => 'required|min_length[3]|max_length[50]',
+            'apellido_materno' => 'permit_empty|max_length[50]',
+            'telefono' => 'permit_empty|min_length[7]|max_length[15]',
+            'foto' => 'permit_empty|is_image[foto]|max_size[foto,2048]|mime_in[foto,image/jpg,image/jpeg,image/png]',
+        ];
+
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
+
+        // ✅ Preparar datos a actualizar 
+        $dataUpdate = [
+            'nombre' => $this->request->getPost('nombre'),
+            'apellido_paterno' => $this->request->getPost('apellido_paterno'),
+            'apellido_materno' => $this->request->getPost('apellido_materno'),
+            'telefono' => $this->request->getPost('telefono'),
+        ];
+
+        // ✅ Procesar la foto si fue subida 
+        $fotoFile = $this->request->getFile('foto');
+        if ($fotoFile && $fotoFile->isValid() && !$fotoFile->hasMoved()) {
+            $nombreFoto = time() . '_' . $fotoFile->getName();
+            $fotoFile->move(FCPATH . 'public/img_user', $nombreFoto);
+            $dataUpdate['foto'] = $nombreFoto;
+
+            // Actualizar la sesión con nueva foto 
+            $user['foto'] = $nombreFoto;
+        }
+
         // ✅ Actualizar base de datos 
-        $this->usuarioModel->update($user['id_usuario'], $dataUpdate); 
-        
+        $this->usuarioModel->update($user['id_usuario'], $dataUpdate);
+
         // ✅ Refrescar sesión con los datos nuevos 
-        $user = array_merge($user, $dataUpdate); 
-        $session->set('usuario', $user); 
-        $session->setFlashdata('success', 'Perfil actualizado correctamente'); 
-        return redirect()->back(); 
+        $user = array_merge($user, $dataUpdate);
+        $session->set('usuario', $user);
+        $session->setFlashdata('success', 'Perfil actualizado correctamente');
+        return redirect()->back();
     }
 }
