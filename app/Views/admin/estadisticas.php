@@ -361,25 +361,25 @@
                                     <h4 class="card-title">Filtros de Datos</h4>
                                     <form class="forms-sample">
                                         <div class="row">
-                                            <div class="form-group col-md-3">
+                                            <div class="form-group col-md-4">
                                                 <label for="encuesta_select">Encuesta</label>
                                                 <select class="form-control" id="encuesta_select">
                                                     <option value="">Selecciona una encuesta</option>
                                                     <?php foreach ($encuestas as $encuesta): ?>
                                                         <option value="<?= $encuesta['id_encuesta'] ?>">
-                                                            <?= $encuesta['titulo'] ?>
+                                                            <?= esc($encuesta['titulo']) ?>
                                                         </option>
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
-                                            <div class="form-group col-md-3">
-                                                <label>Pregunta</label>
+                                            <div class="form-group col-md-4">
+                                                <label>Preguntas</label>
                                                 <div id="pregunta_checkbox_container" class="form-group checkbox-group">
                                                     <p class="text-white-50">Selecciona una encuesta para cargar las
                                                         preguntas.</p>
                                                 </div>
                                             </div>
-                                            <div class="form-group col-md-3">
+                                            <div class="form-group col-md-4">
                                                 <label for="chart_type_select">Tipo de Gráfica</label>
                                                 <select class="form-control" id="chart_type_select">
                                                     <option value="bar">Gráfica de Barras</option>
@@ -388,18 +388,22 @@
                                                     <option value="line">Gráfica de Líneas</option>
                                                     <option value="radar">Gráfica de Radar</option>
                                                     <option value="polarArea">Gráfica de Área Polar</option>
-
-                                                </select>
-                                            </div>
-                                            <div class="form-group col-md-3">
-                                                <label for="estado_select">Estado</label>
-                                                <select class="form-control" id="estado_select" disabled>
-                                                    <option value="">Estado</option>
                                                 </select>
                                             </div>
                                         </div>
 
                                         <div class="row">
+                                            <div class="form-group col-md-3">
+                                                <label for="estado_select">Estado</label>
+                                                <select class="form-control" id="estado_select">
+                                                    <option value="">Selecciona un Estado</option>
+                                                    <?php foreach ($estados as $est): ?>
+                                                        <option value="<?= $est['id_estado'] ?>">
+                                                            <?= esc($est['nombre_estado']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
                                             <div class="form-group col-md-3">
                                                 <label for="distrito_federal_select">Distrito Federal</label>
                                                 <select class="form-control" id="distrito_federal_select" disabled>
@@ -414,42 +418,39 @@
                                             </div>
                                             <div class="form-group col-md-3">
                                                 <label for="municipio_select">Municipio</label>
-                                                <select class="form-control" id="municipio_select">
-                                                    <option value="">Selecciona un municipio</option>
-                                                    <?php foreach ($municipios as $municipio): ?>
-                                                        <option value="<?= $municipio['id_municipio'] ?>">
-                                                            <?= $municipio['nombre_municipio'] ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
-                                            <div class="form-group col-md-3">
-                                                <label for="seccion_select">Sección</label>
-                                                <select class="form-control" id="seccion_select" disabled>
-                                                    <option value="">Selecciona una sección</option>
+                                                <select class="form-control" id="municipio_select" disabled>
+                                                    <option value="">Municipio</option>
                                                 </select>
                                             </div>
                                         </div>
 
                                         <div class="row align-items-end">
                                             <div class="form-group col-md-3">
-                                                <label for="comunidad_select">Comunidad</label>
-                                                <select class="form-control" id="comunidad_select" disabled>
-                                                    <option value="">Selecciona una comunidad</option>
+                                                <label for="seccion_select">Sección</label>
+                                                <select class="form-control" id="seccion_select" disabled>
+                                                    <option value="">Sección</option>
                                                 </select>
                                             </div>
-                                            <div class="form-group col-md-9 d-flex justify-content-start">
-                                                <button type="button" class="btn btn-success mr-2"
+                                            <div class="form-group col-md-3">
+                                                <label for="comunidad_select">Comunidad</label>
+                                                <select class="form-control" id="comunidad_select" disabled>
+                                                    <option value="">Comunidad</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group col-md-6 d-flex justify-content-end">
+                                                <button type="button" class="btn btn-success btn-icon-text mr-2"
                                                     id="generate_charts_btn" disabled>
-                                                    <i class="mdi mdi-chart-areaspline"></i> Generar Gráficos
+                                                    <i class="mdi mdi-chart-areaspline btn-icon-prepend"></i> Generar
+                                                    Gráficos
                                                 </button>
-                                                <button type="button" class="btn btn-primary mr-2" id="download_pdf_btn"
-                                                    style="display: none;">
-                                                    <i class="mdi mdi-file-pdf"></i> PDF
+                                                <button type="button" class="btn btn-primary btn-icon-text mr-2"
+                                                    id="download_pdf_btn" style="display: none;">
+                                                    <i class="mdi mdi-file-pdf btn-icon-prepend"></i> PDF
                                                 </button>
-                                                <button type="button" class="btn btn-outline-success"
+                                                <button type="button" class="btn btn-outline-success btn-icon-text"
                                                     id="downloadExcelBtn" style="display: none;">
-                                                    <i class="mdi mdi-file-excel"></i> Excel
+                                                    <i class="mdi mdi-file-excel btn-icon-prepend"></i> Excel
                                                 </button>
                                             </div>
                                         </div>
@@ -459,7 +460,9 @@
                                             <div class="col-12">
                                                 <h6 class="text-white mb-3"><i class="mdi mdi-palette"></i> Personalizar
                                                     Colores de Barras</h6>
-                                                <div id="color_pickers_wrapper" class="d-flex flex-wrap gap-2">
+                                                <div id="color_pickers_wrapper"
+                                                    class="d-flex flex-wrap shadow-sm p-3 rounded"
+                                                    style="background: rgba(0,0,0,0.1);">
                                                 </div>
                                             </div>
                                         </div>
@@ -491,15 +494,7 @@
                     </div>
                 </div>
 
-                <footer class="footer">
-                    <div class="d-sm-flex justify-content-center justify-content-sm-between">
-                        <span class="text-muted d-block text-center text-sm-left d-sm-inline-block">Copyright ©
-                            bootstrapdash.com 2020</span>
-                        <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center"> Free <a
-                                href="https://www.bootstrapdash.com/bootstrap-admin-template/" target="_blank">Bootstrap
-                                admin templates</a> from Bootstrapdash.com</span>
-                    </div>
-                </footer>
+
             </div>
         </div>
     </div>
@@ -626,9 +621,12 @@
                 const params = new URLSearchParams({
                     id_encuesta: idEncuesta,
                     id_pregunta: idPregunta,
-                    id_municipio: municipioSelect.value,
-                    id_seccion: seccionSelect.value,
-                    id_comunidad: comunidadSelect.value,
+                    id_estado: document.getElementById('estado_select').value,
+                    id_distrito_federal: document.getElementById('distrito_federal_select').value,
+                    id_distrito_local: document.getElementById('distrito_local_select').value,
+                    id_municipio: document.getElementById('municipio_select').value,
+                    id_seccion: document.getElementById('seccion_select').value,
+                    id_comunidad: document.getElementById('comunidad_select').value,
                 });
 
                 try {
@@ -652,7 +650,7 @@
                             title: nombrePregunta,
                             labels: Object.keys(datosMapeados),
                             datasets: [{
-                                label: 'Resultados',
+                                label: '',
                                 data: Object.values(datosMapeados),
                                 backgroundColor: Object.values(datosMapeados).map((_, i) => colores[i % colores.length]),
                                 borderColor: Object.values(datosMapeados).map((_, i) => colores[i % colores.length]),
@@ -719,66 +717,113 @@
             }
             // --- FUNCIONES PRINCIPALES (con manejo de errores mejorado) ---
 
+            // --- FUNCION DE VALIDACIÓN CENTRALIZADA ---
+            function validarBotonGenerar() {
+                const encuestaSeleccionada = encuestaSelect.value !== "";
+                const preguntasSeleccionadas = preguntaCheckboxContainer.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+
+                // El botón se habilita solo si hay encuesta Y al menos una pregunta
+                generateChartsBtn.disabled = !(encuestaSeleccionada && preguntasSeleccionadas);
+            }
+
+            // --- EVENTO ENCUESTA (CORREGIDO) ---
             encuestaSelect.addEventListener('change', async function () {
                 const idEncuesta = this.value;
                 preguntaCheckboxContainer.innerHTML = `<p class="text-white-50">Cargando preguntas...</p>`;
-                generateChartsBtn.disabled = true;
 
-                // Limpiar todo
-                ['municipio_select', 'seccion_select', 'comunidad_select', 'estado_select', 'distrito_federal_select', 'distrito_local_select'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (id === 'municipio_select') el.value = '';
-                    else cargarSelect(el, [], '', '', el.firstElementChild.textContent, true);
-                });
+                // ELIMINADO: Ya no limpiamos los selectores geográficos aquí para no romper el enlace
 
                 if (idEncuesta) {
                     try {
                         const data = await fetchJSON(`${baseUrl}/getPreguntas/${idEncuesta}`);
-                        cargarPreguntasCheckboxes(data);
+
+                        // Renderizamos los checkboxes
+                        preguntaCheckboxContainer.innerHTML = '';
+                        if (data && data.length > 0) {
+                            data.forEach(pregunta => {
+                                const div = document.createElement('div');
+                                div.classList.add('form-check');
+                                div.innerHTML = `
+                        <input class="form-check-input" type="checkbox" value="${pregunta.id_pregunta}" id="p-${pregunta.id_pregunta}">
+                        <label class="form-check-label" for="p-${pregunta.id_pregunta}">${pregunta.texto_pregunta}</label>
+                    `;
+                                preguntaCheckboxContainer.appendChild(div);
+
+                                // Cada vez que marquen una pregunta, validamos el botón
+                                div.querySelector('input').addEventListener('change', validarBotonGenerar);
+                            });
+                        } else {
+                            preguntaCheckboxContainer.innerHTML = `<p class="text-white-50">No hay preguntas.</p>`;
+                        }
                     } catch (error) {
-                        preguntaCheckboxContainer.innerHTML = `<p class="text-danger">Error al cargar preguntas. Revisa la consola.</p>`;
+                        preguntaCheckboxContainer.innerHTML = `<p class="text-danger">Error al cargar preguntas.</p>`;
                     }
                 } else {
                     preguntaCheckboxContainer.innerHTML = `<p class="text-white-50">Selecciona una encuesta para cargar las preguntas.</p>`;
                 }
+                validarBotonGenerar();
+            });
+
+            // --- EVENTOS GEOGRÁFICOS (MANTENIENDO LA CASCADA NATURAL) ---
+
+            estadoSelect.addEventListener('change', async function () {
+                const id = this.value;
+                // Solo limpiamos los HIJOS geográficos, no la encuesta
+                cargarSelect(distritoFederalSelect, [], '', '', 'Cargando...', true);
+                cargarSelect(distritoLocalSelect, [], '', '', 'Distrito Local', true);
+                cargarSelect(municipioSelect, [], '', '', 'Municipio', true);
+                cargarSelect(seccionSelect, [], '', '', 'Sección', true);
+                cargarSelect(comunidadSelect, [], '', '', 'Comunidad', true);
+
+                if (id) {
+                    const data = await fetchJSON(`${baseUrl}/getDistritosFederales/${id}`);
+                    cargarSelect(distritoFederalSelect, data, 'id_distrito_federal', 'nombre_distrito_federal', 'Selecciona Distrito Federal', false);
+                }
+            });
+
+            distritoFederalSelect.addEventListener('change', async function () {
+                const id = this.value;
+                cargarSelect(distritoLocalSelect, [], '', '', 'Cargando...', true);
+                cargarSelect(municipioSelect, [], '', '', 'Municipio', true);
+                cargarSelect(seccionSelect, [], '', '', 'Sección', true);
+                cargarSelect(comunidadSelect, [], '', '', 'Comunidad', true);
+
+                if (id) {
+                    const data = await fetchJSON(`${baseUrl}/getDistritosLocales/${id}`);
+                    cargarSelect(distritoLocalSelect, data, 'id_distrito_local', 'nombre_distrito_local', 'Selecciona Distrito Local', false);
+                }
+            });
+
+            distritoLocalSelect.addEventListener('change', async function () {
+                const id = this.value;
+                cargarSelect(municipioSelect, [], '', '', 'Cargando...', true);
+                cargarSelect(seccionSelect, [], '', '', 'Sección', true);
+                cargarSelect(comunidadSelect, [], '', '', 'Comunidad', true);
+
+                if (id) {
+                    const data = await fetchJSON(`${baseUrl}/getMunicipios/${id}`);
+                    cargarSelect(municipioSelect, data, 'id_municipio', 'nombre_municipio', 'Selecciona Municipio', false);
+                }
             });
 
             municipioSelect.addEventListener('change', async function () {
-                const idMunicipio = this.value;
-                cargarSelect(seccionSelect, [], 'id_seccion', 'nombre_seccion', 'Cargando...', true);
-                cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', true);
+                const id = this.value;
+                cargarSelect(seccionSelect, [], '', '', 'Cargando...', true);
+                cargarSelect(comunidadSelect, [], '', '', 'Comunidad', true);
 
-                if (idMunicipio) {
-                    try {
-                        const [seccionesData, parentData] = await Promise.all([
-                            fetchJSON(`${baseUrl}/getSecciones/${idMunicipio}`),
-                            fetchJSON(`${baseUrl}/getGeodataByMunicipio/${idMunicipio}`)
-                        ]);
-
-                        cargarSelect(seccionSelect, seccionesData, 'id_seccion', 'nombre_seccion', 'Selecciona una sección', false);
-
-                        if (parentData && parentData.estado) {
-                            cargarSelectUnico(estadoSelect, parentData.estado, 'id_estado', 'nombre_estado');
-                            cargarSelectUnico(distritoFederalSelect, parentData.distrito_federal, 'id_distrito_federal', 'nombre_distrito_federal');
-                            cargarSelectUnico(distritoLocalSelect, parentData.distrito_local, 'id_distrito_local', 'nombre_distrito_local');
-                        }
-                    } catch (error) {
-                        console.error('Error al cargar datos geográficos:', error);
-                    }
+                if (id) {
+                    const data = await fetchJSON(`${baseUrl}/getSecciones/${id}`);
+                    cargarSelect(seccionSelect, data, 'id_seccion', 'nombre_seccion', 'Selecciona Sección', false);
                 }
             });
 
             seccionSelect.addEventListener('change', async function () {
-                const idSeccion = this.value;
-                cargarSelect(comunidadSelect, [], 'id_comunidad', 'nombre_comunidad', 'Cargando...', true);
+                const id = this.value;
+                cargarSelect(comunidadSelect, [], '', '', 'Cargando...', true);
 
-                if (idSeccion) {
-                    try {
-                        const data = await fetchJSON(`${baseUrl}/getComunidades/${idSeccion}`);
-                        cargarSelect(comunidadSelect, data, 'id_comunidad', 'nombre_comunidad', 'Selecciona una comunidad', false);
-                    } catch (error) {
-                        console.error('Error al cargar comunidades:', error);
-                    }
+                if (id) {
+                    const data = await fetchJSON(`${baseUrl}/getComunidades/${id}`);
+                    cargarSelect(comunidadSelect, data, 'id_comunidad', 'nombre_comunidad', 'Selecciona Comunidad', false);
                 }
             });
 

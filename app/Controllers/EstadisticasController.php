@@ -14,14 +14,13 @@ use App\Models\MunicipioModel;
 use App\Models\SeccionModel;
 use App\Models\ComunidadModel;
 
-// *** ¡CORRECCIÓN IMPORTANTE! ***
-// Debes incluir las clases de PhpSpreadsheet que estás utilizando.
-// Sin estas líneas, PHP no sabrá qué son 'Spreadsheet' y 'Xlsx' y mostrará un error.
+// Librerías necesarias para la generación de Reportes
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class EstadisticasController extends Controller
 {
+    // Propiedades para los modelos
     protected $respuestaModel;
     protected $encuestaModel;
     protected $preguntaModel;
@@ -35,6 +34,7 @@ class EstadisticasController extends Controller
 
     public function __construct()
     {
+        // Instanciación de modelos para uso global en el controlador
         $this->respuestaModel = new RespuestaModel();
         $this->encuestaModel = new EncuestaModel();
         $this->preguntaModel = new PreguntaModel();
@@ -48,297 +48,263 @@ class EstadisticasController extends Controller
     }
 
     /**
-     * Muestra la interfaz de estadísticas para el usuario.
-     * Pasa solo la lista de municipios inicial para que el frontend
-     * pueda cargarlos en el primer selector.
+     * Carga la vista principal. 
+     * Provee el nivel raíz de la geografía (Estados) y las encuestas activas.
      */
     public function index()
     {
         $session = session();
 
         if (!$session->get('isLoggedIn')) {
-            return redirect()->to(base_url('login'))->with('error', 'Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+            return redirect()->to(base_url('login'))->with('error', 'Tu sesión ha expirado.');
         }
 
         $userData = $session->get('usuario');
 
-        $nombreCompleto = esc($userData['nombre'] ?? '') . ' ' . esc($userData['apellido_paterno'] ?? '');
-        $nombreUsuario = esc($userData['usuario'] ?? '');
-        $rutaFotoPerfil = base_url('public/img_user/' . esc($userData['foto'] ?? 'user.png'));
-        $rolTexto = '';
-
-        if (isset($userData['id_rol'])) {
-            switch ($userData['id_rol']) {
-                case 1: $rolTexto = 'Administrador'; break;
-                case 2: $rolTexto = 'Operador'; break;
-                case 3: $rolTexto = 'Encuestador'; break;
-                default: $rolTexto = 'Miembro'; break;
-            }
-        }
-
-        $encuestas = $this->encuestaModel->where('activa', 1)->findAll() ?? [];
-        $municipios = $this->municipioModel->findAll() ?? [];
-
+        // Preparación de datos de perfil para el sidebar/navbar
         $data = [
-            'isLoggedIn'     => $session->get('isLoggedIn'),
-            'userData'       => $userData,
-            'nombreCompleto' => $nombreCompleto,
-            'nombreUsuario'  => $nombreUsuario,
-            'rolTexto'       => $rolTexto,
-            'rutaFotoPerfil' => $rutaFotoPerfil,
-            'encuestas'      => $encuestas,
-            'municipios'     => $municipios,
+            'nombreCompleto' => trim(($userData['nombre'] ?? '') . ' ' . ($userData['apellido_paterno'] ?? '')),
+            'rolTexto' => $this->_getRolTexto($userData['id_rol'] ?? 0),
+            'rutaFotoPerfil' => !empty($userData['foto']) ? base_url('public/img_user/' . $userData['foto']) : base_url('recursos_admin/images/faces/face15.jpg'),
+            'encuestas' => $this->encuestaModel->where('activa', 1)->findAll() ?? [],
+            'estados' => $this->estadoModel->findAll() ?? [], // Punto de partida de la cascada
         ];
 
         return view('admin/estadisticas', $data);
     }
 
-    /**
-     * Método AJAX para obtener la jerarquía completa de un municipio.
-     * Esto incluye el Distrito Local, Distrito Federal y Estado.
-     * @param int $idMunicipio El ID del municipio.
-     */
-    public function getGeodataByMunicipio($idMunicipio)
+    // =========================================================================
+    // MÉTODOS AJAX: CASCADA GEOGRÁFICA MANUAL (Top-Down)
+    // =========================================================================
+
+    public function getDistritosFederales($idEstado)
     {
-        if (!is_numeric($idMunicipio)) {
-            return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de municipio inválido.']);
-        }
-
-        try {
-            $municipio = $this->municipioModel->find($idMunicipio);
-            if (!$municipio) {
-                return $this->response->setStatusCode(404)->setJSON(['error' => 'Municipio no encontrado.']);
-            }
-
-            $distritoLocal = $this->distritoLocalModel->find($municipio['id_distrito_local']);
-            if (!$distritoLocal) {
-                return $this->response->setStatusCode(404)->setJSON(['error' => 'Distrito Local no encontrado.']);
-            }
-
-            $distritoFederal = $this->distritoFederalModel->find($distritoLocal['id_distrito_federal']);
-            if (!$distritoFederal) {
-                return $this->response->setStatusCode(404)->setJSON(['error' => 'Distrito Federal no encontrado.']);
-            }
-
-            $estado = $this->estadoModel->find($distritoFederal['id_estado']);
-            if (!$estado) {
-                return $this->response->setStatusCode(404)->setJSON(['error' => 'Estado no encontrado.']);
-            }
-
-            $data = [
-                'municipio'        => $municipio,
-                'distrito_local'   => $distritoLocal,
-                'distrito_federal' => $distritoFederal,
-                'estado'           => $estado,
-            ];
-
-            return $this->response->setJSON($data);
-        } catch (\Exception $e) {
-            return $this->response->setStatusCode(500)->setJSON([
-                'error'   => 'Error interno del servidor al obtener los datos geográficos.',
-                'message' => $e->getMessage()
-            ]);
-        }
+        if (!is_numeric($idEstado))
+            return $this->response->setJSON([]);
+        return $this->response->setJSON($this->distritoFederalModel->where('id_estado', $idEstado)->findAll() ?? []);
     }
 
-
-    /**
-     * Método AJAX para obtener las preguntas de una encuesta específica.
-     * @param int $idEncuesta El ID de la encuesta.
-     */
-    public function getPreguntas($idEncuesta)
+    public function getDistritosLocales($idDistritoFederal)
     {
-        if (!is_numeric($idEncuesta)) {
-            return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de encuesta inválido.']);
-        }
-        $preguntas = $this->preguntaModel->where('id_encuesta', $idEncuesta)->findAll() ?? [];
-        return $this->response->setJSON($preguntas);
+        if (!is_numeric($idDistritoFederal))
+            return $this->response->setJSON([]);
+        return $this->response->setJSON($this->distritoLocalModel->where('id_distrito_federal', $idDistritoFederal)->findAll() ?? []);
     }
 
-    /**
-     * Método AJAX para obtener las opciones de una pregunta específica.
-     * @param int $idPregunta El ID de la pregunta.
-     */
-    public function getOpcionesPregunta($idPregunta)
+    public function getMunicipios($idDistritoLocal)
     {
-        if (!is_numeric($idPregunta)) {
-            return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de pregunta inválido.']);
-        }
-        $opciones = $this->opcionModel->where('id_pregunta', $idPregunta)->findAll() ?? [];
-        return $this->response->setJSON($opciones);
+        if (!is_numeric($idDistritoLocal))
+            return $this->response->setJSON([]);
+        return $this->response->setJSON($this->municipioModel->where('id_distrito_local', $idDistritoLocal)->findAll() ?? []);
     }
 
-    /**
-     * Método AJAX para obtener las secciones de un municipio.
-     * @param int $idMunicipio El ID del municipio.
-     */
     public function getSecciones($idMunicipio)
     {
-        if (!is_numeric($idMunicipio)) {
-            return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de municipio inválido.']);
-        }
-        $secciones = $this->seccionModel->where('id_municipio', $idMunicipio)->findAll() ?? [];
-        return $this->response->setJSON($secciones);
+        if (!is_numeric($idMunicipio))
+            return $this->response->setJSON([]);
+        return $this->response->setJSON($this->seccionModel->where('id_municipio', $idMunicipio)->findAll() ?? []);
     }
 
-    /**
-     * Método AJAX para obtener las comunidades de una sección.
-     * @param int $idSeccion El ID de la sección.
-     */
     public function getComunidades($idSeccion)
     {
-        if (!is_numeric($idSeccion)) {
-            return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de sección inválido.']);
-        }
-        $comunidades = $this->comunidadModel->where('id_seccion', $idSeccion)->findAll() ?? [];
-        return $this->response->setJSON($comunidades);
+        if (!is_numeric($idSeccion))
+            return $this->response->setJSON([]);
+        return $this->response->setJSON($this->comunidadModel->where('id_seccion', $idSeccion)->findAll() ?? []);
     }
 
-    /**
-     * Método AJAX para obtener los datos de las respuestas de una pregunta.
-     */
+    // =========================================================================
+    // MÉTODOS AJAX: DATOS DE ENCUESTA Y GRÁFICAS
+    // =========================================================================
+
+    public function getPreguntas($idEncuesta)
+    {
+        return $this->response->setJSON($this->preguntaModel->where('id_encuesta', $idEncuesta)->findAll() ?? []);
+    }
+
+    public function getOpcionesPregunta($idPregunta)
+    {
+        return $this->response->setJSON($this->opcionModel->where('id_pregunta', $idPregunta)->findAll() ?? []);
+    }
+
     public function getRespuestas()
     {
         try {
             $idEncuesta = $this->request->getGet('id_encuesta');
             $idPregunta = $this->request->getGet('id_pregunta');
+
+            // Capturamos TODOS los filtros posibles
+            $idEstado = $this->request->getGet('id_estado');
+            $idDistFed = $this->request->getGet('id_distrito_federal');
+            $idDistLoc = $this->request->getGet('id_distrito_local');
             $idMunicipio = $this->request->getGet('id_municipio');
             $idSeccion = $this->request->getGet('id_seccion');
             $idComunidad = $this->request->getGet('id_comunidad');
 
             if (empty($idEncuesta) || empty($idPregunta)) {
-                return $this->response->setStatusCode(400)->setJSON([
-                    'error' => 'Parámetros obligatorios (id_encuesta o id_pregunta) faltantes.',
-                ]);
+                return $this->response->setStatusCode(400)->setJSON(['error' => 'Faltan parámetros básicos.']);
             }
-            
-            $query = $this->respuestaModel
-                ->select('id_opcion, COUNT(id_respuesta) as total')
+
+            // Iniciamos la consulta base
+            $query = $this->respuestaModel->select('id_opcion, COUNT(id_respuesta) as total')
                 ->where('id_encuesta', $idEncuesta)
                 ->where('id_pregunta', $idPregunta);
-            
-            if (!empty($idMunicipio) && is_numeric($idMunicipio)) {
-                $query->where('id_municipio', $idMunicipio);
-            }
-            if (!empty($idSeccion) && is_numeric($idSeccion)) {
-                $query->where('id_seccion', $idSeccion);
-            }
-            if (!empty($idComunidad) && is_numeric($idComunidad)) {
-                $query->where('id_comunidad', $idComunidad);
+
+            // --- LÓGICA DE FILTRADO CON JOINS ---
+            // Si hay filtros de Estado o Distritos, necesitamos unir las tablas geográficas
+            if (!empty($idEstado) || !empty($idDistFed) || !empty($idDistLoc)) {
+                $query->join('municipio', 'municipio.id_municipio = respuestas.id_municipio', 'left')
+                    ->join('distritolocal', 'distritolocal.id_distrito_local = municipio.id_distrito_local', 'left')
+                    ->join('distritofederal', 'distritofederal.id_distrito_federal = distritolocal.id_distrito_federal', 'left')
+                    ->join('estado', 'estado.id_estado = distritofederal.id_estado', 'left');
+
+                if (!empty($idEstado))
+                    $query->where('estado.id_estado', $idEstado);
+                if (!empty($idDistFed))
+                    $query->where('distritofederal.id_distrito_federal', $idDistFed);
+                if (!empty($idDistLoc))
+                    $query->where('distritolocal.id_distrito_local', $idDistLoc);
             }
 
-            $resultados = $query->groupBy('id_opcion')
-                ->findAll() ?? [];
+            // Filtros directos (ya están en la tabla respuestas)
+            if (!empty($idMunicipio))
+                $query->where('respuestas.id_municipio', $idMunicipio);
+            if (!empty($idSeccion))
+                $query->where('respuestas.id_seccion', $idSeccion);
+            if (!empty($idComunidad))
+                $query->where('respuestas.id_comunidad', $idComunidad);
 
+            $resultados = $query->groupBy('id_opcion')->findAll();
             return $this->response->setJSON($resultados);
+
         } catch (\Exception $e) {
-            return $this->response->setStatusCode(500)->setJSON([
-                'error' => 'Error interno del servidor al obtener las respuestas.',
-                'message' => $e->getMessage()
-            ]);
+            return $this->response->setStatusCode(500)->setJSON(['error' => $e->getMessage()]);
         }
     }
 
+    // =========================================================================
+    // EXPORTACIÓN A EXCEL: CON JERARQUÍA GEOGRÁFICA COMPLETA
+    // =========================================================================
+
     public function descargarExcel()
     {
-    
-
         try {
-            // 1. OBTENER Y VALIDAR FILTROS
             $idEncuesta = $this->request->getGet('id_encuesta');
             $idsPreguntasStr = $this->request->getGet('ids_preguntas');
+            $idsPreguntas = array_filter(explode(',', $idsPreguntasStr), 'is_numeric');
+
+            // Filtros adicionales
             $idMunicipio = $this->request->getGet('id_municipio');
             $idSeccion = $this->request->getGet('id_seccion');
             $idComunidad = $this->request->getGet('id_comunidad');
-            
-            $idsPreguntasArray = [];
-            if (!empty($idsPreguntasStr)) {
-                $idsPreguntasArray = array_filter(explode(',', $idsPreguntasStr), 'is_numeric');
+
+            if (empty($idEncuesta) || empty($idsPreguntas)) {
+                return redirect()->back()->with('error', 'Selección inválida para el reporte.');
             }
 
-            if (empty($idEncuesta) || empty($idsPreguntasArray)) {
-                return redirect()->back()->with('error', 'Parámetros inválidos. Debes seleccionar una encuesta y al menos una pregunta.');
-            }
-
-            // 2. CONSTRUIR LA CONSULTA
-            $query = $this->respuestaModel
+            // CONSULTA MAESTRA: Unimos la respuesta con TODA su jerarquía política
+            $builder = $this->respuestaModel
                 ->select([
-                    'respuestas.fecha_respuesta', 'usuarios.nombre as nombre_usuario', 'usuarios.apellido_paterno',
-                    'preguntas.texto_pregunta', 'opciones.texto_opcion', 'respuestas.referencias', 
-                    'respuestas.direccion', 
+                    'respuestas.fecha_respuesta',
+                    'usuarios.nombre as encuestador_nombre',
+                    'usuarios.apellido_paterno as encuestador_apellido',
+                    'preguntas.texto_pregunta',
+                    'opciones.texto_opcion',
+                    'respuestas.referencias',
+                    'respuestas.direccion',
+                    'estado.nombre_estado',
+                    'distritofederal.nombre_distrito_federal',
+                    'distritolocal.nombre_distrito_local',
                     'municipio.nombre_municipio',
-                    'seccion.nombre_seccion', // <-- CORRECCIÓN AQUÍ
+                    'seccion.nombre_seccion',
                     'comunidades.nombre_comunidad'
                 ])
                 ->join('usuarios', 'usuarios.id_usuario = respuestas.id_usuario', 'left')
                 ->join('preguntas', 'preguntas.id_pregunta = respuestas.id_pregunta', 'left')
                 ->join('opciones', 'opciones.id_opcion = respuestas.id_opcion', 'left')
-                ->join('municipio', 'municipio.id_municipio = respuestas.id_municipio', 'left')
-                ->join('seccion', 'seccion.id_seccion = respuestas.id_seccion', 'left') // <-- CORRECCIÓN AQUÍ
+                // Cadena de Joins Geográficos
                 ->join('comunidades', 'comunidades.id_comunidad = respuestas.id_comunidad', 'left')
+                ->join('seccion', 'seccion.id_seccion = respuestas.id_seccion', 'left')
+                ->join('municipio', 'municipio.id_municipio = respuestas.id_municipio', 'left')
+                ->join('distritolocal', 'distritolocal.id_distrito_local = municipio.id_distrito_local', 'left')
+                ->join('distritofederal', 'distritofederal.id_distrito_federal = distritolocal.id_distrito_federal', 'left')
+                ->join('estado', 'estado.id_estado = distritofederal.id_estado', 'left')
                 ->where('respuestas.id_encuesta', $idEncuesta)
-                ->whereIn('respuestas.id_pregunta', $idsPreguntasArray);
+                ->whereIn('respuestas.id_pregunta', $idsPreguntas);
 
-            if (!empty($idMunicipio)) $query->where('respuestas.id_municipio', $idMunicipio);
-            if (!empty($idSeccion)) $query->where('respuestas.id_seccion', $idSeccion);
-            if (!empty($idComunidad)) $query->where('respuestas.id_comunidad', $idComunidad);
-            
-            $resultados = $query->orderBy('respuestas.fecha_respuesta', 'DESC')->findAll();
+            if (!empty($idMunicipio))
+                $builder->where('respuestas.id_municipio', $idMunicipio);
+            if (!empty($idSeccion))
+                $builder->where('respuestas.id_seccion', $idSeccion);
+            if (!empty($idComunidad))
+                $builder->where('respuestas.id_comunidad', $idComunidad);
+
+            $resultados = $builder->orderBy('respuestas.fecha_respuesta', 'DESC')->findAll();
 
             if (empty($resultados)) {
-                return redirect()->back()->with('error', 'No se encontraron datos con los filtros seleccionados para generar el reporte.');
+                return redirect()->back()->with('error', 'No hay datos para exportar con estos filtros.');
             }
 
-            // 3. GENERAR EL EXCEL
+            // GENERACIÓN DEL DOCUMENTO
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
-            $sheet->setTitle('Reporte de Encuestas');
+            $sheet->setTitle('Reporte G-Encuestas');
 
-            $sheet->setCellValue('A1', 'Fecha Respuesta')->setCellValue('B1', 'Encuestador')
-                  ->setCellValue('C1', 'Pregunta')->setCellValue('D1', 'Respuesta (Opción)')
-                  ->setCellValue('E1', 'Referencias')->setCellValue('F1', 'Dirección Geolocalizada')
-                  ->setCellValue('G1', 'Municipio')->setCellValue('H1', 'Sección')->setCellValue('I1', 'Comunidad');
-            $sheet->getStyle('A1:I1')->getFont()->setBold(true);
+            // Encabezados (13 Columnas)
+            $headers = ['Fecha', 'Encuestador', 'Pregunta', 'Respuesta', 'Referencias', 'Dirección GPS', 'Estado', 'Distrito Federal', 'Distrito Local', 'Municipio', 'Sección', 'Comunidad'];
+            $sheet->fromArray($headers, NULL, 'A1');
+            $sheet->getStyle('A1:L1')->getFont()->setBold(true);
 
-            $row = 2;
-            foreach ($resultados as $data) {
-                $sheet->setCellValue('A' . $row, $data['fecha_respuesta']);
-                $sheet->setCellValue('B' . $row, trim($data['nombre_usuario'] . ' ' . $data['apellido_paterno']));
-                $sheet->setCellValue('C' . $row, $data['texto_pregunta']);
-                $sheet->setCellValue('D' . $row, $data['texto_opcion']);
-                $sheet->setCellValue('E' . $row, $data['referencias']);
-                $sheet->setCellValue('F' . $row, $data['direccion']);
-                $sheet->setCellValue('G' . $row, $data['nombre_municipio']);
-                $sheet->setCellValue('H' . $row, $data['nombre_seccion']);
-                $sheet->setCellValue('I' . $row, $data['nombre_comunidad']);
-                $row++;
+            // Llenado de filas
+            $rowNumber = 2;
+            foreach ($resultados as $row) {
+                $datosFila = [
+                    $row['fecha_respuesta'],
+                    trim($row['encuestador_nombre'] . ' ' . $row['encuestador_apellido']),
+                    $row['texto_pregunta'],
+                    $row['texto_opcion'],
+                    $row['referencias'],
+                    $row['direccion'],
+                    $row['nombre_estado'],
+                    $row['nombre_distrito_federal'],
+                    $row['nombre_distrito_local'],
+                    $row['nombre_municipio'],
+                    $row['nombre_seccion'],
+                    $row['nombre_comunidad']
+                ];
+                $sheet->fromArray($datosFila, NULL, 'A' . $rowNumber++);
             }
 
-            foreach (range('A', 'I') as $col) {
+            // Auto-ajuste de columnas
+            foreach (range('A', 'L') as $col) {
                 $sheet->getColumnDimension($col)->setAutoSize(true);
             }
 
-            // 4. ENVIAR EL ARCHIVO AL NAVEGADOR
-            $writer = new Xlsx($spreadsheet);
-            $filename = 'Reporte_Encuestas_' . date('Y-m-d_H-i-s') . '.xlsx';
-
-            if (ob_get_level()) {
-                ob_end_clean();
-            }
+            // Descarga limpia
+            $filename = 'Reporte_Geo_Encuestas_' . date('Ymd_His') . '.xlsx';
 
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             header('Content-Disposition: attachment;filename="' . $filename . '"');
             header('Cache-Control: max-age=0');
+
+            if (ob_get_level())
+                ob_end_clean(); // Limpia el buffer para evitar archivos corruptos
+
+            $writer = new Xlsx($spreadsheet);
             $writer->save('php://output');
             exit();
 
         } catch (\Throwable $e) {
-            if (ENVIRONMENT === 'development') {
-                throw $e;
-            } else {
-                log_message('error', '[Excel Generation Error] ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
-                return redirect()->back()->with('error', 'Ocurrió un error crítico al generar el reporte.');
-            }
+            log_message('error', '[Excel Error]: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error crítico al generar el Excel.');
         }
+    }
+
+    /**
+     * Helper privado para transformar ID de rol en texto legible.
+     */
+    private function _getRolTexto($idRol)
+    {
+        $roles = [1 => 'Administrador', 2 => 'Operador', 3 => 'Encuestador'];
+        return $roles[$idRol] ?? 'Miembro';
     }
 }
