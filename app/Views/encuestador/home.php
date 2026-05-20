@@ -35,7 +35,7 @@ if ($isLoggedIn && is_array($userData)) {
     <link rel="manifest" href="<?= base_url('manifest.json') ?>">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#f44336"> 
+    <meta name="theme-color" content="#f44336">
 
     <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&subset=latin,cyrillic-ext" rel="stylesheet"
         type="text/css">
@@ -133,7 +133,12 @@ if ($isLoggedIn && is_array($userData)) {
                 <a href="javascript:void(0);" class="navbar-toggle collapsed" data-toggle="collapse"
                     data-target="#navbar-collapse" aria-expanded="false"></a>
                 <a href="javascript:void(0);" class="bars"></a>
-                <a class="navbar-brand" href="<?= site_url('home') ?>">VOTA Y OPINA</a>
+
+                <a class="navbar-brand" href="<?= base_url('/') ?>"
+                    style="display: flex; align-items: center; padding: 5px 15px;">
+                    <img src="<?= base_url(RECURSOS_USUARIO_IMG . '/logo/logo.png') ?>" alt="Vota y Opina"
+                        style="height: 35px; width: auto; max-width: 150px; object-fit: contain;">
+                </a>
             </div>
             <div class="collapse navbar-collapse" id="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
@@ -151,7 +156,8 @@ if ($isLoggedIn && is_array($userData)) {
                 </div>
                 <div class="info-container">
                     <div class="name" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <?= $nombreCompleto ?></div>
+                        <?= $nombreCompleto ?>
+                    </div>
                     <div class="email"><?= $nombreUsuario ?></div> <!-- Nombre de usuario dinámico -->
                     <div class="btn-group user-helper-dropdown">
                         <i class="material-icons" data-toggle="dropdown" aria-haspopup="true"

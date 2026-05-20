@@ -445,7 +445,12 @@
                 <a href="javascript:void(0);" class="navbar-toggle collapsed" data-toggle="collapse"
                     data-target="#navbar-collapse" aria-expanded="false"></a>
                 <a href="javascript:void(0);" class="bars"></a>
-                <a class="navbar-brand" href="<?= base_url('home') ?>">VOTA Y OPINA</a>
+
+                <a class="navbar-brand" href="<?= base_url('/') ?>"
+                    style="display: flex; align-items: center; padding: 5px 15px;">
+                    <img src="<?= base_url(RECURSOS_USUARIO_IMG . '/logo/logo.png') ?>" alt="Vota y Opina"
+                        style="height: 35px; width: auto; max-width: 150px; object-fit: contain;">
+                </a>
             </div>
             <div class="collapse navbar-collapse" id="navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
@@ -545,32 +550,20 @@
                                         <div class="row">
                                             <div class="col-sm-6">
                                                 <div class="form-group form-float">
-                                                    <div class="form-line disabled">
+                                                    <div class="form-line">
                                                         <select class="form-control show-tick" id="selectEstado"
-                                                            name="id_estado" required disabled>
-                                                            <option value="">-- Estado --</option>
-                                                            <?php foreach ($comunidades as $comunidad): ?>
-                                                                <option
-                                                                    value="<?= esc($comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['estado']['id_estado']) ?>">
-                                                                    <?= esc($comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['estado']['nombre_estado']) ?>
-                                                                </option>
-                                                            <?php endforeach; ?>
+                                                            name="id_estado" required>
+                                                            <option value="">-- Seleccione Estado --</option>
                                                         </select>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
                                                 <div class="form-group form-float">
-                                                    <div class="form-line disabled">
+                                                    <div class="form-line">
                                                         <select class="form-control show-tick" id="selectDistritoFederal"
-                                                            name="id_distrito_federal" required disabled>
-                                                            <option value="">-- Distrito Federal --</option>
-                                                            <?php foreach ($comunidades as $comunidad): ?>
-                                                                <option
-                                                                    value="<?= esc($comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['id_distrito_federal']) ?>">
-                                                                    <?= esc($comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['nombre_distrito_federal']) ?>
-                                                                </option>
-                                                            <?php endforeach; ?>
+                                                            name="id_distrito_federal" required>
+                                                            <option value="">-- Seleccione Distrito Federal --</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -580,32 +573,20 @@
                                         <div class="row">
                                             <div class="col-sm-6">
                                                 <div class="form-group form-float">
-                                                    <div class="form-line disabled">
+                                                    <div class="form-line">
                                                         <select class="form-control show-tick" id="selectDistritoLocal"
-                                                            name="id_distrito_local" required disabled>
-                                                            <option value="">-- Distrito Local --</option>
-                                                            <?php foreach ($comunidades as $comunidad): ?>
-                                                                <option
-                                                                    value="<?= esc($comunidad['seccion']['municipio']['distrito_local']['id_distrito_local']) ?>">
-                                                                    <?= esc($comunidad['seccion']['municipio']['distrito_local']['nombre_distrito_local']) ?>
-                                                                </option>
-                                                            <?php endforeach; ?>
+                                                            name="id_distrito_local" required>
+                                                            <option value="">-- Seleccione Distrito Local --</option>
                                                         </select>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="col-sm-6">
                                                 <div class="form-group form-float">
-                                                    <div class="form-line disabled">
+                                                    <div class="form-line">
                                                         <select class="form-control show-tick" id="selectMunicipio"
-                                                            name="id_municipio" required disabled>
-                                                            <option value="">-- Municipio --</option>
-                                                            <?php foreach ($comunidades as $comunidad): ?>
-                                                                <option
-                                                                    value="<?= esc($comunidad['seccion']['municipio']['id_municipio']) ?>">
-                                                                    <?= esc($comunidad['seccion']['municipio']['nombre_municipio']) ?>
-                                                                </option>
-                                                            <?php endforeach; ?>
+                                                            name="id_municipio" required>
+                                                            <option value="">-- Seleccione Municipio --</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -618,19 +599,7 @@
                                                     <div class="form-line">
                                                         <select class="form-control show-tick" id="selectSeccion"
                                                             name="id_seccion" required>
-                                                            <option value="">-- Seleccione una Sección --</option>
-                                                            <?php
-                                                            $seccionesUnicas = [];
-                                                            foreach ($comunidades as $comunidad) {
-                                                                if (isset($comunidad['seccion'])) {
-                                                                    $seccionesUnicas[$comunidad['seccion']['id_seccion']] = $comunidad['seccion'];
-                                                                }
-                                                            }
-                                                            foreach ($seccionesUnicas as $seccion): ?>
-                                                                <option value="<?= esc($seccion['id_seccion']) ?>">
-                                                                    <?= esc($seccion['nombre_seccion']) ?>
-                                                                </option>
-                                                            <?php endforeach; ?>
+                                                            <option value="">-- Seleccione Sección --</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -640,19 +609,7 @@
                                                     <div class="form-line">
                                                         <select class="form-control show-tick" id="selectComunidad"
                                                             name="id_comunidad" required>
-                                                            <option value="">-- Seleccione una Comunidad --</option>
-                                                            <?php foreach ($comunidades as $comunidad): ?>
-                                                                <option
-                                                                    class="comunidad-option seccion-<?= esc($comunidad['seccion']['id_seccion']) ?>"
-                                                                    value="<?= esc($comunidad['id_comunidad']) ?>"
-                                                                    data-seccion-id="<?= esc($comunidad['seccion']['id_seccion']) ?>"
-                                                                    data-municipio-id="<?= esc($comunidad['seccion']['municipio']['id_municipio']) ?>"
-                                                                    data-distrito-local-id="<?= esc($comunidad['seccion']['municipio']['distrito_local']['id_distrito_local']) ?>"
-                                                                    data-distrito-federal-id="<?= esc($comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['id_distrito_federal']) ?>"
-                                                                    data-estado-id="<?= esc($comunidad['seccion']['municipio']['distrito_local']['distrito_federal']['estado']['id_estado']) ?>">
-                                                                    <?= esc($comunidad['nombre_comunidad']) ?>
-                                                                </option>
-                                                            <?php endforeach; ?>
+                                                            <option value="">-- Seleccione Comunidad --</option>
                                                         </select>
                                                     </div>
                                                 </div>
@@ -662,16 +619,38 @@
                                         <div class="row">
                                             <div class="col-sm-12">
                                                 <div class="form-group" style="margin-top: 20px;">
-                                                    <h4 style="font-weight: bold;">
-                                                        <i class="material-icons"
-                                                            style="vertical-align: middle; margin-right: 5px;">my_location</i>
-                                                        Estado de la Ubicación
+                                                    <h4
+                                                        style="font-weight: bold; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                                        <span>
+                                                            <i class="material-icons"
+                                                                style="vertical-align: middle; margin-right: 5px;">my_location</i>
+                                                            Estado de la Ubicación
+                                                        </span>
+                                                        <button type="button" id="btnAjustarMapa"
+                                                            class="btn btn-sm btn-info waves-effect"
+                                                            style="display:none; border-radius: 4px; background-color: #00bcd4 !important; color: white;">
+                                                            <i class="material-icons"
+                                                                style="font-size: 16px; vertical-align: middle;">map</i>
+                                                            Ajustar Manualmente
+                                                        </button>
                                                     </h4>
+
                                                     <div id="ubicacion-status" class="font-italic col-grey p-l-5">
                                                         Solicitando permiso de ubicación... Es necesario para continuar.
                                                     </div>
                                                     <input type="hidden" name="latitud" id="latitud">
                                                     <input type="hidden" name="longitud" id="longitud">
+
+                                                    <div id="mapa_manual_container" style="display: none; margin-top: 15px;">
+                                                        <p style="font-size: 13px; color: #555; font-weight: bold; margin-bottom: 8px;">
+                                                            <i class="material-icons" style="font-size: 16px; vertical-align: middle; color: #FF3D00;">touch_app</i> 
+                                                            Busca un lugar o arrastra el marcador rojo para corregir.
+                                                        </p>
+                                                        
+                                                        <input id="buscador_mapa" class="form-control" type="text" placeholder="🔍 Buscar municipio, calle o lugar..." style="margin-bottom: 10px; border: 2px solid #00bcd4; border-radius: 6px; padding: 10px 15px; font-weight: bold;">
+                                                        
+                                                        <div id="mapa_captura" style="width: 100%; height: 280px; border-radius: 8px; border: 2px solid #ddd;"></div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -679,8 +658,9 @@
                                         <div class="referencias-container">
                                             <p class="referencias-title">
                                                 <i class="material-icons">edit_note</i>
-                                                Referencias (ej. color de casa, número, etc.) <span
-                                                    class="required-field">*</span>
+                                                Referencias (ej. color de casa, número, etc.)
+                                                <span id="asterisco-referencias" class="required-field"
+                                                    style="color:red; font-weight:bold;">*</span>
                                             </p>
 
                                             <div class="form-group" style="margin-bottom: 0;">
@@ -695,7 +675,6 @@
                                             </div>
                                         </div>
                                     </div>
-
                                     <?php if (isset($preguntas) && !empty($preguntas)): ?>
                                         <?php foreach ($preguntas as $pregunta): ?>
                                             <div class="question-block">
@@ -752,22 +731,23 @@
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_PLUGINS . '/node-waves/waves.js') ?>"></script>
     <script src="<?= base_url(RECURSOS_ENCUESTADOR_JS . '/admin.js') ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/dexie@latest/dist/dexie.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?= esc($google_maps_api_key) ?>&libraries=visualization,places"></script>
     <script src="<?= base_url('js/offline_handler.js') ?>"></script>
 
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         $(function () {
             // --- 1. DEFINICIÓN DE CONSTANTES DEL DOM ---
-            // Selectores para los menús desplegables de ubicación
-            const $selectComunidad = $('#selectComunidad');
-            const $selectSeccion = $('#selectSeccion');
-            const $selectMunicipio = $('#selectMunicipio');
-            const $selectDistritoLocal = $('#selectDistritoLocal');
-            const $selectDistritoFederal = $('#selectDistritoFederal');
+            const $form = $('#surveyForm');
             const $selectEstado = $('#selectEstado');
-            const allSelects = [$selectEstado, $selectDistritoFederal, $selectDistritoLocal, $selectMunicipio, $selectSeccion, $selectComunidad];
+            const $selectDistritoFederal = $('#selectDistritoFederal');
+            const $selectDistritoLocal = $('#selectDistritoLocal');
+            const $selectMunicipio = $('#selectMunicipio');
+            const $selectSeccion = $('#selectSeccion');
+            const $selectComunidad = $('#selectComunidad');
 
-            // Selectores para la geolocalización y el formulario
             const $ubicacionStatus = $('#ubicacion-status');
             const $latitudInput = $('#latitud');
             const $longitudInput = $('#longitud');
@@ -775,236 +755,371 @@
             const $referenciasTexto = $('#referencias_texto');
             const $referenciasCounter = $('#referencias-counter');
 
-            // --- 2. LÓGICA PARA LOS SELECTORES DE UBICACIÓN (CASCADA) ---
             const dataComunidades = <?= json_encode($comunidades) ?>;
 
-            function floatLabel($element) {
-                const formLine = $element.closest('.form-line');
-                if ($element.val() && $element.val() !== '') {
-                    formLine.find('label').addClass('active').css({ top: '0px', fontSize: '12px' });
-                } else {
-                    formLine.find('label').removeClass('active').css({ top: '24px', fontSize: '16px' });
+            // Configuración global para Toasts
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+
+            // --- 2. LÓGICA DE VALIDACIÓN Y ENVÍO ---
+            $form.on('submit', function (e) {
+                e.preventDefault();
+
+                const refValue = $referenciasTexto.val().trim();
+
+                if (refValue === "" || refValue.length < 5) {
+                    $referenciasTexto.css('border', '2px solid #F44336');
+                    $referenciasTexto.focus();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Referencias incompletas',
+                        text: 'Es obligatorio indicar referencias de la ubicación con al menos 5 caracteres.',
+                        confirmButtonColor: '#F44336'
+                    });
+                    return;
                 }
-                if ($.fn.selectpicker) {
-                    $element.selectpicker('refresh');
+
+                if ($selectComunidad.val() === "") {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Selecciona una comunidad',
+                        text: 'Debes completar la cascada geográfica hasta la comunidad.',
+                        confirmButtonColor: '#F44336'
+                    });
+                    return;
                 }
-            }
 
-            function populateComunidades(seccionId) {
-                $selectComunidad.empty().append('<option value="">-- Seleccione Comunidad --</option>');
-                const comunidadesFiltradas = dataComunidades.filter(c => c.seccion && c.seccion.id_seccion == seccionId);
-
-                comunidadesFiltradas.forEach(c => {
-                    // VERSIÓN CORREGIDA: Usa la variable de JS 'c' en lugar de la de PHP
-                    const option = `<option 
-                class="comunidad-option seccion-${c.seccion.id_seccion}"
-                value="${c.id_comunidad}"
-                data-seccion-id="${c.seccion.id_seccion}"
-                data-municipio-id="${c.seccion.municipio.id_municipio}"
-                data-distrito-local-id="${c.seccion.municipio.distrito_local.id_distrito_local}"
-                data-distrito-federal-id="${c.seccion.municipio.distrito_local.distrito_federal.id_distrito_federal}"
-                data-estado-id="${c.seccion.municipio.distrito_local.distrito_federal.estado.id_estado}"
-            >
-                ${c.nombre_comunidad}
-            </option>`;
-                    $selectComunidad.append(option);
-                });
-                floatLabel($selectComunidad);
-                if ($.fn.selectpicker) {
-                    $selectComunidad.selectpicker('refresh');
+                const respondidas = $(this).find('input[type="checkbox"]:checked').length;
+                if (respondidas === 0) {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Encuesta vacía',
+                        text: 'Por favor, marque al menos una opción antes de enviar.',
+                        confirmButtonColor: '#F44336'
+                    });
+                    return;
                 }
-            }
 
-            function populateAllSelects() {
-                // Esta función llena los selects deshabilitados la primera vez
-                const unicos = { estados: {}, distritosFederales: {}, distritosLocales: {}, municipios: {}, secciones: {} };
-
-                dataComunidades.forEach(comunidad => {
-                    if (comunidad.seccion && comunidad.seccion.municipio && comunidad.seccion.municipio.distrito_local && comunidad.seccion.municipio.distrito_local.distrito_federal && comunidad.seccion.municipio.distrito_local.distrito_federal.estado) {
-                        const estado = comunidad.seccion.municipio.distrito_local.distrito_federal.estado;
-                        const df = comunidad.seccion.municipio.distrito_local.distrito_federal;
-                        const dl = comunidad.seccion.municipio.distrito_local;
-                        const mun = comunidad.seccion.municipio;
-                        const sec = comunidad.seccion;
-
-                        unicos.estados[estado.id_estado] = estado.nombre_estado;
-                        unicos.distritosFederales[df.id_distrito_federal] = df.nombre_distrito_federal;
-                        unicos.distritosLocales[dl.id_distrito_local] = dl.nombre_distrito_local;
-                        unicos.municipios[mun.id_municipio] = mun.nombre_municipio;
-                        unicos.secciones[sec.id_seccion] = sec.nombre_seccion;
+                Swal.fire({
+                    title: '¿Confirmar envío?',
+                    text: "Se guardarán las respuestas y la ubicación GPS actual.",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#4CAF50',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sí, enviar ahora',
+                    cancelButtonText: 'Revisar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        if (navigator.onLine) {
+                            Swal.fire({
+                                title: 'Enviando...',
+                                text: 'Información enviada, por favor espera.',
+                                allowOutsideClick: false,
+                                didOpen: () => { Swal.showLoading(); }
+                            });
+                            setTimeout(() => { this.submit(); }, 100);
+                        } else {
+                            if (typeof guardarOffline === "function") {
+                                guardarOffline(this);
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error de sistema',
+                                    text: 'El controlador offline no está disponible.'
+                                });
+                            }
+                        }
                     }
                 });
+            });
 
-                // Llenar selects. Limpiamos primero por si acaso.
-                $selectEstado.empty().append('<option value="">-- Estado --</option>');
-                Object.entries(unicos.estados).forEach(([id, nombre]) => $selectEstado.append(`<option value="${id}">${nombre}</option>`));
+            // --- 3. LÓGICA DE CASCADA MANUAL ---
 
+            function refreshSelect($el) {
+                if ($.fn.selectpicker) { $el.selectpicker('refresh'); }
+                const formLine = $el.closest('.form-line');
+                $el.val() !== "" ? formLine.find('label').addClass('active') : formLine.find('label').removeClass('active');
+            }
+
+            // Inicializar Estados
+            function initEstados() {
+                const estadosMap = {};
+                dataComunidades.forEach(c => {
+                    const e = c.seccion.municipio.distrito_local.distrito_federal.estado;
+                    estadosMap[e.id_estado] = e.nombre_estado;
+                });
+                $selectEstado.empty().append('<option value="">-- Seleccione Estado --</option>');
+                Object.entries(estadosMap).forEach(([id, nombre]) => {
+                    $selectEstado.append(`<option value="${id}">${nombre}</option>`);
+                });
+                refreshSelect($selectEstado);
+            }
+
+            // Estado -> Distrito Federal
+            $selectEstado.on('change', function () {
+                const id = $(this).val();
                 $selectDistritoFederal.empty().append('<option value="">-- Distrito Federal --</option>');
-                Object.entries(unicos.distritosFederales).forEach(([id, nombre]) => $selectDistritoFederal.append(`<option value="${id}">${nombre}</option>`));
-
                 $selectDistritoLocal.empty().append('<option value="">-- Distrito Local --</option>');
-                Object.entries(unicos.distritosLocales).forEach(([id, nombre]) => $selectDistritoLocal.append(`<option value="${id}">${nombre}</option>`));
-
                 $selectMunicipio.empty().append('<option value="">-- Municipio --</option>');
-                Object.entries(unicos.municipios).forEach(([id, nombre]) => $selectMunicipio.append(`<option value="${id}">${nombre}</option>`));
+                $selectSeccion.empty().append('<option value="">-- Sección --</option>');
+                $selectComunidad.empty().append('<option value="">-- Comunidad --</option>');
 
-                $selectSeccion.empty().append('<option value="">-- Seleccione una Sección --</option>');
-                Object.entries(unicos.secciones).forEach(([id, nombre]) => $selectSeccion.append(`<option value="${id}">${nombre}</option>`));
+                if (id) {
+                    const m = {};
+                    dataComunidades.filter(c => c.seccion.municipio.distrito_local.distrito_federal.estado.id_estado == id)
+                        .forEach(c => {
+                            const df = c.seccion.municipio.distrito_local.distrito_federal;
+                            m[df.id_distrito_federal] = df.nombre_distrito_federal;
+                        });
+                    Object.entries(m).forEach(([i, n]) => $selectDistritoFederal.append(`<option value="${i}">${n}</option>`));
+                }
+                [$selectDistritoFederal, $selectDistritoLocal, $selectMunicipio, $selectSeccion, $selectComunidad].forEach(s => refreshSelect(s));
+            });
+
+            // Distrito Federal -> Distrito Local
+            $selectDistritoFederal.on('change', function () {
+                const id = $(this).val();
+                $selectDistritoLocal.empty().append('<option value="">-- Distrito Local --</option>');
+                $selectMunicipio.empty().append('<option value="">-- Municipio --</option>');
+                $selectSeccion.empty().append('<option value="">-- Sección --</option>');
+                $selectComunidad.empty().append('<option value="">-- Comunidad --</option>');
+
+                if (id) {
+                    const m = {};
+                    dataComunidades.filter(c => c.seccion.municipio.distrito_local.distrito_federal.id_distrito_federal == id)
+                        .forEach(c => {
+                            const dl = c.seccion.municipio.distrito_local;
+                            m[dl.id_distrito_local] = dl.nombre_distrito_local;
+                        });
+                    Object.entries(m).forEach(([i, n]) => $selectDistritoLocal.append(`<option value="${i}">${n}</option>`));
+                }
+                [$selectDistritoLocal, $selectMunicipio, $selectSeccion, $selectComunidad].forEach(s => refreshSelect(s));
+            });
+
+            // Distrito Local -> Municipio
+            $selectDistritoLocal.on('change', function () {
+                const id = $(this).val();
+                $selectMunicipio.empty().append('<option value="">-- Municipio --</option>');
+                $selectSeccion.empty().append('<option value="">-- Sección --</option>');
+                $selectComunidad.empty().append('<option value="">-- Comunidad --</option>');
+
+                if (id) {
+                    const m = {};
+                    dataComunidades.filter(c => c.seccion.municipio.distrito_local.id_distrito_local == id)
+                        .forEach(c => {
+                            const mun = c.seccion.municipio;
+                            m[mun.id_municipio] = mun.nombre_municipio;
+                        });
+                    Object.entries(m).forEach(([i, n]) => $selectMunicipio.append(`<option value="${i}">${n}</option>`));
+                }
+                [$selectMunicipio, $selectSeccion, $selectComunidad].forEach(s => refreshSelect(s));
+            });
+
+            // Municipio -> Sección
+            $selectMunicipio.on('change', function () {
+                const id = $(this).val();
+                $selectSeccion.empty().append('<option value="">-- Sección --</option>');
+                $selectComunidad.empty().append('<option value="">-- Comunidad --</option>');
+
+                if (id) {
+                    const m = {};
+                    dataComunidades.filter(c => c.seccion.municipio.id_municipio == id)
+                        .forEach(c => {
+                            const sec = c.seccion;
+                            m[sec.id_seccion] = sec.nombre_seccion;
+                        });
+                    Object.entries(m).forEach(([i, n]) => $selectSeccion.append(`<option value="${i}">${n}</option>`));
+                }
+                [$selectSeccion, $selectComunidad].forEach(s => refreshSelect(s));
+            });
+
+            // Sección -> Comunidad
+            $selectSeccion.on('change', function () {
+                const id = $(this).val();
+                $selectComunidad.empty().append('<option value="">-- Comunidad --</option>');
+
+                if (id) {
+                    dataComunidades.filter(c => c.seccion.id_seccion == id)
+                        .forEach(c => {
+                            $selectComunidad.append(`<option value="${c.id_comunidad}">${c.nombre_comunidad}</option>`);
+                        });
+                }
+                refreshSelect($selectComunidad);
+            });
+
+            // --- 4. OTROS EVENTOS ---
+
+            $referenciasTexto.on('input', function () {
+                if ($(this).val().trim().length >= 5) { $(this).css('border', '1px solid #4CAF50'); }
+            });
+
+            $referenciasTexto.on('keyup', function () {
+                $referenciasCounter.text(100 - $(this).val().length);
+            });
+
+            // --- 5. GEOLOCALIZACIÓN ---
+
+            // --- VARIABLES GLOBALES PARA EL MAPA ---
+            let mapCaptura = null;
+            let markerCaptura = null;
+
+            /**
+             * 1. Inicializa el mapa de Google con un marcador arrastrable.
+             */
+            // Función para crear/actualizar el mapa interactivo
+            function initMapaCaptura(lat, lng) {
+                const pos = { lat: parseFloat(lat), lng: parseFloat(lng) };
+
+                if (!mapCaptura) {
+                    mapCaptura = new google.maps.Map(document.getElementById('mapa_captura'), {
+                        center: pos,
+                        zoom: 17,
+                        mapTypeId: 'hybrid', // Satélite + Calles
+                        disableDefaultUI: true,
+                        zoomControl: true
+                    });
+
+                    // Marcador arrastrable
+                    markerCaptura = new google.maps.Marker({
+                        position: pos,
+                        map: mapCaptura,
+                        draggable: true,
+                        animation: google.maps.Animation.DROP,
+                        title: "Arrastra para ajustar ubicación"
+                    });
+
+                    // --- NUEVO: Lógica del Buscador (Autocomplete) ---
+                    const inputBuscador = document.getElementById("buscador_mapa");
+                    const searchBox = new google.maps.places.SearchBox(inputBuscador);
+
+                    // Evitar que al presionar "Enter" en el buscador se envíe la encuesta por error
+                    $(inputBuscador).on('keydown', function(e) {
+                        if (e.key === 'Enter') { e.preventDefault(); return false; }
+                    });
+
+                    // Cuando el usuario elige un lugar de las sugerencias
+                    searchBox.addListener("places_changed", () => {
+                        const places = searchBox.getPlaces();
+                        if (places.length == 0) return;
+
+                        const lugar = places[0];
+                        if (!lugar.geometry || !lugar.geometry.location) return;
+
+                        // Hacemos que el mapa y el marcador "vuelen" al lugar buscado
+                        mapCaptura.setCenter(lugar.geometry.location);
+                        mapCaptura.setZoom(17);
+                        markerCaptura.setPosition(lugar.geometry.location);
+
+                        // Actualizamos los inputs ocultos
+                        $latitudInput.val(lugar.geometry.location.lat());
+                        $longitudInput.val(lugar.geometry.location.lng());
+                        
+                        $ubicacionStatus.html(`<strong><i class="material-icons" style="font-size: 14px; vertical-align: middle;">edit_location</i> Ubicación ajustada por búsqueda</strong>`)
+                            .removeClass('col-green col-red').css('color', '#FF9800');
+                    });
+
+                    // Evento al soltar el marcador (arrastre manual)
+                    markerCaptura.addListener('dragend', function() {
+                        const nuevaPos = markerCaptura.getPosition();
+                        $latitudInput.val(nuevaPos.lat());
+                        $longitudInput.val(nuevaPos.lng());
+                        
+                        $ubicacionStatus.html(`<strong><i class="material-icons" style="font-size: 14px; vertical-align: middle;">edit_location</i> Ubicación ajustada manualmente</strong>`)
+                            .removeClass('col-green col-red').css('color', '#FF9800');
+                    });
+                } else {
+                    mapCaptura.setCenter(pos);
+                    markerCaptura.setPosition(pos);
+                }
             }
 
-            $selectSeccion.on('change', function () {
-                const seccionId = $(this).val();
-                populateComunidades(seccionId);
+            /**
+             * 2. Modo de emergencia: Se activa si el GPS del celular falla o es denegado.
+             */
+            function activarModoManualFalloGPS() {
+                $('#ubicacion-status').html(`<strong><i class="material-icons" style="font-size: 14px; vertical-align: middle;">warning</i> GPS no disponible. Ubica el punto en el mapa.</strong>`)
+                    .removeClass('col-orange col-green').addClass('col-red');
 
-                // Autocompletar los selects padres deshabilitados
-                if (seccionId) {
-                    const comunidadDeReferencia = dataComunidades.find(c => c.seccion.id_seccion == seccionId);
-                    if (comunidadDeReferencia) {
-                        const seccionData = comunidadDeReferencia.seccion;
-                        $selectMunicipio.val(seccionData.municipio.id_municipio);
-                        $selectDistritoLocal.val(seccionData.municipio.distrito_local.id_distrito_local);
-                        $selectDistritoFederal.val(seccionData.municipio.distrito_local.distrito_federal.id_distrito_federal);
-                        $selectEstado.val(seccionData.municipio.distrito_local.distrito_federal.estado.id_estado);
-                    }
-                } else {
-                    // Si se deselecciona, limpiar todo
-                    $selectMunicipio.val('');
-                    $selectDistritoLocal.val('');
-                    $selectDistritoFederal.val('');
-                    $selectEstado.val('');
-                }
-                allSelects.forEach($select => floatLabel($select));
-            });
+                // Habilitamos el botón de enviar para que no se bloquee la encuesta
+                $('#btnEnviarEncuesta').prop('disabled', false);
 
-            $selectComunidad.on('change', function () {
-                const selectedOption = $(this).find('option:selected');
-                if (selectedOption.val()) {
-                    // Autoseleccionar todos los padres basados en los data-attributes
-                    $selectSeccion.val(selectedOption.data('seccion-id'));
-                    $selectMunicipio.val(selectedOption.data('municipio-id'));
-                    $selectDistritoLocal.val(selectedOption.data('distrito-local-id'));
-                    $selectDistritoFederal.val(selectedOption.data('distrito-federal-id'));
-                    $selectEstado.val(selectedOption.data('estado-id'));
-                }
-                allSelects.forEach($select => floatLabel($select));
-            });
+                // Ocultamos el botón de "Ajustar" porque el mapa se abrirá automáticamente
+                $('#btnAjustarMapa').hide();
+                $('#mapa_manual_container').slideDown();
 
-            // --- 3. LÓGICA PARA EL CAMPO DE TEXTO "REFERENCIAS" ---
-            $referenciasTexto.on('keyup', function () {
-                const maxLength = $(this).attr('maxlength');
-                const currentLength = $(this).val().length;
-                const remaining = maxLength - currentLength;
-                $referenciasCounter.text(remaining);
-            });
+                // Coordenadas por defecto (puedes ajustarlas al centro de tu ciudad)
+                const latDefecto = 19.3181;
+                const lngDefecto = -98.2375;
 
-            // --- 4. LÓGICA DE GEOLOCALIZACIÓN ---
+                $('#latitud').val(latDefecto);
+                $('#longitud').val(lngDefecto);
 
-            // --- 4. LÓGICA DE GEOLOCALIZACIÓN ---
+                initMapaCaptura(latDefecto, lngDefecto);
+            }
 
-            // Inicializamos la referencia a la base de datos local para el monitoreo
-            const dbLocal = new Dexie("PanelEncuestadorDB");
-            dbLocal.version(1).stores({ ubicaciones: '++id, data, timestamp' });
-
+            /**
+             * 3. Función principal: Intenta obtener la ubicación real al cargar la página.
+             */
             function obtenerUbicacionParaFormulario() {
                 if (!navigator.geolocation) {
-                    $ubicacionStatus.text('Geolocalización no soportada.').addClass('col-red');
-                    $btnEnviarEncuesta.prop('disabled', true);
+                    activarModoManualFalloGPS();
                     return;
                 }
 
-                $ubicacionStatus.text('Obteniendo ubicación para el formulario...').addClass('col-orange');
+                $('#ubicacion-status').html('<i class="material-icons" style="font-size: 14px; vertical-align: middle;">satellite</i> Buscando señal GPS...')
+                    .removeClass('col-red col-green').addClass('col-orange');
+
                 navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        $latitudInput.val(position.coords.latitude);
-                        $longitudInput.val(position.coords.longitude);
-                        $ubicacionStatus.html(`<strong><i class="material-icons" style="font-size: 1em; vertical-align: sub;">check_circle</i> Ubicación obtenida.</strong>`).removeClass('col-orange col-red').addClass('col-green');
-                        $btnEnviarEncuesta.prop('disabled', false);
+                    (pos) => {
+                        // ÉXITO
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+
+                        $('#latitud').val(lat);
+                        $('#longitud').val(lng);
+
+                        $('#ubicacion-status').html(`<strong><i class="material-icons" style="font-size: 14px; vertical-align: middle;">check_circle</i> Ubicación lista (GPS)</strong>`)
+                            .removeClass('col-orange col-red').addClass('col-green');
+
+                        $('#btnEnviarEncuesta').prop('disabled', false);
+
+                        // Preparamos el mapa por si el usuario quiere corregirlo
+                        initMapaCaptura(lat, lng);
+                        $('#btnAjustarMapa').show();
                     },
                     (err) => {
-                        $btnEnviarEncuesta.prop('disabled', true);
-                        let msg = "Error al obtener ubicación. Intente de nuevo.";
-                        if (err.code === 1) msg = "Permiso de ubicación denegado.";
-                        if (err.code === 2) msg = "Ubicación no disponible. Revise su GPS.";
-                        if (err.code === 3) msg = "Tiempo de espera agotado.";
-                        $ubicacionStatus.text(msg).removeClass('col-orange col-green').addClass('col-red');
+                        // ERROR (Denegado, sin señal o timeout)
+                        activarModoManualFalloGPS();
                     },
-                    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 15000,
+                        maximumAge: 0
+                    }
                 );
             }
 
-            function iniciarMonitoreoContinuo() {
-                if (!navigator.geolocation) {
-                    console.warn('Monitoreo no disponible: geolocalización no soportada.');
-                    return;
-                }
+            // --- EVENTO PARA EL BOTÓN DE AJUSTE MANUAL ---
+            $(document).on('click', '#btnAjustarMapa', function () {
+                $('#mapa_manual_container').slideToggle();
 
-                const procesarEnvioUbicacion = async (position) => {
-                    const coords = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                        time: Date.now()
-                    };
-
-                    // Intentar envío si hay internet
-                    if (navigator.onLine) {
-                        try {
-                            const res = await fetch('<?= base_url('encuestador/guardar_ubicacion_monitoreo') ?>', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-Requested-With': 'XMLHttpRequest'
-                                },
-                                body: JSON.stringify({
-                                    latitud: coords.lat,
-                                    longitud: coords.lng
-                                })
-                            });
-                            const data = await res.json();
-                            if (data.success) {
-                                console.log('Monitoreo: Sincronizado en tiempo real.');
-                            }
-                        } catch (err) {
-                            // Si el fetch falla (ej. internet inestable), respaldamos en Dexie
-                            console.warn('Fallo envío en vivo, guardando en dispositivo...');
-                            await guardarEnLocal(coords);
-                        }
-                    } else {
-                        // Modo offline total: Guardar directo en Dexie
-                        await guardarEnLocal(coords);
+                // Refrescar el mapa después de que el contenedor se hace visible
+                setTimeout(() => {
+                    if (mapCaptura) {
+                        google.maps.event.trigger(mapCaptura, 'resize');
+                        mapCaptura.setCenter(markerCaptura.getPosition());
                     }
-                };
+                }, 400);
+            });
 
-                async function guardarEnLocal(coords) {
-                    try {
-                        await dbLocal.ubicaciones.add({
-                            data: coords,
-                            timestamp: Date.now()
-                        });
-                        console.log('Monitoreo: Coordenada guardada localmente (Offline).');
-                    } catch (error) {
-                        console.error('Error al guardar en Dexie:', error);
-                    }
-                }
-
-                // Iniciar el rastreo con watchPosition
-                navigator.geolocation.watchPosition(
-                    procesarEnvioUbicacion,
-                    (err) => console.warn(`Monitoreo (Error de GPS): ${err.message}`),
-                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-                );
-            }
-
-            // --- 5. EJECUCIÓN INICIAL AL CARGAR LA PÁGINA ---
-            populateAllSelects(); // Llama a la función para llenar los selectores
+            // --- INICIALIZACIÓN ---
+            initEstados();
             obtenerUbicacionParaFormulario();
-            iniciarMonitoreoContinuo();
-
-            // Inicializa plugins de estilo
-            setTimeout(() => {
-                if ($.fn.selectpicker) {
-                    $('.form-control.show-tick').selectpicker('refresh');
-                }
-                floatLabel($('#referencias_texto'));
-            }, 200);
         });
     </script>

@@ -201,12 +201,10 @@ class EstadisticasController extends Controller
                 return redirect()->back()->with('error', 'Selección inválida para el reporte.');
             }
 
-            // CONSULTA MAESTRA: Unimos la respuesta con TODA su jerarquía política
+            // CONSULTA MAESTRA (Optimizada sin tabla de usuarios)
             $builder = $this->respuestaModel
                 ->select([
                     'respuestas.fecha_respuesta',
-                    'usuarios.nombre as encuestador_nombre',
-                    'usuarios.apellido_paterno as encuestador_apellido',
                     'preguntas.texto_pregunta',
                     'opciones.texto_opcion',
                     'respuestas.referencias',
@@ -218,10 +216,8 @@ class EstadisticasController extends Controller
                     'seccion.nombre_seccion',
                     'comunidades.nombre_comunidad'
                 ])
-                ->join('usuarios', 'usuarios.id_usuario = respuestas.id_usuario', 'left')
                 ->join('preguntas', 'preguntas.id_pregunta = respuestas.id_pregunta', 'left')
                 ->join('opciones', 'opciones.id_opcion = respuestas.id_opcion', 'left')
-                // Cadena de Joins Geográficos
                 ->join('comunidades', 'comunidades.id_comunidad = respuestas.id_comunidad', 'left')
                 ->join('seccion', 'seccion.id_seccion = respuestas.id_seccion', 'left')
                 ->join('municipio', 'municipio.id_municipio = respuestas.id_municipio', 'left')
@@ -244,52 +240,121 @@ class EstadisticasController extends Controller
                 return redirect()->back()->with('error', 'No hay datos para exportar con estos filtros.');
             }
 
-            // GENERACIÓN DEL DOCUMENTO
-            $spreadsheet = new Spreadsheet();
+            // --- 1. PROCESAMIENTO DINÁMICO (PIVOT) ---
+            $encuestasAgrupadas = [];
+            $preguntasUnicas = [];
+
+            foreach ($resultados as $row) {
+                // LLAVE ÚNICA para agrupar respuestas de la misma persona
+                $idEncuestado = $row['fecha_respuesta'] . '|' . $row['direccion'] . '|' . $row['referencias'];
+
+                $pregunta = $row['texto_pregunta'];
+                $respuesta = $row['texto_opcion'];
+
+                if (!in_array($pregunta, $preguntasUnicas)) {
+                    $preguntasUnicas[] = $pregunta;
+                }
+
+                if (!isset($encuestasAgrupadas[$idEncuestado])) {
+                    $encuestasAgrupadas[$idEncuestado] = [
+                        'fecha' => $row['fecha_respuesta'],
+                        'estado' => $row['nombre_estado'],
+                        'distrito_federal' => $row['nombre_distrito_federal'],
+                        'distrito_local' => $row['nombre_distrito_local'],
+                        'municipio' => $row['nombre_municipio'],
+                        'seccion' => $row['nombre_seccion'],
+                        'comunidad' => $row['nombre_comunidad'],
+                        'direccion' => $row['direccion'],
+                        'referencias' => $row['referencias'],
+                        'respuestas' => []
+                    ];
+                }
+
+                // Concatenar respuestas si hay opciones múltiples en la misma pregunta
+                if (isset($encuestasAgrupadas[$idEncuestado]['respuestas'][$pregunta])) {
+                    $encuestasAgrupadas[$idEncuestado]['respuestas'][$pregunta] .= ', ' . $respuesta;
+                } else {
+                    $encuestasAgrupadas[$idEncuestado]['respuestas'][$pregunta] = $respuesta;
+                }
+            }
+
+            // --- 2. GENERACIÓN DEL EXCEL ---
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
             $sheet->setTitle('Reporte G-Encuestas');
 
-            // Encabezados (13 Columnas)
-            $headers = ['Fecha', 'Encuestador', 'Pregunta', 'Respuesta', 'Referencias', 'Dirección GPS', 'Estado', 'Distrito Federal', 'Distrito Local', 'Municipio', 'Sección', 'Comunidad'];
-            $sheet->fromArray($headers, NULL, 'A1');
-            $sheet->getStyle('A1:L1')->getFont()->setBold(true);
+            // --- AQUÍ ESTÁ EL ORDEN EXACTO SOLICITADO ---
+            $headersBase = [
+                'Fecha',
+                'Estado',
+                'Distrito Federal',
+                'Distrito Local',
+                'Municipio',
+                'Sección',
+                'Comunidad',
+                'Dirección GPS',
+                'Referencias'
+            ];
 
-            // Llenado de filas
+            $headersFinales = array_merge($headersBase, $preguntasUnicas);
+            $sheet->fromArray($headersFinales, NULL, 'A1');
+
+            // Estilos para la fila de títulos
+            $totalColumnas = count($headersFinales);
+            $ultimaLetraColumna = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($totalColumnas);
+
+            $estiloCabecera = [
+                'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['argb' => 'FF4A4A4A'] // Gris oscuro
+                ]
+            ];
+            $sheet->getStyle('A1:' . $ultimaLetraColumna . '1')->applyFromArray($estiloCabecera);
+
+            // --- 3. LLENADO DE FILAS ---
             $rowNumber = 2;
-            foreach ($resultados as $row) {
+            foreach ($encuestasAgrupadas as $encuesta) {
+                // --- DATOS EN EL ORDEN EXACTO ---
                 $datosFila = [
-                    $row['fecha_respuesta'],
-                    trim($row['encuestador_nombre'] . ' ' . $row['encuestador_apellido']),
-                    $row['texto_pregunta'],
-                    $row['texto_opcion'],
-                    $row['referencias'],
-                    $row['direccion'],
-                    $row['nombre_estado'],
-                    $row['nombre_distrito_federal'],
-                    $row['nombre_distrito_local'],
-                    $row['nombre_municipio'],
-                    $row['nombre_seccion'],
-                    $row['nombre_comunidad']
+                    $encuesta['fecha'],
+                    $encuesta['estado'],
+                    $encuesta['distrito_federal'],
+                    $encuesta['distrito_local'],
+                    $encuesta['municipio'],
+                    $encuesta['seccion'],
+                    $encuesta['comunidad'],
+                    $encuesta['direccion'],
+                    $encuesta['referencias']
                 ];
+
+                // Agregar las respuestas dinámicas
+                foreach ($preguntasUnicas as $pregunta) {
+                    $datosFila[] = isset($encuesta['respuestas'][$pregunta]) ? $encuesta['respuestas'][$pregunta] : '';
+                }
+
                 $sheet->fromArray($datosFila, NULL, 'A' . $rowNumber++);
             }
 
-            // Auto-ajuste de columnas
-            foreach (range('A', 'L') as $col) {
-                $sheet->getColumnDimension($col)->setAutoSize(true);
+            // Auto-ajustar ancho de las columnas
+            foreach (range(1, $totalColumnas) as $colIndex) {
+                $colLetra = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+                $sheet->getColumnDimension($colLetra)->setAutoSize(true);
             }
 
-            // Descarga limpia
+            // --- 4. DESCARGA DEL ARCHIVO ---
             $filename = 'Reporte_Geo_Encuestas_' . date('Ymd_His') . '.xlsx';
 
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             header('Content-Disposition: attachment;filename="' . $filename . '"');
             header('Cache-Control: max-age=0');
 
-            if (ob_get_level())
-                ob_end_clean(); // Limpia el buffer para evitar archivos corruptos
+            // Prevenir archivos corruptos limpiando el buffer de salida
+            if (ob_get_level()) {
+                ob_end_clean();
+            }
 
-            $writer = new Xlsx($spreadsheet);
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
             $writer->save('php://output');
             exit();
 
@@ -298,7 +363,6 @@ class EstadisticasController extends Controller
             return redirect()->back()->with('error', 'Error crítico al generar el Excel.');
         }
     }
-
     /**
      * Helper privado para transformar ID de rol en texto legible.
      */

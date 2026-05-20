@@ -556,17 +556,25 @@
                     };
 
                     // Renderizar preguntas
+                    // Renderizar preguntas (Corregido para manejar opciones agrupadas)
                     const container = $('#preguntasRespondidasContainer');
                     container.empty();
 
                     if (preguntas && preguntas.length > 0) {
                         preguntas.forEach((item, index) => {
+                            // 'item.respuestas' ahora es un array de strings gracias al controlador corregido
+                            // Usamos .join(' / ') para separar las opciones marcadas de forma elegante
+                            const opcionesTexto = item.respuestas.join(' <br> • ');
+
                             const html = `
-    <div class="respuesta-item">
-        <h6>${index + 1}. ${item.texto_pregunta}</h6>
-        <p class="text-primary text-bold-600">${item.respuesta_seleccionada || 'Sin respuesta'}
-        </p>
-    </div>`;
+            <div class="respuesta-item" style="margin-bottom: 20px; border-left: 4px solid #007bff; padding-left: 15px;">
+                <h6 class="text-bold-700" style="color: #333; margin-bottom: 5px;">
+                    ${index + 1}. ${item.texto_pregunta}
+                </h6>
+                <div class="text-primary" style="font-weight: 600; font-size: 1rem; line-height: 1.4;">
+                    • ${opcionesTexto}
+                </div>
+            </div>`;
                             container.append(html);
                         });
                     } else {

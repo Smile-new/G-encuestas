@@ -16,7 +16,7 @@ use App\Models\ComunidadModel;
 use App\Models\PreguntaModel;
 use App\Models\OpcionModel;
 
-class Uniones extends Controller
+class Cruces extends Controller
 {
     /* ==========================================================
        VISTA PRINCIPAL
@@ -27,7 +27,8 @@ class Uniones extends Controller
         $estadoModel = new EstadoModel();
         $googleConfig = config(Google::class);
 
-        return view('admin/uniones', [
+        // CAMBIO: Ahora apunta a la vista admin/cruces
+        return view('admin/cruces', [
             'encuestas' => $encuestaModel->where('activa', 1)->findAll(),
             'estados' => $estadoModel->findAll(),
             'google_maps_api_key' => $googleConfig->apiKey
@@ -94,9 +95,9 @@ class Uniones extends Controller
     }
 
     /* ==========================================================
-       PROCESAMIENTO DE UNIÓN (CORREGIDO)
+       PROCESAMIENTO DE UNIÓN / CRUCE
     ========================================================== */
-   public function procesar()
+    public function procesar()
     {
         try {
             $db = Database::connect();
@@ -111,13 +112,11 @@ class Uniones extends Controller
 
             /* ==================================================
                MAPEO GEOGRÁFICO (El puente entre JS y BD)
-               Izquierda: Nombre exacto de la columna en BD (tabla respuestas)
-               Derecha: Nombre de la clave que envía el JavaScript
             ================================================== */
             $camposGeoMap = [
                 'id_estado'          => 'id_estado',
-                'id_distritofederal' => 'id_distrito_federal', // <-- Corrige la diferencia del guion
-                'id_distritolocal'   => 'id_distrito_local',   // <-- Corrige la diferencia del guion
+                'id_distritofederal' => 'id_distrito_federal', 
+                'id_distritolocal'   => 'id_distrito_local',   
                 'id_municipio'       => 'id_municipio',
                 'id_seccion'         => 'id_seccion',
                 'id_comunidad'       => 'id_comunidad'
@@ -129,7 +128,6 @@ class Uniones extends Controller
             $builderUniverso = $db->table('respuestas r')
                 ->where('r.id_encuesta', $idEncuesta);
 
-            // Aplicamos los filtros usando el mapa
             foreach ($camposGeoMap as $columnaBD => $claveJS) {
                 if (!empty($geo[$claveJS])) {
                     $builderUniverso->where('r.' . $columnaBD, $geo[$claveJS]);
@@ -153,7 +151,6 @@ class Uniones extends Controller
                 ->where('r.id_encuesta', $idEncuesta)
                 ->whereIn('r.id_opcion', $opcionesFlat);
 
-            // Aplicamos los filtros usando el mapa
             foreach ($camposGeoMap as $columnaBD => $claveJS) {
                 if (!empty($geo[$claveJS])) {
                     $builder->where('r.' . $columnaBD, $geo[$claveJS]);
@@ -179,14 +176,16 @@ class Uniones extends Controller
             }
 
             /* ==================================================
-               3. DESGLOSE DE RESULTADOS
+               3. DESGLOSE DE RESULTADOS (AGRUPADO POR PREGUNTA)
             ================================================== */
+            // Hacemos JOIN con preguntas para traer el título de cada gráfica
             $queryRespuestas = $db->table('respuestas r')
-                ->select('o.texto_opcion, COUNT(r.id_monitoreo) as total, r.id_pregunta')
+                ->select('p.texto_pregunta, o.texto_opcion, COUNT(r.id_monitoreo) as total, r.id_pregunta')
                 ->join('opciones o', 'o.id_opcion = r.id_opcion')
+                ->join('preguntas p', 'p.id_pregunta = r.id_pregunta')
                 ->whereIn('r.id_monitoreo', $idsMonitoreo)
                 ->whereIn('r.id_opcion', $opcionesFlat)
-                ->groupBy('o.texto_opcion')
+                ->groupBy('r.id_pregunta, o.id_opcion') // Agrupamos por pregunta y luego por opción
                 ->orderBy('r.id_pregunta', 'ASC')
                 ->get();
 
@@ -199,15 +198,28 @@ class Uniones extends Controller
 
             $resultadoGrafica = [];
             foreach ($queryRespuestas->getResultArray() as $row) {
-                $resultadoGrafica[] = [
+                $idPreg = $row['id_pregunta'];
+                
+                // Si la pregunta no existe en nuestro arreglo, la creamos
+                if (!isset($resultadoGrafica[$idPreg])) {
+                    $resultadoGrafica[$idPreg] = [
+                        'pregunta' => $row['texto_pregunta'],
+                        'opciones' => []
+                    ];
+                }
+
+                // Guardamos las opciones dentro de su pregunta correspondiente
+                $resultadoGrafica[$idPreg]['opciones'][] = [
                     'perfil_corto' => $row['texto_opcion'],
                     'total' => (int) $row['total']
                 ];
             }
 
+            // Reindexamos el arreglo para que las llaves numéricas sean secuenciales y limpias para JS
+            $resultadoGrafica = array_values($resultadoGrafica);
+
             /* ==================================================
                4. GEOLOCALIZACIÓN
-               Buscamos en la tabla correcta (monitoreo_ubicacion)
             ================================================== */
             $queryPuntos = $db->table('monitoreo_ubicacion')
                 ->select('id_monitoreo, latitud, longitud')

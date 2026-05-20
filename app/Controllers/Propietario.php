@@ -370,7 +370,6 @@ class Propietario extends BaseController
         $usuarioModel = new UsuarioModel();
         $encuestaModel = new EncuestaModel();
 
-        // 1. Capturar los filtros de la URL
         $filtroEncuesta = $this->request->getVar('f_encuesta');
         $filtroUsuario = $this->request->getVar('f_usuario');
 
@@ -378,26 +377,22 @@ class Propietario extends BaseController
         $page = $this->request->getVar('page') ?? 1;
         $offset = ($page - 1) * $perPage;
 
-        // 2. Construir la Subquery base
         $subqueryBuilder = $db->table('respuestas')
             ->select('id_encuesta_realizada, MAX(fecha_respuesta) as fecha_respuesta, id_usuario, id_encuesta, direccion')
             ->where('id_encuesta_realizada IS NOT NULL')
             ->groupBy('id_encuesta_realizada');
 
-        // Filtro por encuesta (se aplica en la subquery para eficiencia)
         if (!empty($filtroEncuesta)) {
             $subqueryBuilder->where('id_encuesta', $filtroEncuesta);
         }
 
         $subquerySql = $subqueryBuilder->getCompiledSelect();
 
-        // 3. Consulta Principal con JOINs y Filtro de Nombre Completo
         $mainQuery = $db->table('(' . $subquerySql . ') AS t1')
             ->select('t1.*, usuarios.nombre, usuarios.apellido_paterno, usuarios.apellido_materno, usuarios.usuario AS nombre_encuestador, encuestas.titulo AS nombre_encuesta')
             ->join('usuarios', 'usuarios.id_usuario = t1.id_usuario', 'left')
             ->join('encuestas', 'encuestas.id_encuesta = t1.id_encuesta', 'left');
 
-        // Filtro por Nombre Completo del Usuario
         if (!empty($filtroUsuario)) {
             $mainQuery->groupStart()
                 ->like('CONCAT(usuarios.nombre, " ", usuarios.apellido_paterno, " ", usuarios.apellido_materno)', $filtroUsuario)
@@ -407,14 +402,16 @@ class Propietario extends BaseController
 
         $mainQuery->orderBy('t1.fecha_respuesta', 'DESC');
 
-        // 4. Obtener Totales y Resultados Paginados
-        $totalResults = $mainQuery->countAllResults(false); // false para no resetear el query
+        $totalResults = $mainQuery->countAllResults(false);
         $listaRespuestas = $mainQuery->get($perPage, $offset)->getResultArray();
 
-        // 5. Configurar Pager con los filtros para que no se pierdan al cambiar de página
+        // --- CORRECCIÓN DE PAGINACIÓN ---
         $pager = service('pager');
-        $pager->setPath(current_url());
-        $pagerLinks = $pager->makeLinks($page, $perPage, $totalResults, 'default_full', 0, 'default');
+        // Usamos la ruta relativa del controlador en lugar de current_url()
+        $pager->setPath('controlador/respuestas');
+
+        // Generamos los links manteniendo los filtros actuales
+        $pagerLinks = $pager->makeLinks($page, $perPage, $totalResults, 'default_full');
 
         $googleConfig = config(\Config\Google::class);
 
@@ -424,7 +421,6 @@ class Propietario extends BaseController
             'totalRespuestas' => $totalResults,
             'google_maps_api_key' => $googleConfig->apiKey,
             'listaEncuestas' => $encuestaModel->select('id_encuesta, titulo')->findAll(),
-            // Enviamos los filtros actuales de vuelta a la vista
             'f_encuesta' => $filtroEncuesta,
             'f_usuario' => $filtroUsuario
         ];
@@ -442,65 +438,58 @@ class Propietario extends BaseController
         $idInstancia = $this->request->getGet('id_instancia');
 
         if (!$idInstancia) {
-            return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de instancia de encuesta requerido.']);
+            return $this->response->setStatusCode(400)->setJSON(['error' => 'ID de instancia requerido.']);
         }
 
-        $db = \Config\Database::connect();
-        $respuestaModel = new RespuestaModel();
-        $preguntaModel = new PreguntaModel();
+        $respuestaModel = new \App\Models\RespuestaModel();
 
-        // 1. Obtener TODAS las respuestas de esta instancia (sesión de encuesta)
-        $respuestasInstancia = $respuestaModel
+        // 1. Obtener los datos con los JOINs necesarios
+        $respuestasRaw = $respuestaModel
             ->select('respuestas.*, preguntas.texto_pregunta, opciones.texto_opcion, encuestas.titulo AS titulo_encuesta, usuarios.usuario AS alias_usuario, usuarios.nombre AS nombre_usuario, usuarios.apellido_paterno')
             ->join('preguntas', 'preguntas.id_pregunta = respuestas.id_pregunta', 'left')
             ->join('opciones', 'opciones.id_opcion = respuestas.id_opcion', 'left')
             ->join('encuestas', 'encuestas.id_encuesta = respuestas.id_encuesta', 'left')
             ->join('usuarios', 'usuarios.id_usuario = respuestas.id_usuario', 'left')
             ->where('respuestas.id_encuesta_realizada', $idInstancia)
-            // Agregamos un ORDER BY para consistencia, si la tabla preguntas tiene una columna 'orden_pregunta'
-            // Si 'orden_pregunta' no existe, quita la siguiente línea
             ->orderBy('preguntas.id_pregunta', 'ASC')
             ->findAll();
 
-        if (empty($respuestasInstancia)) {
-            return $this->response->setStatusCode(404)->setJSON(['error' => 'Detalle de encuesta contestada no encontrado.']);
+        if (empty($respuestasRaw)) {
+            return $this->response->setStatusCode(404)->setJSON(['error' => 'No encontrado.']);
         }
 
-        // 2. Estructurar el detalle de la encuesta para la vista
-        $detalle = [];
-        $preguntasRespondidas = [];
+        // 2. Preparar el encabezado (solo una vez)
+        $detalle = [
+            'alias_usuario' => $respuestasRaw[0]['alias_usuario'],
+            'nombre_usuario' => $respuestasRaw[0]['nombre_usuario'],
+            'apellido_paterno' => $respuestasRaw[0]['apellido_paterno'],
+            'titulo_encuesta' => $respuestasRaw[0]['titulo_encuesta'],
+            'fecha_respuesta' => $respuestasRaw[0]['fecha_respuesta'],
+            'direccion' => $respuestasRaw[0]['direccion'],
+            'referencias' => $respuestasRaw[0]['referencias'],
+        ];
 
-        foreach ($respuestasInstancia as $respuesta) {
-            // Datos del encabezado (tomados de la primera respuesta)
-            if (empty($detalle)) {
-                $detalle = [
-                    'id_usuario' => $respuesta['id_usuario'],
-                    'alias_usuario' => $respuesta['alias_usuario'],
-                    'nombre_usuario' => $respuesta['nombre_usuario'],
-                    'apellido_paterno' => $respuesta['apellido_paterno'],
-                    'titulo_encuesta' => $respuesta['titulo_encuesta'],
-                    'fecha_respuesta' => $respuesta['fecha_respuesta'],
-                    'direccion' => $respuesta['direccion'],
-                    'referencias' => $respuesta['referencias'],
-                    'id_encuesta_realizada' => $respuesta['id_encuesta_realizada'],
+        // 3. AGRUPACIÓN LÓGICA: Pregunta => [Opción 1, Opción 2...]
+        $preguntasAgrupadas = [];
+        foreach ($respuestasRaw as $row) {
+            $idP = $row['id_pregunta'];
+
+            // Si la pregunta no ha sido agregada al array, la creamos
+            if (!isset($preguntasAgrupadas[$idP])) {
+                $preguntasAgrupadas[$idP] = [
+                    'texto_pregunta' => $row['texto_pregunta'],
+                    'respuestas' => [] // Aquí guardaremos todas las opciones marcadas
                 ];
-                // Obtener coordenadas de monitoreo (una sola vez)
-                $monitoreoModel = new MonitoreoModel();
-                $ubicacionMonitoreo = $monitoreoModel->find($respuesta['id_usuario']);
-                $detalle['latitud'] = $ubicacionMonitoreo['latitud'] ?? null;
-                $detalle['longitud'] = $ubicacionMonitoreo['longitud'] ?? null;
             }
 
-            $preguntasRespondidas[] = [
-                'texto_pregunta' => $respuesta['texto_pregunta'],
-                'respuesta_seleccionada' => $respuesta['texto_opcion'],
-            ];
+            // Añadimos la opción a la lista de respuestas de esa pregunta
+            $preguntasAgrupadas[$idP]['respuestas'][] = $row['texto_opcion'];
         }
 
-        // 3. Devolver la respuesta en formato JSON
+        // Convertimos el array asociativo a uno indexado para que sea fácil de recorrer en JS/Vista
         return $this->response->setJSON([
             'detalle' => $detalle,
-            'preguntas_respondidas' => $preguntasRespondidas
+            'preguntas_respondidas' => array_values($preguntasAgrupadas)
         ]);
     }
 

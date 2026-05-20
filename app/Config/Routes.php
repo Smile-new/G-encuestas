@@ -37,17 +37,17 @@ $routes->get('/', 'Home::index');
 $routes->get('/administrador', 'Administrador::index');
 
 //Users
-    $routes->get('usuarios', 'Usuarios::index');
-    $routes->get('usuarios/create', 'Usuarios::create');
-    $routes->post('usuarios/store', 'Usuarios::store');
-    $routes->get('usuarios/edit/(:num)', 'Usuarios::edit/$1');
-    $routes->post('usuarios/update/(:num)', 'Usuarios::update/$1');
-    $routes->post('usuarios/delete/(:num)', 'Usuarios::delete/$1');
+$routes->get('usuarios', 'Usuarios::index');
+$routes->get('usuarios/create', 'Usuarios::create');
+$routes->post('usuarios/store', 'Usuarios::store');
+$routes->get('usuarios/edit/(:num)', 'Usuarios::edit/$1');
+$routes->post('usuarios/update/(:num)', 'Usuarios::update/$1');
+$routes->post('usuarios/delete/(:num)', 'Usuarios::delete/$1');
 
 
 
-    //Encuestas
-   // Routes for Encuestas (Surveys)
+//Encuestas
+// Routes for Encuestas (Surveys)
 $routes->get('encuestas', 'Encuestas::index');
 $routes->get('encuestas/create', 'Encuestas::create');
 $routes->post('encuestas/store', 'Encuestas::store');
@@ -63,7 +63,7 @@ $routes->get('preguntas/getPreguntasConOpcionesPorEncuesta/(:num)', 'Preguntas::
 $routes->get('preguntas', 'Preguntas::index');
 
 //Encuestador
-   $routes->get('home', 'Encuestador::index'); // Ruta base para el encuestador
+$routes->get('home', 'Encuestador::index'); // Ruta base para el encuestador
 $routes->get('perfil', 'Encuestador::perfil');
 $routes->post('perfil/actualizar', 'Encuestador::actualizarPerfil');
 $routes->get('formularios', 'Encuestador::formularios'); // Ruta para la lista de formularios
@@ -101,29 +101,29 @@ $routes->get('estadisticas/descargarExcel', 'EstadisticasController::descargarEx
 
 
 //Administrador
-    $routes->get('dashboard', 'Administrador::index'); // Alias para /administrador/dashboard   
-    $routes->get('admin/perfil', 'Administrador::perfil'); // Perfil admin 
-    $routes->get('admin/actualizar/perfil', 'Administrador::actualizarPerfil'); // Actualizar perfil admin 
+$routes->get('dashboard', 'Administrador::index'); // Alias para /administrador/dashboard   
+$routes->get('admin/perfil', 'Administrador::perfil'); // Perfil admin 
+$routes->get('admin/actualizar/perfil', 'Administrador::actualizarPerfil'); // Actualizar perfil admin 
 
 
 //Operador
-    $routes->get('dash', 'Operador::dashboard'); 
-    $routes->get('estat', 'Operador::estadisticas');
-    $routes->get('operador/perfil', 'Operador::perfil');
-	$routes->post('operador/perfil/update', 'Operador::updateProfile');
+$routes->get('dash', 'Operador::dashboard');
+$routes->get('estat', 'Operador::estadisticas');
+$routes->get('operador/perfil', 'Operador::perfil');
+$routes->post('operador/perfil/update', 'Operador::updateProfile');
 
-    //Opeador Usuarios
-    $routes->get('operador_user', 'Operador_User::index');
-    $routes->get('operador_user/create', 'Operador_User::create');
-    $routes->post('operador_user/store', 'Operador_User::store');
-    $routes->get('operador_user/edit/(:num)', 'Operador_User::edit/$1');
-    $routes->post('operador_user/update/(:num)', 'Operador_User::update/$1');
-    $routes->get('operador_user/verMapa/(:num)', 'Operador_User::verMapa/$1');
-    $routes->get('operador_user/obtener_ubicaciones', 'Operador_User::obtener_ubicaciones');
+//Opeador Usuarios
+$routes->get('operador_user', 'Operador_User::index');
+$routes->get('operador_user/create', 'Operador_User::create');
+$routes->post('operador_user/store', 'Operador_User::store');
+$routes->get('operador_user/edit/(:num)', 'Operador_User::edit/$1');
+$routes->post('operador_user/update/(:num)', 'Operador_User::update/$1');
+$routes->get('operador_user/verMapa/(:num)', 'Operador_User::verMapa/$1');
+$routes->get('operador_user/obtener_ubicaciones', 'Operador_User::obtener_ubicaciones');
 
 
-    
-  $routes->get('controlador', 'Propietario::index');
+
+$routes->get('controlador', 'Propietario::index');
 $routes->get('controlador/panel', 'Propietario::index'); // Usado si index() es estático
 $routes->get('controlador/graficas', 'Propietario::graficas'); // Contiene la lógica de KPIs y gráficos
 $routes->get('controlador/encuestas', 'Propietario::encuestas');
@@ -150,8 +150,25 @@ $routes->get('uniones/getComunidades/(:num)', 'Uniones::getComunidades/$1');
 $routes->post('uniones/procesar', 'Uniones::procesar');
 $routes->get('uniones/getPreguntas/(:num)', 'Uniones::getPreguntas/$1');
 $routes->get('uniones/getOpcionesPregunta/(:num)', 'Uniones::getOpcionesPregunta/$1');
-    //pagina
-    $routes->get('/acerca', 'Home::acerca');
+
+
+/* ==========================================================
+   RUTAS PARA EL MÓDULO DE CRUCES
+========================================================== */
+
+
+$routes->get('cruces', 'Cruces::index');
+$routes->post('cruces/procesar', 'Cruces::procesar');
+$routes->get('cruces/getPreguntas/(:num)', 'Cruces::getPreguntas/$1');
+$routes->get('cruces/getOpcionesPregunta/(:num)', 'Cruces::getOpcionesPregunta/$1');
+$routes->get('cruces/getDistritosFederales/(:num)', 'Cruces::getDistritosFederales/$1');
+$routes->get('cruces/getDistritosLocales/(:num)', 'Cruces::getDistritosLocales/$1');
+$routes->get('cruces/getMunicipios/(:num)', 'Cruces::getMunicipios/$1');
+$routes->get('cruces/getSecciones/(:num)', 'Cruces::getSecciones/$1');
+$routes->get('cruces/getComunidades/(:num)', 'Cruces::getComunidades/$1');
+
+//pagina
+$routes->get('/acerca', 'Home::acerca');
 
 // Acceso a tudominio.com/contacto
 $routes->get('/contacto', 'Home::contacto');

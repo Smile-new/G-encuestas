@@ -104,6 +104,8 @@ class Encuestador extends Controller
         $data['encuesta'] = $encuesta;
         $data['preguntas'] = $this->preguntaModel->getPreguntasConOpciones($idEncuesta);
         $data['comunidades'] = $this->getComunidadesConJerarquiaCompleta();
+        $googleConfig = config('Google');
+        $data['google_maps_api_key'] = $googleConfig->apiKey;
 
         return view('encuestador/ver_encuesta', $data);
     }

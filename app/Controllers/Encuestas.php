@@ -47,97 +47,97 @@ class Encuestas extends BaseController
     /**
      * Guarda una nueva encuesta (con sus preguntas y opciones).
      */
-   public function store()
-{
-    // Reglas de validación del lado del servidor.
-    $rules = [
-    'titulo' => 'required',
-    'descripcion' => 'permit_empty',
-    'activa' => 'required|in_list[0,1]',
-    'preguntas' => 'required',
-    'preguntas.*.texto_pregunta' => 'required',
-    'preguntas.*.opciones' => 'required',
-    'preguntas.*.opciones.*.texto_opcion' => 'required',
-];
+    public function store()
+    {
+        // Reglas de validación del lado del servidor.
+        $rules = [
+            'titulo' => 'required',
+            'descripcion' => 'permit_empty',
+            'activa' => 'required|in_list[0,1]',
+            'preguntas' => 'required',
+            'preguntas.*.texto_pregunta' => 'required',
+            'preguntas.*.opciones' => 'required',
+            'preguntas.*.opciones.*.texto_opcion' => 'required',
+        ];
 
 
 
-    if (!$this->validate($rules)) {
-        return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
-    }
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
+        }
 
-    $postData = $this->request->getPost();
+        $postData = $this->request->getPost();
 
-    // Validación manual: cada pregunta debe tener al menos 2 opciones
-    foreach ($postData['preguntas'] as $index => $pregunta) {
-        if (!isset($pregunta['opciones']) || !is_array($pregunta['opciones']) || count($pregunta['opciones']) < 2) {
-            session()->setFlashdata('error', 'La pregunta #' . ($index + 1) . ' debe tener al menos dos opciones.');
+        // Validación manual: cada pregunta debe tener al menos 2 opciones
+        foreach ($postData['preguntas'] as $index => $pregunta) {
+            if (!isset($pregunta['opciones']) || !is_array($pregunta['opciones']) || count($pregunta['opciones']) < 2) {
+                session()->setFlashdata('error', 'La pregunta #' . ($index + 1) . ' debe tener al menos dos opciones.');
+                return redirect()->back()->withInput();
+            }
+        }
+
+        // Iniciar transacción
+        $this->encuestaModel->db->transBegin();
+
+        try {
+            // Guardar encuesta principal
+            $encuestaData = [
+                'titulo' => $postData['titulo'],
+                'descripcion' => $postData['descripcion'],
+                'activa' => $postData['activa'],
+            ];
+
+            if (!$this->encuestaModel->insert($encuestaData)) {
+                throw new \Exception('No se pudo crear la encuesta: ' . implode(', ', $this->encuestaModel->errors()));
+            }
+
+            $idEncuesta = $this->encuestaModel->insertID();
+
+            // Guardar preguntas y opciones
+            foreach ($postData['preguntas'] as $preguntaIndex => $pregunta) {
+                $preguntaData = [
+                    'id_encuesta' => $idEncuesta,
+                    'texto_pregunta' => $pregunta['texto_pregunta'],
+                    'tipo_pregunta' => 'opcion_multiple',
+                ];
+
+                if (!$this->preguntaModel->insert($preguntaData)) {
+                    throw new \Exception('No se pudo crear la pregunta ' . ($preguntaIndex + 1) . ': ' . implode(', ', $this->preguntaModel->errors()));
+                }
+
+                $idPregunta = $this->preguntaModel->insertID();
+
+                foreach ($pregunta['opciones'] as $opcionIndex => $opcion) {
+                    $opcionData = [
+                        'id_pregunta' => $idPregunta,
+                        'texto_opcion' => $opcion['texto_opcion'],
+                    ];
+
+                    if (!$this->opcionModel->insert($opcionData)) {
+                        throw new \Exception('No se pudo crear la opción ' . ($opcionIndex + 1) . ' para la pregunta ' . ($preguntaIndex + 1) . ': ' . implode(', ', $this->opcionModel->errors()));
+                    }
+                }
+            }
+
+            $this->encuestaModel->db->transComplete();
+
+            if ($this->encuestaModel->db->transStatus() === false) {
+                throw new \Exception('Error en la transacción de la base de datos.');
+            }
+
+            session()->setFlashdata('message', 'Encuesta creada exitosamente.');
+            return redirect()->to(base_url('encuestas'));
+
+        } catch (DatabaseException $e) {
+            $this->encuestaModel->db->transRollback();
+            session()->setFlashdata('error', 'Error de base de datos: ' . $e->getMessage());
+            return redirect()->back()->withInput();
+        } catch (\Exception $e) {
+            $this->encuestaModel->db->transRollback();
+            session()->setFlashdata('error', 'Error al crear la encuesta: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
     }
-
-    // Iniciar transacción
-    $this->encuestaModel->db->transBegin();
-
-    try {
-        // Guardar encuesta principal
-        $encuestaData = [
-            'titulo' => $postData['titulo'],
-            'descripcion' => $postData['descripcion'],
-            'activa' => $postData['activa'],
-        ];
-
-        if (!$this->encuestaModel->insert($encuestaData)) {
-            throw new \Exception('No se pudo crear la encuesta: ' . implode(', ', $this->encuestaModel->errors()));
-        }
-
-        $idEncuesta = $this->encuestaModel->insertID();
-
-        // Guardar preguntas y opciones
-        foreach ($postData['preguntas'] as $preguntaIndex => $pregunta) {
-            $preguntaData = [
-                'id_encuesta' => $idEncuesta,
-                'texto_pregunta' => $pregunta['texto_pregunta'],
-                'tipo_pregunta' => 'opcion_multiple',
-            ];
-
-            if (!$this->preguntaModel->insert($preguntaData)) {
-                throw new \Exception('No se pudo crear la pregunta ' . ($preguntaIndex + 1) . ': ' . implode(', ', $this->preguntaModel->errors()));
-            }
-
-            $idPregunta = $this->preguntaModel->insertID();
-
-            foreach ($pregunta['opciones'] as $opcionIndex => $opcion) {
-                $opcionData = [
-                    'id_pregunta' => $idPregunta,
-                    'texto_opcion' => $opcion['texto_opcion'],
-                ];
-
-                if (!$this->opcionModel->insert($opcionData)) {
-                    throw new \Exception('No se pudo crear la opción ' . ($opcionIndex + 1) . ' para la pregunta ' . ($preguntaIndex + 1) . ': ' . implode(', ', $this->opcionModel->errors()));
-                }
-            }
-        }
-
-        $this->encuestaModel->db->transComplete();
-
-        if ($this->encuestaModel->db->transStatus() === false) {
-            throw new \Exception('Error en la transacción de la base de datos.');
-        }
-
-        session()->setFlashdata('message', 'Encuesta creada exitosamente.');
-        return redirect()->to(base_url('encuestas'));
-
-    } catch (DatabaseException $e) {
-        $this->encuestaModel->db->transRollback();
-        session()->setFlashdata('error', 'Error de base de datos: ' . $e->getMessage());
-        return redirect()->back()->withInput();
-    } catch (\Exception $e) {
-        $this->encuestaModel->db->transRollback();
-        session()->setFlashdata('error', 'Error al crear la encuesta: ' . $e->getMessage());
-        return redirect()->back()->withInput();
-    }
-}
 
     /**
      * Muestra el formulario para editar una encuesta existente.
@@ -171,189 +171,175 @@ class Encuestas extends BaseController
      * Actualiza una encuesta existente (con sus preguntas y opciones).
      * @param int $id El ID de la encuesta a actualizar.
      */
-   public function update($id = null)
-{
-    $encuestaExistente = $this->encuestaModel->find($id);
-    if (!$encuestaExistente) {
-        session()->setFlashdata('error', 'Encuesta no encontrada.');
-        return redirect()->to(base_url('encuestas'));
-    }
+    public function update($id = null)
+    {
+        $encuestaExistente = $this->encuestaModel->find($id);
+        if (!$encuestaExistente) {
+            session()->setFlashdata('error', 'Encuesta no encontrada.');
+            return redirect()->to(base_url('encuestas'));
+        }
 
-    // Reglas de validación (sin usar 'array')
-    $rules = [
-    'titulo' => 'required',
-    'descripcion' => 'permit_empty',
-    'activa' => 'required|in_list[0,1]',
-    'preguntas' => 'required',
-    'preguntas.*.texto_pregunta' => 'required',
-    'preguntas.*.opciones' => 'required',
-    'preguntas.*.opciones.*.texto_opcion' => 'required',
-];
+        $postData = $this->request->getPost();
+        $this->encuestaModel->db->transBegin();
 
+        try {
+            // 1. Actualizar datos básicos de la encuesta
+            $this->encuestaModel->update($id, [
+                'titulo' => $postData['titulo'],
+                'descripcion' => $postData['descripcion'],
+                'activa' => $postData['activa'],
+            ]);
 
-    if (!$this->validate($rules)) {
-        return redirect()->back()->withInput()->with('errors', $this->validator->getErrors());
-    }
+            // 2. Obtener IDs de preguntas actuales en la BD para saber cuáles borrar después
+            $preguntasBD = $this->preguntaModel->where('id_encuesta', $id)->findAll();
+            $idsPreguntasEnBD = array_column($preguntasBD, 'id_pregunta');
+            $idsPreguntasRecibidas = [];
 
-    $postData = $this->request->getPost();
+            // 3. Procesar preguntas recibidas
+            foreach ($postData['preguntas'] as $pregunta) {
+                $idPregunta = $pregunta['id_pregunta'] ?? null; // Necesitas enviar este ID oculto en tu vista
 
-    // Validación manual para mínimo dos opciones por pregunta
-    if (!is_array($postData['preguntas']) || empty($postData['preguntas'])) {
-        session()->setFlashdata('error', 'Debe proporcionar al menos una pregunta válida.');
-        return redirect()->back()->withInput();
-    }
+                $preguntaData = [
+                    'id_encuesta' => $id,
+                    'texto_pregunta' => $pregunta['texto_pregunta'],
+                    'tipo_pregunta' => 'opcion_multiple',
+                ];
 
-    foreach ($postData['preguntas'] as $i => $pregunta) {
-        if (!isset($pregunta['opciones']) || !is_array($pregunta['opciones']) || count($pregunta['opciones']) < 2) {
-            session()->setFlashdata('error', 'La pregunta #' . ($i + 1) . ' debe tener al menos dos opciones.');
+                if ($idPregunta) {
+                    // Actualizar pregunta existente
+                    $this->preguntaModel->update($idPregunta, $preguntaData);
+                    $idsPreguntasRecibidas[] = $idPregunta;
+                } else {
+                    // Insertar pregunta nueva
+                    $this->preguntaModel->insert($preguntaData);
+                    $idPregunta = $this->preguntaModel->insertID();
+                }
+
+                // --- PROCESAR OPCIONES DE ESTA PREGUNTA ---
+                $opcionesBD = $this->opcionModel->where('id_pregunta', $idPregunta)->findAll();
+                $idsOpcionesEnBD = array_column($opcionesBD, 'id_opcion');
+                $idsOpcionesRecibidas = [];
+
+                foreach ($pregunta['opciones'] as $opcion) {
+                    $idOpcion = $opcion['id_opcion'] ?? null; // ID oculto en la vista
+                    $opcionData = [
+                        'id_pregunta' => $idPregunta,
+                        'texto_opcion' => $opcion['texto_opcion'],
+                    ];
+
+                    if ($idOpcion) {
+                        $this->opcionModel->update($idOpcion, $opcionData);
+                        $idsOpcionesRecibidas[] = $idOpcion;
+                    } else {
+                        $this->opcionModel->insert($opcionData);
+                    }
+                }
+
+                // Eliminar opciones que ya no vienen en el POST (fueron borradas en el JS)
+                $opcionesAEliminar = array_diff($idsOpcionesEnBD, $idsOpcionesRecibidas);
+                if (!empty($opcionesAEliminar)) {
+                    $this->opcionModel->whereIn('id_opcion', $opcionesAEliminar)->delete();
+                }
+            }
+
+            // 4. Eliminar preguntas que ya no vienen en el POST
+            $preguntasAEliminar = array_diff($idsPreguntasEnBD, $idsPreguntasRecibidas);
+            if (!empty($preguntasAEliminar)) {
+                $this->preguntaModel->whereIn('id_pregunta', $preguntasAEliminar)->delete();
+            }
+
+            $this->encuestaModel->db->transComplete();
+            session()->setFlashdata('message', 'Encuesta sincronizada correctamente.');
+            return redirect()->to(base_url('encuestas'));
+
+        } catch (\Exception $e) {
+            $this->encuestaModel->db->transRollback();
+            session()->setFlashdata('error', 'Error: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
     }
-
-    $this->encuestaModel->db->transBegin();
-
-    try {
-        // Actualizar encuesta
-        $encuestaData = [
-            'titulo' => $postData['titulo'],
-            'descripcion' => $postData['descripcion'],
-            'activa' => $postData['activa'],
-        ];
-
-        if (!$this->encuestaModel->update($id, $encuestaData)) {
-            throw new \Exception('No se pudo actualizar la encuesta: ' . implode(', ', $this->encuestaModel->errors()));
-        }
-
-        // Eliminar preguntas anteriores (ON DELETE CASCADE debe estar configurado)
-        $this->preguntaModel->where('id_encuesta', $id)->delete();
-
-        // Insertar nuevas preguntas y opciones
-        foreach ($postData['preguntas'] as $preguntaIndex => $pregunta) {
-            $preguntaData = [
-                'id_encuesta' => $id,
-                'texto_pregunta' => $pregunta['texto_pregunta'],
-                'tipo_pregunta' => 'opcion_multiple',
-            ];
-
-            if (!$this->preguntaModel->insert($preguntaData)) {
-                throw new \Exception('No se pudo insertar la pregunta ' . ($preguntaIndex + 1) . ': ' . implode(', ', $this->preguntaModel->errors()));
-            }
-
-            $idPregunta = $this->preguntaModel->insertID();
-
-            foreach ($pregunta['opciones'] as $opcionIndex => $opcion) {
-                $opcionData = [
-                    'id_pregunta' => $idPregunta,
-                    'texto_opcion' => $opcion['texto_opcion'],
-                ];
-
-                if (!$this->opcionModel->insert($opcionData)) {
-                    throw new \Exception('No se pudo insertar la opción ' . ($opcionIndex + 1) . ' para la pregunta ' . ($preguntaIndex + 1) . ': ' . implode(', ', $this->opcionModel->errors()));
-                }
-            }
-        }
-
-        $this->encuestaModel->db->transComplete();
-
-        if ($this->encuestaModel->db->transStatus() === false) {
-            throw new \Exception('Error en la transacción de la base de datos.');
-        }
-
-        session()->setFlashdata('message', 'Encuesta actualizada exitosamente.');
-        return redirect()->to(base_url('encuestas'));
-
-    } catch (DatabaseException $e) {
-        $this->encuestaModel->db->transRollback();
-        session()->setFlashdata('error', 'Error de base de datos: ' . $e->getMessage());
-        return redirect()->back()->withInput();
-    } catch (\Exception $e) {
-        $this->encuestaModel->db->transRollback();
-        session()->setFlashdata('error', 'Error al actualizar la encuesta: ' . $e->getMessage());
-        return redirect()->back()->withInput();
-    }
-}
 
     /**
      * Elimina una encuesta.
      * @param int $id El ID de la encuesta a eliminar.
      */
     public function delete($id)
-{
-    // 1. Obtener todas las preguntas asociadas a la encuesta
-    $preguntas = $this->preguntaModel->where('id_encuesta', $id)->findAll();
+    {
+        // 1. Obtener todas las preguntas asociadas a la encuesta
+        $preguntas = $this->preguntaModel->where('id_encuesta', $id)->findAll();
 
-    // 2. Extraer los IDs de esas preguntas
-    $idPreguntas = array_column($preguntas, 'id_pregunta');
+        // 2. Extraer los IDs de esas preguntas
+        $idPreguntas = array_column($preguntas, 'id_pregunta');
 
-    // 3. Si hay preguntas, borrar sus opciones primero
-    if (!empty($idPreguntas)) {
-        $this->opcionModel->whereIn('id_pregunta', $idPreguntas)->delete();
+        // 3. Si hay preguntas, borrar sus opciones primero
+        if (!empty($idPreguntas)) {
+            $this->opcionModel->whereIn('id_pregunta', $idPreguntas)->delete();
+        }
+
+        // 4. Borrar preguntas de la encuesta
+        $this->preguntaModel->where('id_encuesta', $id)->delete();
+
+        // 5. Borrar la encuesta
+        $this->encuestaModel->delete($id);
+
+        // 6. Redirigir con mensaje
+        return redirect()->to(base_url('encuestas'))->with('success', 'Encuesta eliminada correctamente');
     }
 
-    // 4. Borrar preguntas de la encuesta
-    $this->preguntaModel->where('id_encuesta', $id)->delete();
 
-    // 5. Borrar la encuesta
-    $this->encuestaModel->delete($id);
-
-    // 6. Redirigir con mensaje
-    return redirect()->to(base_url('encuestas'))->with('success', 'Encuesta eliminada correctamente');
-}
-
-
-   public function estatus($id = null)
-{
-    if (!$id || !is_numeric($id)) {
-        if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'ID de encuesta inválido.'
-            ]);
+    public function estatus($id = null)
+    {
+        if (!$id || !is_numeric($id)) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'ID de encuesta inválido.'
+                ]);
+            }
+            session()->setFlashdata('error', 'ID de encuesta inválido.');
+            return redirect()->to(base_url('encuestas'));
         }
-        session()->setFlashdata('error', 'ID de encuesta inválido.');
+
+        $encuesta = $this->encuestaModel->find($id);
+
+        if (!$encuesta) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Encuesta no encontrada.'
+                ]);
+            }
+            session()->setFlashdata('error', 'Encuesta no encontrada.');
+            return redirect()->to(base_url('encuestas'));
+        }
+
+        try {
+            $nuevoEstado = $encuesta['activa'] == 1 ? 0 : 1;
+            $this->encuestaModel->update($id, ['activa' => $nuevoEstado]);
+
+            // Preparar respuesta JSON si es AJAX
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'nuevoEstado' => $nuevoEstado,
+                    'textoEstado' => $nuevoEstado ? 'Activa' : 'Inactiva'
+                ]);
+            }
+
+            $estadoTexto = $nuevoEstado ? 'activada' : 'desactivada';
+            session()->setFlashdata('message', 'Encuesta ' . $estadoTexto . ' correctamente.');
+
+        } catch (\Exception $e) {
+            if ($this->request->isAJAX()) {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Error al cambiar el estado: ' . $e->getMessage()
+                ]);
+            }
+            session()->setFlashdata('error', 'Error al cambiar el estado: ' . $e->getMessage());
+        }
+
         return redirect()->to(base_url('encuestas'));
     }
-
-    $encuesta = $this->encuestaModel->find($id);
-
-    if (!$encuesta) {
-        if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Encuesta no encontrada.'
-            ]);
-        }
-        session()->setFlashdata('error', 'Encuesta no encontrada.');
-        return redirect()->to(base_url('encuestas'));
-    }
-
-    try {
-        $nuevoEstado = $encuesta['activa'] == 1 ? 0 : 1;
-        $this->encuestaModel->update($id, ['activa' => $nuevoEstado]);
-
-        // Preparar respuesta JSON si es AJAX
-        if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
-                'success' => true,
-                'nuevoEstado' => $nuevoEstado,
-                'textoEstado' => $nuevoEstado ? 'Activa' : 'Inactiva'
-            ]);
-        }
-
-        $estadoTexto = $nuevoEstado ? 'activada' : 'desactivada';
-        session()->setFlashdata('message', 'Encuesta ' . $estadoTexto . ' correctamente.');
-
-    } catch (\Exception $e) {
-        if ($this->request->isAJAX()) {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => 'Error al cambiar el estado: ' . $e->getMessage()
-            ]);
-        }
-        session()->setFlashdata('error', 'Error al cambiar el estado: ' . $e->getMessage());
-    }
-
-    return redirect()->to(base_url('encuestas'));
-}
 
 }

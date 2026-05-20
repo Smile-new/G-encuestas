@@ -226,8 +226,12 @@
                                 <span class="count bg-success"></span>
                             </div>
                             <div class="profile-name">
-                                <h5 class="mb-0 font-weight-normal"><?= esc($nombreCompleto) ?></h5>
-                                <span><?= esc($rolTexto) ?></span>
+                                <h5 class="mb-0 font-weight-normal">
+                                    <?= esc($nombreCompleto) ?>
+                                </h5>
+                                <span>
+                                    <?= esc($rolTexto) ?>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -269,6 +273,13 @@
                     <a class="nav-link" href="<?= base_url('uniones') ?>">
                         <span class="menu-icon"><i class="mdi mdi-source-branch"></i></span>
                         <span class="menu-title">Uniones</span>
+                    </a>
+                </li>
+
+                <li class="nav-item menu-items">
+                    <a class="nav-link" href="<?= base_url('cruces') ?>">
+                        <span class="menu-icon"><i class="mdi mdi-compare"></i></span>
+                        <span class="menu-title">Cruces</span>
                     </a>
                 </li>
 
@@ -348,7 +359,7 @@
                 <div class="content-wrapper">
 
                     <div class="page-header">
-                        <h3 class="page-title">Análisis de Segmentación Dinámica (Mapa y Gráficas)</h3>
+                        <h3 class="page-title">Reporte tecnico de filtrado</h3>
                     </div>
 
                     <div class="row">
@@ -456,11 +467,9 @@
                                                 <select
                                                     class="form-control-sm selector-tipo-maestro bg-dark text-white border-secondary"
                                                     id="selector_tipo_grafica">
-                                                    <option value="bar" selected>Barras Horizontales</option>
+                                                    <option value="bar" selected>Lineas</option>
                                                     <option value="bar_v">Barras Verticales</option>
-                                                    <option value="pie">Pastel</option>
-                                                    <option value="doughnut">Dona</option>
-                                                    <option value="line">Gráfica de Puntos / Línea</option>
+                                                    
                                                 </select>
                                             </div>
                                         </div>
@@ -492,25 +501,7 @@
                                 </div>
                             </div>
 
-                            <div class="card" id="seccion_tabla_detalles"
-                                style="display: none; background: #191c24; margin-top: 20px; border: 1px solid #2c2e33;">
-                                <div class="card-body">
-                                    <h4 class="card-title text-warning">Detalle de Filtros Aplicados</h4>
-                                    <div class="table-responsive">
-                                        <table class="table table-hover" style="color: #fff;">
-                                            <thead>
-                                                <tr>
-                                                    <th>Categoría (Pregunta)</th>
-                                                    <th>Opciones Seleccionadas</th>
-                                                    <th class="text-center">Estado</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="tabla_filtros_body">
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
+                            
 
                             <div class="card" id="seccion_mapa"
                                 style="display:none; margin-top: 20px; border: 1px solid #2c2e33;">
@@ -601,30 +592,58 @@
             function agregarFilaCriterio() {
                 const uid = Date.now();
                 let opts = listaPreguntas.map(p => `<option value="${p.id_pregunta}">${p.texto_pregunta}</option>`).join('');
+
                 $('#contenedor_criterios').append(`
-                <div class="criterio-row" id="row_${uid}" style="border: 1px solid #3e415b; padding: 15px; border-radius: 10px; margin-bottom: 10px; background: #191c24; position:relative;">
-                    <button class="btn btn-danger btn-sm" style="position:absolute; top:5px; right:5px;" onclick="$('#row_${uid}').remove()">×</button>
-                    <div class="form-group mb-2">
-                        <label class="small text-muted">Pregunta</label>
-                        <select class="form-control mb-2 select-pregunta" data-target="opciones_${uid}">
-                            <option value="">Seleccione...</option>
-                            ${opts}
-                        </select>
-                    </div>
-                    <div class="form-group mb-0">
-                        <label class="small text-muted">Opciones (Ctrl + Click)</label>
-                        <select class="form-control select-opcion" id="opciones_${uid}" multiple style="min-height: 100px; height: auto;"></select>
-                    </div>
-                </div>`);
+    <div class="criterio-row" id="row_${uid}" style="border: 1px solid #3e415b; padding: 15px; border-radius: 10px; margin-bottom: 10px; background: #191c24; position:relative;">
+        <button class="btn btn-danger btn-sm" style="position:absolute; top:5px; right:5px;" onclick="$('#row_${uid}').remove()">×</button>
+        
+        <div class="form-group mb-2">
+            <label class="small text-muted">Pregunta</label>
+            <select class="form-control mb-2 select-pregunta" data-target="opciones_${uid}">
+                <option value="">Seleccione...</option>
+                ${opts}
+            </select>
+        </div>
+        
+        <div class="form-group mb-0">
+            <label class="small text-muted">Seleccione una o varias opciones</label>
+            
+            <div id="opciones_${uid}" class="opciones-container form-control" style="min-height: 120px; max-height: 180px; overflow-y: auto; background: #2a2d3e; border: 1px solid #3e415b; padding: 10px; height: auto;">
+                <span class="text-muted" style="font-size: 13px;">Seleccione una pregunta primero...</span>
+            </div>
+            
+        </div>
+    </div>`);
             }
 
             $(document).on('change', '.select-pregunta', function () {
                 const idP = $(this).val();
                 const target = $(this).data('target');
-                if (!idP) return $(`#${target}`).empty();
-                $(`#${target}`).html('<option>Cargando...</option>');
+
+                // 1. Si regresan a "Seleccione...", limpiamos y mostramos el texto por defecto
+                if (!idP) {
+                    $(`#${target}`).html('<span class="text-muted" style="font-size: 13px;">Seleccione una pregunta primero...</span>');
+                    return;
+                }
+
+                // 2. Mensaje temporal mientras carga de la base de datos
+                $(`#${target}`).html('<span class="text-white" style="font-size: 13px;">Cargando opciones...</span>');
+
+                // 3. Petición para traer las opciones
                 $.get(`<?= base_url('uniones/getOpcionesPregunta') ?>/${idP}`, function (res) {
-                    $(`#${target}`).html(res.map(o => `<option value="${o.id_opcion}">${o.texto_opcion}</option>`).join(''));
+
+                    // CORRECCIÓN: Iterar para crear inputs tipo checkbox en lugar de <option>
+                    const checkboxesHtml = res.map(o => `
+            <div class="form-check" style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; padding-left: 0;">
+                <input class="check-opcion" type="checkbox" value="${o.id_opcion}" id="chk_${target}_${o.id_opcion}" style="cursor: pointer; width: 16px; height: 16px; margin: 0;">
+                <label class="form-check-label text-white mb-0" style="cursor: pointer; width: 100%; font-size: 14px; user-select: none;" for="chk_${target}_${o.id_opcion}">
+                    ${o.texto_opcion}
+                </label>
+            </div>
+        `).join('');
+
+                    // Inyectamos todo el bloque de checkboxes en el contenedor
+                    $(`#${target}`).html(checkboxesHtml);
                 });
             });
 
@@ -633,48 +652,82 @@
             ========================================== */
             $('#btn_procesar').click(function () {
                 let filtros = {};
+
+                // 1. Recolección de criterios de perfil (con CHECKBOXES)
                 $('.criterio-row').each(function () {
                     const idP = $(this).find('.select-pregunta').val();
-                    const valO = $(this).find('.select-opcion').val();
-                    if (idP && valO && valO.length > 0) filtros[idP] = valO;
+                    let valO = [];
+
+                    $(this).find('.check-opcion:checked').each(function () {
+                        valO.push($(this).val());
+                    });
+
+                    if (idP && valO.length > 0) {
+                        filtros[idP] = valO;
+                    }
                 });
 
-                if (Object.keys(filtros).length === 0) return alert("Seleccione criterios.");
+                if (Object.keys(filtros).length === 0) {
+                    alert("Por favor, seleccione al menos un criterio y marque una opción para el análisis.");
+                    return;
+                }
 
                 $('#loader').show();
                 $('.chart-container, #no_data, #seccion_mapa, #seccion_tabla_detalles, #dynamic-legend-container').hide();
 
+                // 2. Mapeo geográfico
+                let datosGeo = {
+                    'id_estado': $('#id_estado').val() || '',
+                    'id_distrito_federal': $('#id_distritofederal').val() || '',
+                    'id_distrito_local': $('#id_distritolocal').val() || '',
+                    'id_municipio': $('#id_municipio').val() || '',
+                    'id_seccion': $('#id_seccion').val() || '',
+                    'id_comunidad': $('#id_comunidad').val() || ''
+                };
+
+                // 3. Petición POST
                 $.post('<?= base_url('uniones/procesar') ?>', {
                     id_encuesta: $('#id_encuesta').val(),
                     filtros: filtros,
-                    geo: {
-                        id_estado: $('#id_estado').val(),
-                        id_distritofederal: $('#id_distrito_federal').val(),
-                        id_distritolocal: $('#id_distrito_local').val(),
-                        id_municipio: $('#id_municipio').val(),
-                        id_seccion: $('#id_seccion').val(),
-                        id_comunidad: $('#id_comunidad').val()
-                    }
+                    geo: datosGeo
                 }, function (res) {
                     $('#loader').hide();
 
                     if (res.status === 'success') {
-
                         lastChartData = res;
-                        window.datosGrafica = res; // 🔥🔥 ESTA LÍNEA ARREGLA TODO
+                        window.datosGrafica = res;
 
-                        $('.chart-container, #seccion_mapa, #dynamic-legend-container').show();
+                        // ── Guardar última opción marcada para el reporte ──────
+                        window._ultimaOpcionReporte = "";
+                        $('.criterio-row').each(function () {
+                            $(this).find('.check-opcion:checked').each(function () {
+                                const chkId = $(this).attr('id');
+                                const txt = $(`label[for="${chkId}"]`).text().trim();
+                                if (txt) window._ultimaOpcionReporte = txt;
+                            });
+                        });
+                        // ───────────────────────────────────────────────────────
+
+                        $('.chart-container, #seccion_mapa, #dynamic-legend-container, #seccion_tabla_detalles').show();
+
                         actualizarGrafica(res.desglose, res.resumen);
-                        generarSelectoresDeColor(res.desglose);
-                        actualizarMapa(res.puntos);
-                        actualizarTablaFiltros();
+
+                        if (typeof generarSelectoresDeColor === 'function') generarSelectoresDeColor(res.desglose);
+                        if (typeof actualizarMapa === 'function') actualizarMapa(res.puntos);
+                        if (typeof actualizarTablaFiltros === 'function') actualizarTablaFiltros();
 
                     } else {
                         $('#no_data').show();
+                        if (res.msg) console.error("Error del servidor: ", res.msg);
                     }
+
+                }).fail(function (err) {
+                    $('#loader').hide();
+                    $('#no_data').show();
+                    alert("Ocurrió un error al procesar los datos. Verifique su conexión.");
+                    console.error("Error en POST:", err);
                 });
             });
-
 
             $(document).on('change', '#selector_tipo_grafica', function () {
                 currentChartType = $(this).val();
@@ -683,7 +736,6 @@
 
 
             function actualizarGrafica(desglose, resumen) {
-
                 const canvas = document.getElementById('canvasUniones');
                 const ctx = canvas.getContext('2d');
 
@@ -699,184 +751,466 @@
                     targetType = (targetType === 'line') ? 'line' : 'bar';
                 }
 
-                const isCircular = ['pie', 'doughnut'].includes(targetType);
                 const isLine = targetType === 'line';
+                const isVertical = indexAxis === 'x';
+                const isHorizontal = indexAxis === 'y' && !isLine;
                 const numElementos = desglose.length;
-
                 const $contenedor = $('#contenedor_grafica_principal');
 
-                // Ajuste de altura dinámica
-                const alturaBase = !isCircular && indexAxis === 'y'
-                    ? Math.max(600, (numElementos * 50) + 100)
-                    : 650;
+                // Siempre limpiar scroll al cambiar gráfica
+                $contenedor.css('min-width', '');
+                $contenedor.css('width', '100%');
+                $contenedor.parent().css('overflow-x', 'hidden');
+                $contenedor.parent().css('overflow-y', 'hidden');
 
-                $contenedor.css('height', alturaBase + 'px');
+                const universoTotal = resumen.total_encuesta || 100;
+                const maxDataValue = Math.max(...desglose.map(d => Math.round(d.total)));
 
-                const totalPersonas = resumen.coincidencias ||
-                    desglose.reduce((sum, d) => sum + parseInt(d.total), 0);
-
-                // --- 1. LÓGICA DE COLORES CORREGIDA ---
-                // Ahora usa barColorsMap y PALETA_PRO para sincronizarse con los inputs de color
                 const rawColors = desglose.map((d, i) => {
-                    const key = d.texto_completo || d.texto_opcion;
-
-                    // Si ya existe un color seleccionado/guardado, úsalo
-                    if (barColorsMap[key]) {
-                        return barColorsMap[key];
-                    } else {
-                        // Si no, asigna uno de PALETA_PRO y guárdalo para que el input nazca con este color
-                        const colorAsignado = PALETA_PRO[i % PALETA_PRO.length];
-                        barColorsMap[key] = colorAsignado;
-                        return colorAsignado;
-                    }
+                    const key = d.texto_completo || d.texto_opcion || d.perfil_corto;
+                    if (barColorsMap[key]) return barColorsMap[key];
+                    const colorAsignado = PALETA_PRO[i % PALETA_PRO.length];
+                    barColorsMap[key] = colorAsignado;
+                    return colorAsignado;
                 });
 
-                // --- Patrones ---
                 const createPattern = (color) => {
                     const pc = document.createElement('canvas');
-                    pc.width = 14;
-                    pc.height = 14;
+                    pc.width = 12; pc.height = 12;
                     const pctx = pc.getContext('2d');
                     pctx.fillStyle = color;
-                    pctx.fillRect(0, 0, 14, 14);
-                    pctx.strokeStyle = 'rgba(255,255,255,0.35)';
-                    pctx.lineWidth = 2;
+                    pctx.fillRect(0, 0, 12, 12);
+                    pctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                    pctx.lineWidth = 1;
                     pctx.beginPath();
-                    pctx.moveTo(0, 14);
-                    pctx.lineTo(14, 0);
+                    pctx.moveTo(0, 12); pctx.lineTo(12, 0);
                     pctx.stroke();
                     return ctx.createPattern(pc, 'repeat');
                 };
 
-                // --- Estilos Visuales ---
-                let finalBackground;
-                if (isLine) {
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                    gradient.addColorStop(0, 'rgba(220, 53, 69, 0.6)');
-                    gradient.addColorStop(1, 'rgba(220, 53, 69, 0.05)');
-                    finalBackground = gradient;
-                } else {
-                    finalBackground = rawColors.map(c => createPattern(c));
+               
+
+                // ── GRÁFICA DE LÍNEAS ─────────────────────────────────────────────────────
+                if (isHorizontal) {
+
+                    // ── Calculamos el ancho real máximo de las etiquetas ──
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.font = 'bold 11px sans-serif';
+                    const maxLabelPx = Math.max(
+                        ...desglose.map(d => tempCtx.measureText(d.perfil_corto || d.texto_opcion || '').width)
+                    );
+
+                    // Con 45° la proyección vertical es width * sin(45°) ≈ width * 0.707
+                    const espacioAbajo = Math.ceil(maxLabelPx * 0.707) + 40;
+                    const alturaLinea = espacioAbajo + 340;
+
+                    $contenedor.css('height', alturaLinea + 'px');
+
+                    window.chartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: desglose.map(d => d.perfil_corto || d.texto_opcion),
+                            datasets: [{
+                                data: desglose.map(d => Math.round(d.total)),
+                                borderColor: 'rgba(78,121,167,1)',
+                                backgroundColor: (context) => {
+                                    const chart = context.chart;
+                                    const { ctx: c, chartArea } = chart;
+                                    if (!chartArea) return 'transparent';
+                                    const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+                                    grad.addColorStop(0, 'rgba(78,121,167,0.55)');
+                                    grad.addColorStop(0.6, 'rgba(78,121,167,0.15)');
+                                    grad.addColorStop(1, 'rgba(78,121,167,0.02)');
+                                    return grad;
+                                },
+                                borderWidth: 3,
+                                pointRadius: 8,
+                                pointBackgroundColor: rawColors,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 3,
+                                pointHoverRadius: 12,
+                                pointHoverBorderWidth: 3,
+                                pointStyle: 'circle',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            layout: {
+                                padding: { top: 70, bottom: espacioAbajo, left: 40, right: 40 }
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                datalabels: { display: false }
+                            },
+                            scales: {
+                                x: {
+                                    grid: { display: false },
+                                    border: { display: false },
+                                    ticks: { display: false },
+                                    offset: true
+                                },
+                                y: {
+                                    display: false,
+                                    beginAtZero: true,
+                                    max: Math.ceil(maxDataValue * 1.35)
+                                }
+                            }
+                        },
+                        plugins: [ChartDataLabels, {
+                            id: 'linea3DCustom',
+
+                            afterDatasetsDraw(chart) {
+                                const { ctx: c } = chart;
+                                const meta = chart.getDatasetMeta(0);
+
+                                desglose.forEach((d, i) => {
+                                    const val = Math.round(d.total);
+                                    const pct = ((val / universoTotal) * 100).toFixed(1);
+                                    const punto = meta.data[i];
+                                    const x = punto.x;
+                                    const y = punto.y;
+                                    const color = rawColors[i] || '#4e79a7';
+
+                                    // ── Sombra del punto (efecto 3D) ──
+                                    c.save();
+                                    c.beginPath();
+                                    c.arc(x + 3, y + 5, 10, 0, Math.PI * 2);
+                                    c.fillStyle = 'rgba(0,0,0,0.15)';
+                                    c.fill();
+                                    c.restore();
+
+                                    // ── Punto exterior con brillo ──
+                                    c.save();
+                                    const gradPunto = c.createRadialGradient(x - 3, y - 3, 1, x, y, 10);
+                                    gradPunto.addColorStop(0, '#ffffff');
+                                    gradPunto.addColorStop(0.4, color);
+                                    gradPunto.addColorStop(1, shadeColor(color, -40));
+                                    c.beginPath();
+                                    c.arc(x, y, 10, 0, Math.PI * 2);
+                                    c.fillStyle = gradPunto;
+                                    c.fill();
+                                    c.strokeStyle = '#fff';
+                                    c.lineWidth = 2.5;
+                                    c.stroke();
+                                    c.restore();
+
+                                    // ── Línea vertical desde el punto hacia arriba ──
+                                    c.save();
+                                    c.beginPath();
+                                    c.setLineDash([4, 3]);
+                                    c.moveTo(x, y - 12);
+                                    c.lineTo(x, y - 52);
+                                    c.strokeStyle = color;
+                                    c.lineWidth = 1.5;
+                                    c.globalAlpha = 0.5;
+                                    c.stroke();
+                                    c.restore();
+
+                                    // ── Caja del porcentaje con fondo y borde de color ──
+                                    c.save();
+                                    c.translate(x, y - 55);
+                                    c.rotate(-Math.PI / 2); // 90 grados
+
+                                    const texto = `${val}  (${pct}%)`;
+                                    c.font = 'bold 11px sans-serif';
+                                    const tw = c.measureText(texto).width;
+                                    const boxW = tw + 14;
+                                    const boxH = 20;
+
+                                    // Sombra de la caja
+                                    c.shadowColor = 'rgba(0,0,0,0.2)';
+                                    c.shadowBlur = 6;
+                                    c.shadowOffsetX = 2;
+                                    c.shadowOffsetY = 2;
+
+                                    // Fondo de la caja
+                                    c.fillStyle = color;
+                                    roundRect(c, -boxW / 2, -boxH / 2, boxW, boxH, 5);
+                                    c.fill();
+
+                                    // Borde blanco
+                                    c.shadowColor = 'transparent';
+                                    c.strokeStyle = 'rgba(255,255,255,0.7)';
+                                    c.lineWidth = 1.5;
+                                    roundRect(c, -boxW / 2, -boxH / 2, boxW, boxH, 5);
+                                    c.stroke();
+
+                                    // Texto blanco
+                                    c.fillStyle = '#ffffff';
+                                    c.textAlign = 'center';
+                                    c.textBaseline = 'middle';
+                                    c.fillText(texto, 0, 0);
+                                    c.restore();
+                                });
+                            },
+
+                            afterDraw(chart) {
+                                const { ctx: c, chartArea } = chart;
+                                const meta = chart.getDatasetMeta(0);
+                                const yBase = chartArea.bottom + 8;
+
+                                desglose.forEach((d, i) => {
+                                    const punto = meta.data[i];
+                                    const x = punto.x;
+                                    const label = d.perfil_corto || d.texto_opcion || '';
+                                    const color = rawColors[i] || '#333';
+
+                                    // ── Línea guía vertical al nombre ──
+                                    c.save();
+                                    c.beginPath();
+                                    c.moveTo(x, yBase);
+                                    c.lineTo(x, yBase + 10);
+                                    c.strokeStyle = color;
+                                    c.lineWidth = 1.5;
+                                    c.globalAlpha = 0.4;
+                                    c.stroke();
+                                    c.restore();
+
+                                    // ── Nombre en diagonal 45° con color ──
+                                    c.save();
+                                    c.translate(x, yBase + 14);
+                                    c.rotate(-Math.PI / 4); // 45° diagonal
+                                    c.textAlign = 'right';
+                                    c.textBaseline = 'middle';
+                                    c.font = 'bold 11px sans-serif';
+                                    c.fillStyle = color;
+                                    c.fillText(label, 0, 0);
+                                    c.restore();
+                                });
+                            }
+                        }]
+                    });
+
+                    return;
                 }
 
-                const borderColor = isLine ? '#dc3545' : '#ffffff';
-                const pointBgColor = isLine ? '#ffffff' : undefined;
-                const pointBorderColor = isLine ? '#dc3545' : undefined;
+                // ── Helpers ──────────────────────────────────────────────
 
-                const superDetailPlugin = {
-                    id: 'superDetail',
-                    beforeDatasetDraw(chart) {
-                        const { ctx } = chart;
-                        ctx.save();
-                        ctx.shadowColor = 'rgba(0,0,0,0.25)';
-                        ctx.shadowBlur = 10;
-                        ctx.shadowOffsetX = 4;
-                        ctx.shadowOffsetY = 4;
-                    },
-                    afterDatasetDraw(chart) {
-                        chart.ctx.restore();
-                    }
-                };
+                function roundRect(ctx, x, y, w, h, r) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + r, y);
+                    ctx.lineTo(x + w - r, y);
+                    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                    ctx.lineTo(x + w, y + h - r);
+                    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                    ctx.lineTo(x + r, y + h);
+                    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                    ctx.lineTo(x, y + r);
+                    ctx.quadraticCurveTo(x, y, x + r, y);
+                    ctx.closePath();
+                }
+
+                function shadeColor(color, percent) {
+                    if (!color.startsWith('#')) return color;
+                    let r = parseInt(color.slice(1, 3), 16);
+                    let g = parseInt(color.slice(3, 5), 16);
+                    let b = parseInt(color.slice(5, 7), 16);
+                    r = Math.min(255, Math.max(0, Math.round(r * (100 + percent) / 100)));
+                    g = Math.min(255, Math.max(0, Math.round(g * (100 + percent) / 100)));
+                    b = Math.min(255, Math.max(0, Math.round(b * (100 + percent) / 100)));
+                    return `rgb(${r},${g},${b})`;
+                }
+
+                // ── BARRAS VERTICALES ─────────────────────────────────────────────────────
+                const alturaBase = Math.max(500, (numElementos * 20) + 200);
+                $contenedor.css('height', alturaBase + 'px');
+
+                const datosOriginales3D = desglose.map(d => Math.round(d.total));
 
                 window.chartInstance = new Chart(ctx, {
-                    type: targetType,
+                    type: 'bar',
                     data: {
-                        labels: desglose.map(d => d.perfil_corto),
+                        labels: desglose.map(d => d.perfil_corto || d.texto_opcion),
                         datasets: [{
-                            data: desglose.map(d => Math.round(d.total)),
-                            backgroundColor: finalBackground,
-                            borderColor: borderColor,
-                            borderWidth: isCircular ? 6 : (isLine ? 3 : 4),
-                            borderRadius: isCircular ? 0 : 22,
-                            borderSkipped: false,
-                            spacing: isCircular ? 8 : 0,
-
-                            pointRadius: isLine ? 6 : 0,
-                            pointHoverRadius: isLine ? 8 : 0,
-                            pointBackgroundColor: pointBgColor,
-                            pointBorderColor: pointBorderColor,
-                            pointBorderWidth: 3,
-
-                            tension: 0.4,
-                            fill: isLine,
-                            barThickness: isCircular ? null : (indexAxis === 'y' ? 25 : (numElementos > 15 ? 22 : 48)),
-                            hoverOffset: 15
+                            data: datosOriginales3D,
+                            backgroundColor: 'rgba(0,0,0,0)',
+                            borderColor: 'rgba(0,0,0,0)',
+                            borderWidth: 0,
+                            barPercentage: 0.6,
+                            maxBarThickness: 60
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        indexAxis: indexAxis,
-
-                        layout: {
-                            padding: {
-                                top: 60,
-                                bottom: isCircular ? 140 : 60,
-                                left: 20,
-                                right: 80
-                            }
-                        },
-
+                        indexAxis: 'x',
+                        layout: { padding: { top: 60, bottom: 20, left: 20, right: 20 } },
                         plugins: {
-                            datalabels: {
-                                color: '#000',
-                                font: { weight: 'bold', size: 13 },
-                                // Rotación: 0 si es horizontal, -90 si es vertical/circular
-                                rotation: indexAxis === 'y' ? 0 : -90,
-                                anchor: isCircular ? 'end' : 'end',
-                                align: isCircular ? 'end' : (indexAxis === 'y' ? 'right' : 'end'),
-                                offset: isCircular ? 4 : 8,
-                                display: true,
-                                formatter: (value) => {
-                                    const pct = ((value / totalPersonas) * 100).toFixed(1);
-                                    return `${pct}%`;
-                                },
-                                textStrokeColor: '#fff',
-                                textStrokeWidth: 4
-                            },
-                            legend: {
-                                display: isCircular,
-                                position: 'bottom',
-                                labels: { padding: 30, usePointStyle: true }
-                            }
+                            legend: { display: false },
+                            datalabels: { display: false }
                         },
-
                         scales: {
                             x: {
-                                display: !isCircular,
-                                grid: { display: false, drawBorder: false },
-                                grace: '15%',
-                                ticks: {
-                                    display: indexAxis === 'x',
-                                    autoSkip: false,
-                                    minRotation: 90,
-                                    maxRotation: 90,
-                                    font: { weight: 'bold' }
-                                }
+                                beginAtZero: true,
+                                grid: { display: false },
+                                border: { display: false },
+                                ticks: { color: '#444', font: { size: 11, weight: 'bold' } }
                             },
                             y: {
-                                display: !isCircular,
-                                grid: { display: false, drawBorder: false },
-                                grace: '15%',
-                                ticks: {
-                                    display: indexAxis === 'y',
-                                    autoSkip: false,
-                                    minRotation: 0,
-                                    maxRotation: 0,
-                                    font: { weight: 'bold' },
-                                    crossAlign: 'near'
-                                },
-                                afterFit: function (scaleInstance) {
-                                    if (indexAxis === 'y') {
-                                        scaleInstance.width = 160;
-                                    }
-                                }
+                                beginAtZero: true,
+                                display: false,
+                                grid: { display: false },
+                                border: { display: false },
+                                max: Math.ceil(maxDataValue * 1.45)
                             }
-                        },
-
-                        cutout: targetType === 'doughnut' ? '50%' : 0
+                        }
                     },
-                    plugins: [ChartDataLabels, superDetailPlugin]
+                    plugins: [ChartDataLabels, {
+                        id: 'bar3DPlugin',
+                        afterDatasetsDraw(chart) {
+                            const { ctx, scales, chartArea } = chart;
+                            const meta = chart.getDatasetMeta(0);
+                            const yZero = scales.y.getPixelForValue(0);
+                            const depth = 14;
+
+                            const lighten = (hex, amt) => {
+                                let r = parseInt(hex.slice(1, 3), 16),
+                                    g = parseInt(hex.slice(3, 5), 16),
+                                    b = parseInt(hex.slice(5, 7), 16);
+                                r = Math.min(255, Math.round(r * (100 + amt) / 100));
+                                g = Math.min(255, Math.round(g * (100 + amt) / 100));
+                                b = Math.min(255, Math.round(b * (100 + amt) / 100));
+                                return `rgb(${r},${g},${b})`;
+                            };
+                            const darken = (hex, amt) => lighten(hex, -amt);
+
+                            meta.data.forEach((bar, i) => {
+                                const color = rawColors[i % rawColors.length];
+                                const x = bar.x;
+                                const bw = bar.width;
+                                const bx = x - bw / 2;
+                                const yTop = bar.y;
+                                const height = yZero - yTop;
+
+                                if (height <= 0) return;
+
+                                const fullTop = chartArea.top + 10;
+                                const fullH = yZero - fullTop;
+
+                                // ── 1. Contenedor gris 3D ────────────────────────────────────
+
+                                ctx.save();
+
+                                ctx.fillStyle = 'rgba(200,205,215,0.55)';
+                                ctx.beginPath();
+                                ctx.roundRect(bx, fullTop, bw, fullH, [4, 4, 0, 0]);
+                                ctx.fill();
+
+                                ctx.beginPath();
+                                ctx.moveTo(bx, fullTop);
+                                ctx.lineTo(bx + bw, fullTop);
+                                ctx.lineTo(bx + bw + depth, fullTop - depth * 0.6);
+                                ctx.lineTo(bx + depth, fullTop - depth * 0.6);
+                                ctx.closePath();
+                                ctx.fillStyle = 'rgba(180,185,195,0.55)';
+                                ctx.fill();
+
+                                ctx.beginPath();
+                                ctx.moveTo(bx + bw, fullTop);
+                                ctx.lineTo(bx + bw + depth, fullTop - depth * 0.6);
+                                ctx.lineTo(bx + bw + depth, yZero - depth * 0.6);
+                                ctx.lineTo(bx + bw, yZero);
+                                ctx.closePath();
+                                ctx.fillStyle = 'rgba(160,165,175,0.55)';
+                                ctx.fill();
+
+                                ctx.restore();
+
+                                // ── 2. Barra de color 3D ─────────────────────────────────────
+
+                                ctx.save();
+
+                                const gradFront = ctx.createLinearGradient(bx, yTop, bx + bw, yTop);
+                                gradFront.addColorStop(0, lighten(color, 30));
+                                gradFront.addColorStop(0.5, color);
+                                gradFront.addColorStop(1, darken(color, 20));
+
+                                ctx.beginPath();
+                                ctx.roundRect(bx, yTop, bw, height, [4, 4, 0, 0]);
+                                ctx.fillStyle = gradFront;
+                                ctx.fill();
+                                ctx.strokeStyle = darken(color, 30);
+                                ctx.lineWidth = 1;
+                                ctx.stroke();
+
+                                // Cara superior
+                                ctx.beginPath();
+                                ctx.moveTo(bx, yTop);
+                                ctx.lineTo(bx + bw, yTop);
+                                ctx.lineTo(bx + bw + depth, yTop - depth * 0.6);
+                                ctx.lineTo(bx + depth, yTop - depth * 0.6);
+                                ctx.closePath();
+                                ctx.fillStyle = lighten(color, 50);
+                                ctx.fill();
+                                ctx.strokeStyle = darken(color, 10);
+                                ctx.lineWidth = 0.5;
+                                ctx.stroke();
+
+                                // Cara lateral derecha
+                                ctx.beginPath();
+                                ctx.moveTo(bx + bw, yTop);
+                                ctx.lineTo(bx + bw + depth, yTop - depth * 0.6);
+                                ctx.lineTo(bx + bw + depth, yZero - depth * 0.6);
+                                ctx.lineTo(bx + bw, yZero);
+                                ctx.closePath();
+                                ctx.fillStyle = darken(color, 25);
+                                ctx.fill();
+                                ctx.strokeStyle = darken(color, 35);
+                                ctx.lineWidth = 0.5;
+                                ctx.stroke();
+
+                                // Brillo interior
+                                const shine = ctx.createLinearGradient(bx, 0, bx + bw * 0.35, 0);
+                                shine.addColorStop(0, 'rgba(255,255,255,0.25)');
+                                shine.addColorStop(1, 'rgba(255,255,255,0)');
+                                ctx.beginPath();
+                                ctx.roundRect(bx, yTop, bw, height, [4, 4, 0, 0]);
+                                ctx.fillStyle = shine;
+                                ctx.fill();
+
+                                ctx.restore();
+
+                                // ── 3. Etiqueta encima de la barra en negro ──────────────────
+
+                                // ── 3. Etiqueta encima de la barra en negro, rotada 90° ──────────
+
+                                const valor = datosOriginales3D[i];
+                                const pct = ((valor / universoTotal) * 100).toFixed(1);
+                                const labelTxt = `${valor} (${pct}%)`;
+
+                                ctx.save();
+
+                                const maxFontSize = 16;
+                                const minFontSize = 9;
+                                let fontSize = maxFontSize;
+                                ctx.font = `bold ${fontSize}px sans-serif`;
+
+                                // Con rotación 90°, el texto ocupa 'height' vertical → ajustar al espacio encima
+                                while (fontSize > minFontSize && ctx.measureText(labelTxt).width > (chartArea.top - (yTop - depth * 0.6) - 6)) {
+                                    fontSize -= 0.5;
+                                    ctx.font = `bold ${fontSize}px sans-serif`;
+                                }
+
+                                // Posición: encima de la cara superior 3D
+                                const labelY = yTop - depth * 0.6 - 6;
+
+                                ctx.translate(x, labelY);
+                                ctx.rotate(-Math.PI / 2);        // 90° hacia arriba
+                                ctx.textAlign = 'left';       // 'left' porque el texto crece hacia arriba tras rotar
+                                ctx.textBaseline = 'middle';
+                                ctx.fillStyle = '#222222';
+                                ctx.shadowColor = 'rgba(255,255,255,0.8)';
+                                ctx.shadowBlur = 3;
+                                ctx.fillText(labelTxt, 4, 0);
+
+                                ctx.restore();
+                            });
+                        }
+                    }]
                 });
             }
 
@@ -899,22 +1233,30 @@
                 const $container = $('#dynamic-legend-container').empty();
 
                 desglose.forEach((item, index) => {
-                    const key = item.texto_completo || item.texto_opcion;
-                    if (!barColorsMap[key]) barColorsMap[key] = PALETA_PRO[index % PALETA_PRO.length];
+                    // La clave DEBE ser la misma que en actualizarGrafica
+                    const key = item.texto_completo || item.texto_opcion || item.perfil_corto;
+
+                    if (!barColorsMap[key]) {
+                        barColorsMap[key] = PALETA_PRO[index % PALETA_PRO.length];
+                    }
 
                     $container.append(`
             <div class="d-flex align-items-center bg-dark p-1 rounded border border-secondary" style="gap: 5px; margin-bottom: 5px;">
-                <input type="color" class="individual-picker" data-key="${key}" value="${barColorsMap[key]}" style="border:none; width:20px; height:20px; cursor:pointer; background:none;">
+                <input type="color" class="individual-picker" data-key="${key}" value="${barColorsMap[key]}" 
+                       style="border:none; width:20px; height:20px; cursor:pointer; background:none;">
                 <span class="text-white" style="font-size: 10px;">${item.total} pers.</span>
-            </div>`);
+            </div>
+        `);
                 });
 
-                $('.individual-picker').on('input change', function () {
+                // Evento vinculado: Al cambiar el color, redibuja con los datos guardados
+                $('.individual-picker').off('input change').on('input change', function () {
                     const newColor = $(this).val();
-                    barColorsMap[$(this).data('key')] = newColor;
+                    const key = $(this).data('key');
+                    barColorsMap[key] = newColor;
 
-                    // Redibujamos la gráfica con el nuevo color
                     if (lastChartData) {
+                        // Llama a la función de arriba con el universo total original
                         actualizarGrafica(lastChartData.desglose, lastChartData.resumen);
                     }
                 });
@@ -957,46 +1299,61 @@
 
 
             // ASISTENTE DE IMAGEN
-            /**
- * PÁGINA 1: Genera el HTML para la Gráfica con tamaño controlado
- */
+
             function obtenerImagenGrafica(idCanvas) {
                 const chart = window.chartInstance;
                 if (!chart) return '';
 
-                // 1. APLICAR ESTILO NEGRO CON BORDE BLANCO PARA EL PDF
-                chart.options.plugins.datalabels.color = '#000000'; // Letra Negra
-                chart.options.plugins.datalabels.textStrokeColor = '#ffffff'; // Borde Blanco
-                chart.options.plugins.datalabels.textStrokeWidth = 3; // Grosor del borde
-
-                // Cambiar también los ejes y leyenda a negro para el fondo blanco del PDF
-                if (chart.options.scales.x) chart.options.scales.x.ticks.color = '#000000';
-                if (chart.options.scales.y) chart.options.scales.y.ticks.color = '#000000';
-                if (chart.options.plugins.legend) chart.options.plugins.legend.labels.color = '#000000';
-
-                chart.update({ duration: 0 }); // Actualizar sin animaciones
-
-                // 2. CAPTURAR EN EL LIENZO TEMPORAL
                 const canvas = document.getElementById(idCanvas);
+
+                const escala = 2;
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = canvas.width;
-                tempCanvas.height = canvas.height;
+                tempCanvas.width = canvas.width * escala;
+                tempCanvas.height = canvas.height * escala;
                 const tempCtx = tempCanvas.getContext('2d');
 
-                tempCtx.fillStyle = '#ffffff';
-                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                // SIN fondo — transparente para que se vea la marca de agua
+                // tempCtx.fillStyle = '#ffffff';
+                // tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+                tempCtx.scale(escala, escala);
+
+                // Guardar estilos originales
+                const originalDatalabelsColor = chart.options.plugins.datalabels?.color;
+                const originalDatalabelsStrokeColor = chart.options.plugins.datalabels?.textStrokeColor;
+                const originalDatalabelsStrokeWidth = chart.options.plugins.datalabels?.textStrokeWidth;
+                const originalXColor = chart.options.scales?.x?.ticks?.color;
+                const originalYColor = chart.options.scales?.y?.ticks?.color;
+
+                // Estilos para PDF — letras negras
+                if (chart.options.plugins.datalabels) {
+                    chart.options.plugins.datalabels.color = '#000000';
+                    chart.options.plugins.datalabels.textStrokeColor = '#ffffff';
+                    chart.options.plugins.datalabels.textStrokeWidth = 3;
+                }
+                if (chart.options.scales?.x?.ticks) chart.options.scales.x.ticks.color = '#000000';
+                if (chart.options.scales?.y?.ticks) chart.options.scales.y.ticks.color = '#000000';
+                if (chart.options.plugins?.legend?.labels) chart.options.plugins.legend.labels.color = '#000000';
+
+                window._graficaParaPDF = true;
+                chart.update({ duration: 0 });
+
                 tempCtx.drawImage(canvas, 0, 0);
-                const imgData = tempCanvas.toDataURL('image/jpeg', 1.0);
 
-                // 3. REGRESAR TODO A BLANCO PARA EL DASHBOARD OSCURO
-                chart.options.plugins.datalabels.color = '#ffffff';
-                chart.options.plugins.datalabels.textStrokeColor = 'transparent';
-                chart.options.plugins.datalabels.textStrokeWidth = 0;
+                // PNG mantiene transparencia
+                const imgData = tempCanvas.toDataURL('image/png');
 
-                if (chart.options.scales.x) chart.options.scales.x.ticks.color = '#ffffff';
-                if (chart.options.scales.y) chart.options.scales.y.ticks.color = '#ffffff';
-                if (chart.options.plugins.legend) chart.options.plugins.legend.labels.color = '#ffffff';
+                // Restaurar estilos originales
+                if (chart.options.plugins.datalabels) {
+                    chart.options.plugins.datalabels.color = originalDatalabelsColor ?? '#ffffff';
+                    chart.options.plugins.datalabels.textStrokeColor = originalDatalabelsStrokeColor ?? 'transparent';
+                    chart.options.plugins.datalabels.textStrokeWidth = originalDatalabelsStrokeWidth ?? 0;
+                }
+                if (chart.options.scales?.x?.ticks) chart.options.scales.x.ticks.color = originalXColor ?? '#ffffff';
+                if (chart.options.scales?.y?.ticks) chart.options.scales.y.ticks.color = originalYColor ?? '#ffffff';
+                if (chart.options.plugins?.legend?.labels) chart.options.plugins.legend.labels.color = '#ffffff';
 
+                window._graficaParaPDF = false;
                 chart.update({ duration: 0 });
 
                 return imgData;
@@ -1018,7 +1375,6 @@
             function obtenerHtmlPagina1() {
                 const imgData = obtenerImagenGrafica('canvasUniones');
 
-                // 1. Extraer los nombres de los filtros geográficos seleccionados
                 const obtenerTexto = (id, label) => {
                     const val = $(id).val();
                     const texto = $(id + " option:selected").text();
@@ -1034,33 +1390,50 @@
                     obtenerTexto('#id_comunidad', 'Comunidad')
                 ].filter(f => f !== null).join(' | ');
 
-                // 2. Extraer datos de la encuesta y totales
-                const nombreEncuesta = (lastChartData && lastChartData.resumen.encuesta_nombre)
-                    ? lastChartData.resumen.encuesta_nombre
-                    : "Análisis de Datos Vota y Opina";
+                // Leer la variable guardada al momento de PROCESAR
+                const subencabezadoDinamico =
+                    (window._ultimaOpcionReporte && window._ultimaOpcionReporte !== '')
+                        ? window._ultimaOpcionReporte
+                        : (lastChartData && lastChartData.resumen.encuesta_nombre
+                            ? lastChartData.resumen.encuesta_nombre
+                            : "Análisis de Datos Vota y Opina");
 
-                const totalRegistros = (lastChartData && lastChartData.resumen.coincidencias)
-                    ? lastChartData.resumen.coincidencias
-                    : 0;
+                return `
+<div class="pagina-reporte">
+    ${inyectarMarcaAgua()}
+    <div class="contenido-superior" style="display: flex; flex-direction: column; height: 100%; padding: 4mm 6mm;">
 
-                return `<div class="pagina-reporte">${inyectarMarcaAgua()}<div class="contenido-superior"><div style="text-align: center; width: 100%; margin-bottom: 5mm;"><h1 style="color: #003366; margin: 0; font-size: 30px; text-transform: uppercase;">Reporte de Uniones</h1><h2 style="color: #444; margin: 5px 0; font-size: 18px; font-weight: normal;">${nombreEncuesta}</h2><div style="margin-top: 5px; padding: 5px; background-color: rgba(0,0,0,0.03); border-radius: 5px; font-size: 13px; color: #333;">${filtrosGeo || "<i>Análisis Global (Sin filtros geográficos)</i>"}</div></div><div style="width: 100%; display: flex; align-items: center; justify-content: space-around; background-color: #f0f5f9; border: 1.5px solid #003366; border-radius: 15px; padding: 12px 0; margin-bottom: 15px;"><div style="text-align: center; flex: 1;"><span style="display: block; font-size: 11px; color: #003366; font-weight: bold; text-transform: uppercase;">TOTAL DE REGISTROS</span><span style="font-size: 22px; font-weight: bold; color: #000;">${totalRegistros}</span></div><div style="text-align: center; flex: 1; border-left: 1.5px solid #003366; border-right: 1.5px solid #003366;"><span style="display: block; font-size: 11px; color: #003366; font-weight: bold; text-transform: uppercase;">PUNTOS GEOGRÁFICOS</span><span style="font-size: 22px; font-weight: bold; color: #000;">${markers.length} Puntos</span></div><div style="text-align: center; flex: 1;"><span style="display: block; font-size: 11px; color: #003366; font-weight: bold; text-transform: uppercase;">FECHA</span><span style="font-size: 22px; font-weight: bold; color: #000;">${new Date().toLocaleDateString()}</span></div></div><div class="contenedor-grafica-full" style="width: 80%; display: flex; justify-content: center; align-items: center; flex-grow: 1;"><img src="${imgData}" class="grafica-img-full" style="width: 80%; max-height: 470px; object-fit: contain;"></div></div></div>`;
+        <div style="text-align: center; width: 100%; margin-bottom: 2mm;">
+            <h1 style="color: #003366; margin: 0; font-size: 28px; text-transform: uppercase; letter-spacing: 1px;">
+                Intención de Voto
+            </h1>
+            <h2 style="color: #444; margin: 3px 0; font-size: 16px; font-weight: normal; text-transform: uppercase; letter-spacing: 0.5px;">
+                ${subencabezadoDinamico}
+            </h2>
+            <div style="margin-top: 3px; padding: 3px 8px; background-color: rgba(0,0,0,0.03); border-radius: 5px; font-size: 12px; color: #555; display: inline-block;">
+                ${filtrosGeo || "<i>Análisis Global (Sin filtros geográficos)</i>"}
+            </div>
+        </div>
+
+        <div style="width: 100%; flex-grow: 1; display: flex; justify-content: center; align-items: center;">
+            <img
+                src="${imgData}"
+                style="
+                    width: 85%;
+                    max-height: 700px;
+                    object-fit: contain;
+                    image-rendering: -webkit-optimize-contrast;
+                    image-rendering: crisp-edges;
+                    -ms-interpolation-mode: nearest-neighbor;
+                "
+            >
+        </div>
+
+    </div>
+</div>`;
             }
 
 
-            function obtenerHtmlPagina3() {
-                const centro = map.getCenter();
-                const zoom = map.getZoom();
-                let staticUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${centro.lat()},${centro.lng()}&zoom=${zoom}&size=1000x385&maptype=hybrid&key=<?= $google_maps_api_key ?>`;
-
-                if (typeof markers !== 'undefined' && markers.length > 0) {
-                    markers.slice(0, 50).forEach(marker => {
-                        const pos = marker.getPosition();
-                        staticUrl += `&markers=color:red%7C${pos.lat()},${pos.lng()}`;
-                    });
-                }
-
-                return `<div class="pagina-reporte">${inyectarMarcaAgua()}<div class="contenido-superior"><h3 style="color: #003366; font-size: 24px; border-bottom: 3px solid #003366; padding-bottom: 10px; width: 100%; text-align: center;">3. Distribución Geográfica</h3><img src="${staticUrl}" class="mapa-img"></div></div>`;
-            }
 
             // VINCULACIÓN AL BOTÓN
             $('#btn_imprimir_reporte').off('click').on('click', function () {
@@ -1072,12 +1445,13 @@
                 window.scrollTo(0, 0);
 
                 const container = document.createElement('div');
-                // Concatenamos y aplicamos .trim() para asegurar que no hay espacios al inicio
-                container.innerHTML = (obtenerHtmlPagina1() + obtenerHtmlPagina3()).trim();
+
+                // Solo se usa la página 1
+                container.innerHTML = obtenerHtmlPagina1().trim();
 
                 const opt = {
                     margin: 0,
-                    filename: 'Reporte_VotayOpina.pdf',
+                    filename: 'IntencionDeVoto.pdf',
                     image: { type: 'jpeg', quality: 1 },
                     html2canvas: {
                         scale: 2,
@@ -1085,12 +1459,13 @@
                         letterRendering: true
                     },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-                    // CAMBIO: Usamos modo 'css' para que respete el page-break-after de tu clase
                     pagebreak: { mode: 'css' }
                 };
 
                 html2pdf().set(opt).from(container).save();
             });
+
+
             function cargarEstados() {
                 $.get('<?= base_url('uniones/getEstados') ?>', res => $('#id_estado').html('<option value="">Seleccione Estado</option>' + res.map(e => `<option value="${e.id_estado}">${e.nombre_estado}</option>`).join('')));
             }

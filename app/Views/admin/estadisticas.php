@@ -241,8 +241,12 @@
                                 <span class="count bg-success"></span>
                             </div>
                             <div class="profile-name">
-                                <h5 class="mb-0 font-weight-normal"><?= esc($nombreCompleto) ?></h5>
-                                <span><?= esc($rolTexto) ?></span>
+                                <h5 class="mb-0 font-weight-normal">
+                                    <?= esc($nombreCompleto) ?>
+                                </h5>
+                                <span>
+                                    <?= esc($rolTexto) ?>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -284,6 +288,13 @@
                     <a class="nav-link" href="<?= base_url('uniones') ?>">
                         <span class="menu-icon"><i class="mdi mdi-source-branch"></i></span>
                         <span class="menu-title">Uniones</span>
+                    </a>
+                </li>
+
+                <li class="nav-item menu-items">
+                    <a class="nav-link" href="<?= base_url('cruces') ?>">
+                        <span class="menu-icon"><i class="mdi mdi-compare"></i></span>
+                        <span class="menu-title">Cruces</span>
                     </a>
                 </li>
 
@@ -383,11 +394,11 @@
                                                 <label for="chart_type_select">Tipo de Gráfica</label>
                                                 <select class="form-control" id="chart_type_select">
                                                     <option value="bar">Gráfica de Barras</option>
-                                                    <option value="doughnut">Gráfica de Dona</option>
-                                                    <option value="pie">Gráfica de Pastel</option>
-                                                    <option value="line">Gráfica de Líneas</option>
-                                                    <option value="radar">Gráfica de Radar</option>
-                                                    <option value="polarArea">Gráfica de Área Polar</option>
+                                                    <option value="doughnut">Velocímetros</option>
+                                                    <option value="pie">Gráfica de Esferas (Burbujas)</option>
+                                                    <option value="line">Línea 3D</option>
+                                                    <option value="anillo_3d">Anillo Moderno 3D</option>
+                                                    <option value="tarta_premium">Tarta Premium Explodida</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -667,6 +678,8 @@
             }
 
             // --- COPIA Y PEGA ESTA FUNCIÓN COMPLETA ---
+            // --- COPIA Y PEGA ESTA FUNCIÓN COMPLETA ---
+            // --- COPIA Y PEGA ESTA FUNCIÓN COMPLETA ---
             function renderizarGrafico(dataSet) {
                 const chartsContainer = document.getElementById('charts_container');
                 const wrapperPickers = document.getElementById('color_pickers_wrapper');
@@ -689,27 +702,106 @@
 
                 noDataMessage.style.display = 'none';
 
-                // 3. Creación del Canvas
+                // --- MAGIA AQUÍ: Memoria Individual ---
+                // Si esta pregunta no tiene un tipo asignado, usa el del selector global de arriba por defecto.
+                if (!dataSet.tipoElegido) {
+                    dataSet.tipoElegido = document.getElementById('chart_type_select').value || 'bar';
+                }
+                const currentChartType = dataSet.tipoElegido;
+                const totalItems = dataSet.labels.length;
+
+                // Cálculo de altura dinámica según el tipo elegido
+                let canvasHeight = 380;
+                if (currentChartType === 'doughnut') {
+                    const avgLabelLen = dataSet.labels.reduce((s, l) => s + l.length, 0) / dataSet.labels.length;
+                    const maxCols = avgLabelLen > 25 ? 3 : 4;
+                    const rows = Math.ceil(totalItems / maxCols);
+                    canvasHeight = Math.max(350, rows * 180);
+                } else if (currentChartType === 'pie') {
+                    canvasHeight = 450;
+                } else if (currentChartType === 'line' || currentChartType === 'scatter') {
+                    const maxLabelLen = Math.max(...dataSet.labels.map(l => l.length));
+                    const espacioAbajo = Math.max(100, maxLabelLen * 7 + 40);
+                    canvasHeight = espacioAbajo + 250;
+                }
+
+                // 3. Creación del Wrapper Principal
                 const chartWrapper = document.createElement('div');
                 chartWrapper.classList.add('chart-wrapper');
+                chartWrapper.style.height = 'auto';
+                chartWrapper.style.minHeight = '420px';
+
+                // --- NUEVO: Encabezado con Título y Selector Individual ---
+                const headerDiv = document.createElement('div');
+                headerDiv.style.display = 'flex';
+                headerDiv.style.justifyContent = 'space-between';
+                headerDiv.style.alignItems = 'center'; // Mejor alineación vertical
+                headerDiv.style.marginBottom = '20px';
+                headerDiv.style.gap = '15px';
+                headerDiv.style.width = '100%'; // Asegura que no se desborde
+
                 const chartTitle = document.createElement('h4');
                 chartTitle.textContent = dataSet.title;
+                chartTitle.style.margin = '0';
+
+                // --- LA MAGIA PARA QUE EL TEXTO LARGO BAJE DE LÍNEA ---
+                chartTitle.style.flex = '1 1 0%';
+                chartTitle.style.minWidth = '0';
+                chartTitle.style.wordWrap = 'break-word';
+                chartTitle.style.lineHeight = '1.4'; // Da un poco de respiro entre las líneas de texto
+
+                chartTitle.style.textAlign = 'left'; // Alineado a la izquierda para mejor balance con el select
+                chartTitle.style.color = '#333333';
+
+                // Selector individual para esta gráfica
+                const selectorIndividual = document.createElement('select');
+                selectorIndividual.className = 'form-control form-control-sm';
+                selectorIndividual.style.width = '160px'; // Un poquito más compacto para dar más espacio al título
+                selectorIndividual.style.flexShrink = '0'; // Evita que el selector se aplaste
+                selectorIndividual.style.backgroundColor = '#2a2c3d';
+                selectorIndividual.style.color = '#ffffff';
+                selectorIndividual.style.borderColor = '#4a4a4a';
+
+                selectorIndividual.innerHTML = `
+                    <option value="bar" ${currentChartType === 'bar' ? 'selected' : ''}>Gráfica de Barras</option>
+                    <option value="doughnut" ${currentChartType === 'doughnut' ? 'selected' : ''}>Velocímetros</option>
+                    <option value="pie" ${currentChartType === 'pie' ? 'selected' : ''}>Esferas Líquidas</option>
+                    <option value="line" ${currentChartType === 'line' ? 'selected' : ''}>Línea 3D</option>
+                    <option value="anillo_3d" ${currentChartType === 'anillo_3d' ? 'selected' : ''}>Anillo Moderno 3D</option>
+                    <option value="tarta_premium" ${currentChartType === 'tarta_premium' ? 'selected' : ''}>Tarta Premium Explodida</option>
+                `;
+
+                // Si el usuario cambia el tipo, se guarda en su memoria y se repinta
+                selectorIndividual.addEventListener('change', function () {
+                    dataSet.tipoElegido = this.value;
+                    renderizarGrafico(dataSet);
+                });
+
+                headerDiv.appendChild(chartTitle);
+                headerDiv.appendChild(selectorIndividual);
+
+                // Contenedor del Canvas
+                const canvasContainer = document.createElement('div');
+                canvasContainer.style.position = 'relative';
+                canvasContainer.style.width = '100%';
+                canvasContainer.style.height = canvasHeight + 'px';
+
                 const chartCanvas = document.createElement('canvas');
 
-                chartWrapper.appendChild(chartTitle);
-                chartWrapper.appendChild(chartCanvas);
+                canvasContainer.appendChild(chartCanvas);
+                chartWrapper.appendChild(headerDiv);
+                chartWrapper.appendChild(canvasContainer);
                 chartsContainer.appendChild(chartWrapper);
 
-                // 4. Generar configuración y renderizar
+                // 4. Generar configuración y renderizar usando el tipo individual
                 const ctx = chartCanvas.getContext('2d');
-                const chartType = document.getElementById('chart_type_select').value;
-                const config = crearConfiguracionGrafico(dataSet, chartType, ctx, total);
+                const config = crearConfiguracionGrafico(dataSet, currentChartType, ctx, total);
 
                 window.chartInstance = new Chart(ctx, config);
 
-                // 5. Mostrar selectores de color si el tipo de gráfica lo permite
-                const tiposPermitidos = ['bar', 'doughnut', 'pie', 'polarArea'];
-                if (tiposPermitidos.includes(chartType)) {
+                // 5. Mostrar selectores de color
+                const tiposPermitidos = ['bar', 'doughnut', 'pie', 'polarArea', 'line', 'scatter', 'anillo_3d', 'tarta_premium'];
+                if (tiposPermitidos.includes(currentChartType)) {
                     generarColorPickers(dataSet);
                 } else if (containerPickers) {
                     containerPickers.style.display = 'none';
@@ -902,70 +994,38 @@
       * @returns {object} - Un objeto con { type, data, options } para crear una instancia de Chart.js.
       */
             function crearConfiguracionGrafico(dataSet, chartType, ctx) {
-                // --- FUNCIONES AUXILIARES DE COLOR ---
+
                 function hexToRgba(hex, alpha = 1) {
                     const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
-                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                    return `rgba(${r},${g},${b},${alpha})`;
                 }
-                // Función para aclarar (+) u oscurecer (-) un color
+
                 function adjustColor(colorHex, percent) {
                     let r = parseInt(colorHex.slice(1, 3), 16), g = parseInt(colorHex.slice(3, 5), 16), b = parseInt(colorHex.slice(5, 7), 16);
                     r = parseInt(r * (100 + percent) / 100); g = parseInt(g * (100 + percent) / 100); b = parseInt(b * (100 + percent) / 100);
-                    r = (r < 255) ? r : 255; g = (g < 255) ? g : 255; b = (b < 255) ? b : 255;
-                    r = (r > 0) ? r : 0; g = (g > 0) ? g : 0; b = (b > 0) ? b : 0;
-                    const rr = ((r.toString(16).length === 1) ? "0" + r.toString(16) : r.toString(16));
-                    const gg = ((g.toString(16).length === 1) ? "0" + g.toString(16) : g.toString(16));
-                    const bb = ((b.toString(16).length === 1) ? "0" + b.toString(16) : b.toString(16));
-                    return `#${rr}${gg}${bb}`;
+                    r = r < 255 ? r : 255; g = g < 255 ? g : 255; b = b < 255 ? b : 255;
+                    r = r > 0 ? r : 0; g = g > 0 ? g : 0; b = b > 0 ? b : 0;
+                    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
                 }
 
-                // --- PLUGINS VISUALES PERSONALIZADOS ---
-
-                // 1. Sombra para Gráficos Circulares (Flotar)
-                const circularShadowPlugin = {
-                    id: 'circularShadow',
-                    beforeDraw: (chart) => {
-                        if (['doughnut', 'pie', 'polarArea'].includes(chart.config.type)) {
-                            const { ctx } = chart;
-                            ctx.save();
-                            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)'; // Sombra oscura
-                            ctx.shadowBlur = 20; // Muy difusa
-                            ctx.shadowOffsetX = 5;
-                            ctx.shadowOffsetY = 10;
-                        }
-                    },
-                    afterDraw: (chart) => {
-                        if (['doughnut', 'pie', 'polarArea'].includes(chart.config.type)) {
-                            chart.ctx.restore();
-                        }
-                    }
-                };
-
-                // 2. Sombra para Puntos (Línea/Scatter)
+                // Sombra para puntos línea
                 const pointShadowPlugin = {
                     id: 'pointShadow',
                     beforeDatasetsDraw: (chart) => {
                         if (['line', 'scatter'].includes(chart.config.type)) {
-                            const { ctx } = chart;
-                            ctx.save();
-                            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-                            ctx.shadowBlur = 8;
-                            ctx.shadowOffsetY = 4;
+                            chart.ctx.save();
+                            chart.ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                            chart.ctx.shadowBlur = 10;
+                            chart.ctx.shadowOffsetY = 5;
                         }
                     },
                     afterDatasetsDraw: (chart) => {
-                        if (['line', 'scatter'].includes(chart.config.type)) {
-                            chart.ctx.restore();
-                        }
+                        if (['line', 'scatter'].includes(chart.config.type)) chart.ctx.restore();
                     }
                 };
 
-                // Registro condicional de plugins (para no duplicar)
-                if (!Chart.registry.plugins.get('circularShadow')) Chart.register(circularShadowPlugin);
                 if (!Chart.registry.plugins.get('pointShadow')) Chart.register(pointShadowPlugin);
 
-
-                // --- CONFIGURACIÓN BASE ---
                 const colores = ['#1E88E5', '#43A047', '#FFB300', '#E53935', '#8E24AA', '#00ACC1', '#FDD835', '#6D4C41'];
                 const colorTextoPrincipal = '#000000';
                 const colorTextoSecundario = '#555555';
@@ -974,302 +1034,1071 @@
                 let finalType = chartType;
                 let finalData = JSON.parse(JSON.stringify(dataSet));
 
-                // Asignación de Colores Base
                 finalData.datasets[0].backgroundColor = finalData.labels.map((label, i) => {
-                    if (typeof customBarColors !== 'undefined' && customBarColors[label]) {
-                        return customBarColors[label];
-                    }
+                    if (typeof customBarColors !== 'undefined' && customBarColors[label]) return customBarColors[label];
                     return colores[i % colores.length];
                 });
 
-                // Opciones Globales de Diseño
                 let chartOptions = {
                     maintainAspectRatio: false,
                     responsive: true,
-                    animation: { duration: 1200, easing: 'easeOutQuart' }, // Animación más lujosa
-                    layout: {
-                        padding: { top: 30, bottom: 20, left: 30, right: 30 } // Padding para sombras y etiquetas
-                    },
+                    animation: { duration: 1200, easing: 'easeOutQuart' },
+                    layout: { padding: { top: 40, bottom: 20, left: 30, right: 30 } },
                     plugins: {
                         legend: {
                             position: 'bottom',
                             labels: {
                                 color: colorTextoSecundario,
-                                font: { size: 13, weight: '600', family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif" },
-                                boxWidth: 18,
-                                boxHeight: 18,
-                                padding: 25,
-                                usePointStyle: true, // Puntos en lugar de cuadrados en la leyenda
-                                pointStyle: 'circle'
+                                font: { size: 13, weight: '600' },
+                                boxWidth: 18, boxHeight: 18, padding: 25,
+                                usePointStyle: true, pointStyle: 'circle'
                             }
                         },
-                        // Configuración base DataLabels (se sobrescribe según el tipo)
                         datalabels: {
                             color: colorTextoPrincipal,
                             font: { weight: 'bold', size: 13 },
-                            clamp: false,
-                            clip: false,
-                            // --- CAMBIOS: Eliminar sombras y efectos ---
-                            textShadowBlur: 0,              // Desenfoque a 0
-                            textShadowColor: 'transparent', // Color transparente
-                            textStrokeWidth: 0              // Sin borde alrededor de la letra
+                            clamp: false, clip: false,
+                            textShadowBlur: 0, textShadowColor: 'transparent', textStrokeWidth: 0,
+                            // Solo porcentajes
+                            formatter: (value) => totalDatosGlobal > 0
+                                ? `${((value / totalDatosGlobal) * 100).toFixed(1)}%`
+                                : '0%'
                         },
-                        // Tooltip Premium (Glassmorphism)
                         tooltip: {
                             enabled: true,
-                            backgroundColor: 'rgba(40, 44, 52, 0.9)', // Fondo oscuro semitransparente
-                            titleColor: '#ffffff',
-                            bodyColor: '#dee2e6',
+                            backgroundColor: 'rgba(40,44,52,0.9)',
+                            titleColor: '#ffffff', bodyColor: '#dee2e6',
                             titleFont: { size: 14, weight: 'bold' },
                             bodyFont: { size: 13 },
-                            padding: 16,
-                            cornerRadius: 12, // Bordes muy redondeados
-                            boxPadding: 8,
-                            borderColor: 'rgba(255,255,255,0.1)', // Borde sutil
-                            borderWidth: 1,
-                            displayColors: true,
-                            usePointStyle: true,
+                            padding: 16, cornerRadius: 12, boxPadding: 8,
+                            borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+                            displayColors: true, usePointStyle: true,
                             callbacks: {
-                                labelColor: function (context) {
-                                    return {
-                                        borderColor: 'transparent',
-                                        backgroundColor: context.dataset.backgroundColor[context.dataIndex] || context.dataset.backgroundColor,
-                                        borderWidth: 0,
-                                        borderRadius: 6
-                                    };
+                                label: (context) => {
+                                    const value = context.raw;
+                                    const pct = totalDatosGlobal > 0
+                                        ? ((value / totalDatosGlobal) * 100).toFixed(1)
+                                        : '0';
+                                    return ` ${pct}%`;
                                 }
                             }
                         }
                     },
-                    scales: {
-                        y: { display: false }, // Ocultar Eje Y por defecto
-                        x: { display: false }  // Ocultar Eje X por defecto
-                    }
+                    scales: { y: { display: false }, x: { display: false } }
                 };
 
-                // --- ESTILOS ESPECÍFICOS POR TIPO ---
-
-                // 1. BARRAS (Con Gradientes, Bordes Redondeados y Sombra 3D)
+                // ── 1. BARRAS ─────────────────────────────────────────────────────────────────
                 if (chartType === 'bar') {
-                    chartOptions.scales.x = {
-                        display: true,
-                        ticks: { color: colorTextoSecundario, font: { weight: 'bold' } },
-                        grid: { display: false }
-                    };
-
-                    const originalColors = finalData.datasets[0].backgroundColor;
-                    // Crear Gradientes Lujosos
-                    finalData.datasets[0].backgroundColor = originalColors.map(color => {
-                        const gradient = ctx.createLinearGradient(0, 0, 0, 500);
-                        gradient.addColorStop(0, adjustColor(color, 30));  // Luz arriba
-                        gradient.addColorStop(1, adjustColor(color, -20)); // Sombra abajo
-                        return gradient;
+                    const originalColors = finalData.labels.map((label, i) => {
+                        if (typeof customBarColors !== 'undefined' && customBarColors[label]) return customBarColors[label];
+                        return finalData.datasets[0].backgroundColor[i] || colores[i % colores.length];
                     });
 
-                    finalData.datasets[0].borderColor = originalColors.map(color => adjustColor(color, -10));
-                    finalData.datasets[0].borderWidth = 2;
-                    finalData.datasets[0].borderRadius = 20; // ¡Esquinas muy redondeadas!
-                    finalData.datasets[0].borderSkipped = false; // Redondear también la base
-                    finalData.datasets[0].barPercentage = 0.65;
-                    finalData.datasets[0].hoverBackgroundColor = originalColors.map(color => adjustColor(color, 50)); // Brillar al pasar el mouse
+                    const datosOriginales = [...finalData.datasets[0].data];
 
-                    // DataLabels Barras
-                    chartOptions.plugins.datalabels = {
-                        ...chartOptions.plugins.datalabels, // Heredar base
-                        anchor: 'end',
-                        align: 'end',
-                        offset: -2,
-                        formatter: (value) => totalDatosGlobal > 0 ? `${((value / totalDatosGlobal) * 100).toFixed(1)}%` : '0%'
+                    chartOptions.scales.x = {
+                        display: true,
+                        ticks: { color: colorTextoSecundario, font: { weight: 'bold', size: 11 } },
+                        grid: { display: false }, border: { display: false }
+                    };
+                    chartOptions.scales.y = {
+                        display: false, grid: { display: false }, beginAtZero: true,
+                        max: Math.ceil(Math.max(...finalData.datasets[0].data) * 1.45)
                     };
 
-                    // Plugin Sombra 3D para Barras
-                    const bar3DShadowPlugin = {
-                        id: 'bar3DShadow',
-                        beforeDatasetsDraw: (chart) => {
-                            const { ctx } = chart;
-                            chart.getDatasetMeta(0).data.forEach(bar => {
+                    finalData.datasets[0].backgroundColor = originalColors.map(() => 'rgba(0,0,0,0)');
+                    finalData.datasets[0].borderColor = 'rgba(0,0,0,0)';
+                    finalData.datasets[0].borderWidth = 0;
+                    finalData.datasets[0].borderSkipped = false;
+                    finalData.datasets[0].barPercentage = 0.65;
+                    chartOptions.plugins.datalabels = { display: false };
+
+                    function drawCapsule(ctx, x, y, w, h, r) {
+                        ctx.beginPath();
+                        ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+                        ctx.arcTo(x + w, y, x + w, y + r, r); ctx.lineTo(x + w, y + h - r);
+                        ctx.arcTo(x + w, y + h, x + w - r, y + h, r); ctx.lineTo(x + r, y + h);
+                        ctx.arcTo(x, y + h, x, y + h - r, r); ctx.lineTo(x, y + r);
+                        ctx.arcTo(x, y, x + r, y, r); ctx.closePath();
+                    }
+
+                    const liquidBarPlugin = {
+                        id: 'liquidBar',
+                        afterDatasetsDraw(chart) {
+                            const { ctx, scales, chartArea } = chart;
+                            const meta = chart.getDatasetMeta(0);
+                            const yZero = scales.y.getPixelForValue(0);
+
+                            meta.data.forEach((bar, i) => {
+                                const label = finalData.labels[i];
+                                const color = (typeof customBarColors !== 'undefined' && customBarColors[label])
+                                    ? customBarColors[label] : originalColors[i];
+                                const x = bar.x;
+                                const bw = bar.width * 0.9;
+                                const bx = x - bw / 2;
+                                const yTop = bar.y;
+                                const radius = 12;
+                                const fullH = yZero - chartArea.top - 10;
+                                const fullY = chartArea.top + 10;
+
+                                // Cápsula fondo
                                 ctx.save();
-                                // Sombra suave y desplazada
-                                ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
-                                ctx.shadowBlur = 12;
-                                ctx.shadowOffsetX = 4;
-                                ctx.shadowOffsetY = 6;
-                                // Dibujar una "falsa barra" detrás para proyectar la sombra
-                                ctx.fillStyle = '#ffffff'; // Color irrelevante, solo importa la sombra
-                                // Ajustamos un poco la posición y tamaño para que la sombra se vea realista
-                                const x = bar.x - bar.width / 2 + 2;
-                                const y = bar.y + 2;
-                                const w = bar.width - 4;
-                                const h = bar.height - 2;
-                                if (h > 0 && w > 0) { // Evitar errores con barras de valor 0
-                                    ctx.roundRect(x, y, w, h, 15); // Usar roundRect si el navegador lo soporta para coincidir con borderRadius
-                                    ctx.fill();
+                                drawCapsule(ctx, bx, fullY, bw, fullH, radius);
+                                ctx.fillStyle = adjustColor(color, 75); ctx.fill();
+                                drawCapsule(ctx, bx, fullY, bw, fullH, radius);
+                                ctx.strokeStyle = adjustColor(color, 20); ctx.lineWidth = 2.5; ctx.stroke();
+                                ctx.restore();
+
+                                // Líquido con ola
+                                ctx.save();
+                                drawCapsule(ctx, bx, fullY, bw, fullH, radius); ctx.clip();
+                                const grad = ctx.createLinearGradient(bx, yTop, bx + bw, yTop);
+                                grad.addColorStop(0, adjustColor(color, 35));
+                                grad.addColorStop(0.5, color);
+                                grad.addColorStop(1, adjustColor(color, -25));
+                                ctx.beginPath(); ctx.moveTo(bx, yZero); ctx.lineTo(bx, yTop + 8);
+                                for (let wx = 0; wx <= bw; wx += 2) {
+                                    ctx.lineTo(bx + wx, yTop + Math.sin((wx / bw) * Math.PI * 2) * 8);
                                 }
+                                ctx.lineTo(bx + bw, yZero); ctx.closePath();
+                                ctx.fillStyle = grad; ctx.fill();
+                                const shine = ctx.createLinearGradient(bx, 0, bx + bw * 0.45, 0);
+                                shine.addColorStop(0, 'rgba(255,255,255,0.30)');
+                                shine.addColorStop(1, 'rgba(255,255,255,0)');
+                                ctx.fillStyle = shine; ctx.fill();
+                                ctx.restore();
+
+                                // Etiqueta solo porcentaje
+                                const valor = datosOriginales[i];
+                                const pct = totalDatosGlobal > 0
+                                    ? `${((valor / totalDatosGlobal) * 100).toFixed(1)}%` : '0%';
+                                ctx.save();
+                                ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                                ctx.font = 'bold 13px sans-serif';
+                                ctx.fillStyle = adjustColor(color, -30);
+                                ctx.fillText(pct, x, yTop - 8);
                                 ctx.restore();
                             });
                         }
                     };
-                    // Registrar este plugin localmente solo para esta instancia si es barras
-                    chartOptions.plugins.bar3DShadow = bar3DShadowPlugin;
 
+                    chartOptions.layout.padding = { top: 40, bottom: 20, left: 20, right: 20 };
+                    finalType = 'bar';
+                    chartOptions._liquidBarPlugin = liquidBarPlugin;
+
+                    return {
+                        type: finalType, data: finalData, options: chartOptions,
+                        plugins: [ChartDataLabels, liquidBarPlugin]
+                    };
                 }
 
+                if (chartType === 'doughnut') {
+                    finalData.datasets[0].backgroundColor = 'transparent';
+                    finalData.datasets[0].borderColor = 'transparent';
+                    finalData.datasets[0].borderWidth = 0;
 
-                // 2. CIRCULARES (Dona, Pastel) - Efecto Flotante y Separadores
-                if (['doughnut', 'pie', 'polarArea'].includes(chartType)) {
-                    finalData.datasets[0].borderColor = '#ffffff'; // Separador blanco
-                    finalData.datasets[0].borderWidth = 4;         // Separador grueso
-                    finalData.datasets[0].hoverBorderColor = '#ffffff';
-                    finalData.datasets[0].hoverBorderWidth = 5;
+                    chartOptions.plugins.legend = { display: false };
+                    chartOptions.plugins.datalabels = { display: false };
+                    chartOptions.plugins.tooltip = { enabled: false };
+                    chartOptions.layout.padding = { top: 40, bottom: 40, left: 20, right: 20 };
 
-                    // DataLabels Circulares (Afuera)
-                    chartOptions.plugins.datalabels = {
-                        ...chartOptions.plugins.datalabels, // Heredar base
-                        anchor: 'end',
-                        align: 'end',
-                        offset: 15, // Más lejos del centro
-                        formatter: (value) => totalDatosGlobal > 0 ? `${((value / totalDatosGlobal) * 100).toFixed(1)}%` : '0%'
+                    const velocimetroGridPlugin = {
+                        id: 'velocimetroGrid',
+                        afterDraw(chart) {
+                            const { ctx, chartArea } = chart;
+                            const labels = finalData.labels;
+                            const data = finalData.datasets[0].data;
+                            const totalItems = labels.length;
+
+                            if (totalItems === 0) return;
+
+                            // 🔥 CORRECCIÓN 1: Limitar cols según longitud de etiquetas
+                            const avgLabelLen = labels.reduce((s, l) => s + l.length, 0) / labels.length;
+                            const maxCols = avgLabelLen > 25 ? 3 : 4;
+                            const cols = Math.min(maxCols, totalItems);
+                            const rows = Math.ceil(totalItems / cols);
+
+                            const cellW = chartArea.width / cols;
+                            const cellH = chartArea.height / rows;
+
+                            // 🔥 CORRECCIÓN 2: Radio más pequeño para que quepan las etiquetas
+                            const radius = Math.min(cellW, cellH) * 0.22;
+
+                            data.forEach((val, i) => {
+                                const label = labels[i];
+
+                                const color = (typeof customBarColors !== 'undefined' && customBarColors[label])
+                                    ? customBarColors[label]
+                                    : colores[i % colores.length];
+
+                                const col = i % cols;
+                                const row = Math.floor(i / cols);
+
+                                // 🔥 CORRECCIÓN 3: Calcular espacio real que ocupa la etiqueta
+                                ctx.font = 'bold 11px Arial';
+                                const maxWidth = cellW - 20;
+                                const words = label.split(' ');
+                                let line = '';
+                                let labelLines = [];
+                                words.forEach(word => {
+                                    const testLine = line + word + ' ';
+                                    if (ctx.measureText(testLine).width > maxWidth) {
+                                        labelLines.push(line);
+                                        line = word + ' ';
+                                    } else {
+                                        line = testLine;
+                                    }
+                                });
+                                labelLines.push(line);
+                                labelLines = labelLines.slice(0, 2);
+
+                                const labelHeight = labelLines.length * 14 + 28;
+
+                                // 🔥 CORRECCIÓN 4: cy desplazado hacia arriba según el espacio de etiqueta
+                                const cx = chartArea.left + (col * cellW) + (cellW / 2);
+                                const cy = chartArea.top + (row * cellH) + (cellH / 2) - (labelHeight / 2) + 10;
+
+                                const pct = totalDatosGlobal > 0 ? val / totalDatosGlobal : 0;
+                                const pctText = (pct * 100).toFixed(1) + '%';
+
+                                // =========================
+                                // TICKS GRISES
+                                // =========================
+                                ctx.save();
+                                ctx.translate(cx, cy);
+
+                                const numTicks = 36;
+
+                                for (let t = 0; t < numTicks; t++) {
+                                    const angle = (t / numTicks) * Math.PI * 2;
+                                    const innerTick = radius + 8;
+                                    const outerTick = t % 4 === 0 ? radius + 16 : radius + 12;
+
+                                    ctx.strokeStyle = 'rgba(210,215,220,0.6)';
+                                    ctx.lineWidth = t % 4 === 0 ? 2 : 1;
+
+                                    ctx.beginPath();
+                                    ctx.moveTo(Math.cos(angle) * innerTick, Math.sin(angle) * innerTick);
+                                    ctx.lineTo(Math.cos(angle) * outerTick, Math.sin(angle) * outerTick);
+                                    ctx.stroke();
+                                }
+                                ctx.restore();
+
+                                // =========================
+                                // TICKS ACTIVOS
+                                // =========================
+                                ctx.save();
+                                ctx.translate(cx, cy);
+                                ctx.rotate(-Math.PI / 2);
+
+                                const activeTicks = Math.round(pct * numTicks);
+
+                                for (let t = 0; t <= activeTicks && t < numTicks && pct > 0; t++) {
+                                    const angle = (t / numTicks) * Math.PI * 2;
+                                    const innerTick = radius + 8;
+                                    const outerTick = t % 4 === 0 ? radius + 16 : radius + 12;
+
+                                    ctx.strokeStyle = color;
+                                    ctx.lineWidth = t % 4 === 0 ? 2.5 : 1.5;
+
+                                    ctx.beginPath();
+                                    ctx.moveTo(Math.cos(angle) * innerTick, Math.sin(angle) * innerTick);
+                                    ctx.lineTo(Math.cos(angle) * outerTick, Math.sin(angle) * outerTick);
+                                    ctx.stroke();
+                                }
+                                ctx.restore();
+
+                                // =========================
+                                // ANILLO BASE
+                                // =========================
+                                ctx.beginPath();
+                                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                                ctx.strokeStyle = 'rgba(235,240,245,0.8)';
+                                ctx.lineWidth = 10;
+                                ctx.stroke();
+
+                                // =========================
+                                // PROGRESO
+                                // =========================
+                                if (pct > 0) {
+                                    ctx.beginPath();
+                                    const startAngle = -Math.PI / 2;
+                                    const endAngle = startAngle + (pct * Math.PI * 2);
+
+                                    ctx.arc(cx, cy, radius, startAngle, endAngle);
+                                    ctx.strokeStyle = color;
+                                    ctx.lineWidth = 10;
+                                    ctx.lineCap = 'round';
+                                    ctx.stroke();
+                                }
+
+                                // =========================
+                                // TEXTOS
+                                // =========================
+                                ctx.save();
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+
+                                // % principal
+                                ctx.font = 'bold 18px Arial';
+                                ctx.fillStyle = color;
+                                ctx.fillText(pctText, cx, cy - 6);
+
+                                // valor
+                                ctx.font = '12px Arial';
+                                ctx.fillStyle = '#777';
+                                ctx.fillText(val, cx, cy + 12);
+
+                                // 🔥 CORRECCIÓN 5: Label multilínea con más separación del anillo
+                                ctx.font = 'bold 11px Arial';
+                                ctx.fillStyle = '#222';
+
+                                // 🔥 CORRECCIÓN 6: Mayor distancia entre la dona y la etiqueta
+                                const startY = cy + radius + 28;
+
+                                labelLines.forEach((l, index) => {
+                                    ctx.fillText(l.trim(), cx, startY + (index * 14));
+                                });
+
+                                ctx.restore();
+                            });
+                        }
                     };
 
-                    if (chartType === 'doughnut') {
-                        chartOptions.cutout = '60%'; // Grosor de la dona
-                        chartOptions.hoverOffset = 15; // Las rebanadas "saltan" mucho al pasar el mouse
-                    } else if (chartType === 'pie') {
-                        chartOptions.hoverOffset = 15;
-                    } else if (chartType === 'polarArea') {
-                        chartOptions.scales.r = {
-                            grid: { color: 'rgba(0,0,0,0.05)', circular: true }, // Rejilla circular muy sutil
-                            ticks: { display: false, backdropColor: 'transparent' },
-                            angleLines: { color: 'rgba(0,0,0,0.05)' }
-                        };
-                        chartOptions.hoverOffset = 10;
-                        finalData.datasets[0].backgroundColor = finalData.datasets[0].backgroundColor.map(c => hexToRgba(c, 0.8)); // Un poco transparentes
-                    }
+                    return {
+                        type: 'doughnut',
+                        data: finalData,
+                        options: chartOptions,
+                        plugins: [velocimetroGridPlugin]
+                    };
                 }
 
+                // ── 4. ANILLO MODERNO 3D ──────────────────────────────────────────────────────
+    
+                if (chartType === 'anillo_3d') {
+                    const originalColors = [...finalData.datasets[0].backgroundColor];
+                    chartOptions.cutout = '60%';
+                    chartOptions.layout.padding = { top: 50, bottom: 100, left: 80, right: 80 };
+                    
+                    chartOptions.animation = {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1600,
+                        easing: 'easeOutExpo'
+                    };
 
-                // 3. LÍNEA Y DISPERSIÓN (Puntos Brillantes y Líneas Suaves)
+                    chartOptions.plugins.legend = {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            color: '#333',
+                            font: { size: 12, weight: '600' },
+                            // --- CORRECCIÓN 2: Padding de leyenda ampliado ---
+                            padding: 30, // Empuja las cajas de leyenda lejos del lienzo
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            boxWidth: 10,
+                            boxHeight: 10
+                        }
+                    };
+
+                    chartOptions.plugins.tooltip = {
+                        backgroundColor: 'rgba(15,20,40,0.92)',
+                        titleColor: '#fff',
+                        bodyColor: '#ccc',
+                        padding: 14,
+                        cornerRadius: 10,
+                        borderColor: 'rgba(255,255,255,0.12)',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: (ctx) => {
+                                const pct = ((ctx.raw / totalDatosGlobal) * 100).toFixed(1);
+                                return `  ${pct}%`;
+                            }
+                        }
+                    };
+
+                    // Dataset base
+                    finalData.datasets[0].borderRadius = 12;
+                    finalData.datasets[0].spacing = 4;
+                    finalData.datasets[0].borderWidth = 3;
+                    finalData.datasets[0].borderColor = '#ffffff';
+                    finalData.datasets[0].hoverOffset = 20;
+                    finalData.datasets[0].hoverBorderColor = '#ffffff';
+                    finalData.datasets[0].hoverBorderWidth = 4;
+
+                    // Datalabels — banderilla sin duplicado
+                    chartOptions.plugins.datalabels = {
+                        display: false // Lo maneja el plugin custom
+                    };
+
+                    // Plugin gradiente metálico
+                    const gradientPlugin = {
+                        id: 'gradientFill',
+                        beforeDatasetsDraw(chart) {
+                            const { ctx, chartArea } = chart;
+                            if (!chartArea) return;
+                            chart.data.datasets[0].backgroundColor = chart.data.labels.map((label, idx) => {
+                                const base = (typeof customBarColors !== 'undefined' && customBarColors[label])
+                                    ? customBarColors[label]
+                                    : originalColors[idx % originalColors.length];
+                                const grad = ctx.createLinearGradient(
+                                    chartArea.left, chartArea.top, chartArea.right, chartArea.bottom
+                                );
+                                grad.addColorStop(0, adjustColor(base, 65));
+                                grad.addColorStop(0.35, base);
+                                grad.addColorStop(0.75, adjustColor(base, -20));
+                                grad.addColorStop(1, adjustColor(base, -50));
+                                return grad;
+                            });
+                        }
+                    };
+
+                    // Plugin sombra 3D
+                    const shadow3DPlugin = {
+                        id: 'shadow3D',
+                        beforeDatasetsDraw(chart) {
+                            const { ctx } = chart;
+                            ctx.save();
+                            ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                            ctx.shadowBlur = 20;
+                            ctx.shadowOffsetX = 4;
+                            ctx.shadowOffsetY = 12;
+                        },
+                        afterDatasetsDraw(chart) { chart.ctx.restore(); }
+                    };
+
+                    // Plugin brillo interior del anillo
+                    const brilloPlugin = {
+                        id: 'brilloAnillo',
+                        afterDatasetsDraw(chart) {
+                            const { ctx, chartArea } = chart;
+                            const meta = chart.getDatasetMeta(0);
+                            const cx = (chartArea.left + chartArea.right) / 2;
+                            const cy = (chartArea.top + chartArea.bottom) / 2;
+
+                            meta.data.forEach((arc) => {
+                                const innerR = arc.innerRadius;
+                                const outerR = arc.outerRadius;
+                                const start = arc.startAngle;
+                                const end = arc.endAngle;
+
+                                // Brillo superior
+                                ctx.save();
+                                ctx.beginPath();
+                                ctx.arc(cx, cy, outerR, start, end);
+                                ctx.arc(cx, cy, outerR - (outerR - innerR) * 0.3, end, start, true);
+                                ctx.closePath();
+                                ctx.fillStyle = 'rgba(255,255,255,0.18)';
+                                ctx.fill();
+                                ctx.restore();
+
+                                // Borde interior luminoso
+                                ctx.save();
+                                ctx.beginPath();
+                                ctx.arc(cx, cy, innerR + 1, start, end);
+                                ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+                                ctx.lineWidth = 2;
+                                ctx.stroke();
+                                ctx.restore();
+                            });
+                        }
+                    };
+
+                    // Plugin banderillas sin duplicado
+                    const banderillaPlugin = {
+                        id: 'banderillaAnillo3D',
+                        afterDatasetsDraw(chart) {
+                            const { ctx, chartArea } = chart;
+                            const meta = chart.getDatasetMeta(0);
+                            const cx = (chartArea.left + chartArea.right) / 2;
+                            const cy = (chartArea.top + chartArea.bottom) / 2;
+                            const MIN_SEP = 20;
+
+                            const labels = [];
+                            meta.data.forEach((arc, i) => {
+                                const value = chart.data.datasets[0].data[i];
+                                const pct = totalDatosGlobal > 0 ? ((value / totalDatosGlobal) * 100) : 0;
+                                if (pct < 2) return;
+
+                                const labelKey = finalData.labels[i];
+                                const color = (typeof customBarColors !== 'undefined' && customBarColors[labelKey])
+                                    ? customBarColors[labelKey]
+                                    : originalColors[i % originalColors.length];
+
+                                const midAngle = (arc.startAngle + arc.endAngle) / 2;
+                                const outerR = arc.outerRadius;
+                                const isRight = Math.cos(midAngle) >= 0;
+                                const lineLen = pct < 5 ? 42 : 28;
+                                const p2x = cx + Math.cos(midAngle) * (outerR + lineLen);
+                                const p2y = cy + Math.sin(midAngle) * (outerR + lineLen);
+                                const horizLen = isRight ? 20 : -20;
+
+                                labels.push({
+                                    color, isRight,
+                                    p1x: cx + Math.cos(midAngle) * (outerR + 4),
+                                    p1y: cy + Math.sin(midAngle) * (outerR + 4),
+                                    p2x, p2y,
+                                    p3x: p2x + horizLen,
+                                    p3y: p2y,
+                                    label: `${pct.toFixed(1)}%`
+                                });
+                            });
+
+                            // Resolver colisiones
+                            const resolver = (grupo) => {
+                                for (let iter = 0; iter < 15; iter++) {
+                                    for (let i = 1; i < grupo.length; i++) {
+                                        const prev = grupo[i - 1], curr = grupo[i];
+                                        const diff = curr.p3y - prev.p3y;
+                                        if (diff < MIN_SEP) {
+                                            const adj = (MIN_SEP - diff) / 2;
+                                            prev.p3y -= adj; prev.p2y -= adj;
+                                            curr.p3y += adj; curr.p2y += adj;
+                                        }
+                                    }
+                                }
+                            };
+
+                            const left = labels.filter(l => !l.isRight).sort((a, b) => a.p3y - b.p3y);
+                            const right = labels.filter(l => l.isRight).sort((a, b) => a.p3y - b.p3y);
+                            resolver(left);
+                            resolver(right);
+
+                            [...left, ...right].forEach(({ color, isRight, p1x, p1y, p2x, p2y, p3x, p3y, label }) => {
+                                const textX = isRight ? p3x + 5 : p3x - 5;
+                                const textAlign = isRight ? 'left' : 'right';
+
+                                // Línea conectora
+                                ctx.save();
+                                ctx.beginPath();
+                                ctx.moveTo(p1x, p1y);
+                                ctx.lineTo(p2x, p2y);
+                                ctx.lineTo(p3x, p3y);
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 1.5;
+                                ctx.stroke();
+
+                                // Badge
+                                ctx.font = 'bold 11px sans-serif';
+                                const tw = ctx.measureText(label).width + 10;
+                                const th = 18;
+                                const bgX = textAlign === 'left' ? textX - 2 : textX - tw + 2;
+
+                                ctx.fillStyle = 'rgba(255,255,255,0.96)';
+                                ctx.beginPath();
+                                ctx.roundRect(bgX, p3y - th / 2, tw, th, 4);
+                                ctx.fill();
+
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 1;
+                                ctx.stroke();
+
+                                ctx.fillStyle = adjustColor(color, -30);
+                                ctx.textAlign = textAlign;
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(label, textX, p3y);
+                                ctx.restore();
+                            });
+                        }
+                    };
+
+                    return {
+                        type: 'doughnut',
+                        data: finalData,
+                        options: chartOptions,
+                        plugins: [ChartDataLabels, shadow3DPlugin, gradientPlugin, brilloPlugin, banderillaPlugin]
+                    };
+                }
+
+                // ── 5. TARTA PREMIUM EXPLODIDA ────────────────────────────────────────────────
+                // ── 6. TARTA PREMIUM EXPLODIDA (CON BANDERILLAS Y ZONA SEGURA) ───────────────
+                if (chartType === 'tarta_premium') {
+                    const originalColors = [...finalData.datasets[0].backgroundColor];
+
+                    // --- 1. ZONA SEGURA: Mucho padding inferior para las banderillas ---
+                    chartOptions.layout.padding = { top: 50, bottom: 100, left: 80, right: 80 };
+
+                    chartOptions.animation = {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1500,
+                        easing: 'easeOutExpo'
+                    };
+
+                    chartOptions.plugins.legend = {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            color: '#333',
+                            font: { size: 12, weight: '600' },
+                            padding: 30, // Empuja las opciones lejos de las líneas
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            boxWidth: 10,
+                            boxHeight: 10
+                        }
+                    };
+
+                    chartOptions.plugins.tooltip = {
+                        backgroundColor: 'rgba(15,20,40,0.92)',
+                        titleColor: '#fff',
+                        bodyColor: '#ccc',
+                        padding: 14,
+                        cornerRadius: 10,
+                        borderColor: 'rgba(255,255,255,0.12)',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: (ctx) => {
+                                const pct = ((ctx.raw / totalDatosGlobal) * 100).toFixed(1);
+                                return `  ${pct}%`;
+                            }
+                        }
+                    };
+
+                    // ✨ Estilo del Dataset (Piezas de la tarta)
+                    finalData.datasets[0].borderRadius = 6; // Bordes ligeramente suaves
+                    finalData.datasets[0].spacing = 8;      // Piezas separadas (efecto explosión)
+                    finalData.datasets[0].borderWidth = 2;
+                    finalData.datasets[0].borderColor = '#ffffff';
+                    finalData.datasets[0].hoverOffset = 25; // Salta mucho al pasar el mouse
+                    finalData.datasets[0].hoverBorderColor = '#ffffff';
+                    finalData.datasets[0].hoverBorderWidth = 3;
+
+                    // Desactivamos los números internos porque usaremos las banderillas
+                    chartOptions.plugins.datalabels = {
+                        display: false 
+                    };
+
+                    // 🎨 Plugin: Gradiente Metálico para cada rebanada
+                    const gradientTartaPlugin = {
+                        id: 'gradientTarta',
+                        beforeDatasetsDraw(chart) {
+                            const { ctx, chartArea } = chart;
+                            if (!chartArea) return;
+                            chart.data.datasets[0].backgroundColor = chart.data.labels.map((label, idx) => {
+                                const base = (typeof customBarColors !== 'undefined' && customBarColors[label])
+                                    ? customBarColors[label]
+                                    : originalColors[idx % originalColors.length];
+                                const grad = ctx.createLinearGradient(
+                                    chartArea.left, chartArea.top, chartArea.right, chartArea.bottom
+                                );
+                                grad.addColorStop(0, adjustColor(base, 50));   // Luz superior
+                                grad.addColorStop(0.4, base);                  // Color base
+                                grad.addColorStop(0.8, adjustColor(base, -20));
+                                grad.addColorStop(1, adjustColor(base, -40));  // Sombra inferior
+                                return grad;
+                            });
+                        }
+                    };
+
+                    // 🕳️ Plugin: Sombra 3D profunda
+                    const shadowTartaPlugin = {
+                        id: 'shadowTarta',
+                        beforeDatasetsDraw(chart) {
+                            const { ctx } = chart;
+                            ctx.save();
+                            ctx.shadowColor = 'rgba(0,0,0,0.35)';
+                            ctx.shadowBlur = 18;
+                            ctx.shadowOffsetX = 6;
+                            ctx.shadowOffsetY = 12;
+                        },
+                        afterDatasetsDraw(chart) { chart.ctx.restore(); }
+                    };
+
+                    // 🚩 Plugin: Banderillas inteligentes (evitan superponerse)
+                    const banderillaTartaPlugin = {
+                        id: 'banderillaTarta',
+                        afterDatasetsDraw(chart) {
+                            const { ctx, chartArea } = chart;
+                            const meta = chart.getDatasetMeta(0);
+                            const cx = (chartArea.left + chartArea.right) / 2;
+                            const cy = (chartArea.top + chartArea.bottom) / 2;
+                            const MIN_SEP = 20; // Separación mínima entre banderillas
+
+                            const labels = [];
+                            meta.data.forEach((arc, i) => {
+                                const value = chart.data.datasets[0].data[i];
+                                const pct = totalDatosGlobal > 0 ? ((value / totalDatosGlobal) * 100) : 0;
+                                if (pct < 2) return; // No muestra línea si es muy pequeño
+
+                                const labelKey = finalData.labels[i];
+                                const color = (typeof customBarColors !== 'undefined' && customBarColors[labelKey])
+                                    ? customBarColors[labelKey]
+                                    : originalColors[i % originalColors.length];
+
+                                const midAngle = (arc.startAngle + arc.endAngle) / 2;
+                                const outerR = arc.outerRadius;
+                                const isRight = Math.cos(midAngle) >= 0;
+                                
+                                // Línea un poco más larga si el porcentaje es pequeño
+                                const lineLen = pct < 5 ? 45 : 30; 
+                                const p2x = cx + Math.cos(midAngle) * (outerR + lineLen);
+                                const p2y = cy + Math.sin(midAngle) * (outerR + lineLen);
+                                const horizLen = isRight ? 20 : -20;
+
+                                labels.push({
+                                    color, isRight,
+                                    p1x: cx + Math.cos(midAngle) * (outerR + 2), // Nace justito en el borde
+                                    p1y: cy + Math.sin(midAngle) * (outerR + 2),
+                                    p2x, p2y,
+                                    p3x: p2x + horizLen,
+                                    p3y: p2y,
+                                    label: `${pct.toFixed(1)}%`
+                                });
+                            });
+
+                            // Resolver choques entre líneas
+                            const resolver = (grupo) => {
+                                for (let iter = 0; iter < 15; iter++) {
+                                    for (let i = 1; i < grupo.length; i++) {
+                                        const prev = grupo[i - 1], curr = grupo[i];
+                                        const diff = curr.p3y - prev.p3y;
+                                        if (diff < MIN_SEP) {
+                                            const adj = (MIN_SEP - diff) / 2;
+                                            prev.p3y -= adj; prev.p2y -= adj;
+                                            curr.p3y += adj; curr.p2y += adj;
+                                        }
+                                    }
+                                }
+                            };
+
+                            const left = labels.filter(l => !l.isRight).sort((a, b) => a.p3y - b.p3y);
+                            const right = labels.filter(l => l.isRight).sort((a, b) => a.p3y - b.p3y);
+                            resolver(left);
+                            resolver(right);
+
+                            // Dibujar las líneas y los cuadros de texto
+                            [...left, ...right].forEach(({ color, isRight, p1x, p1y, p2x, p2y, p3x, p3y, label }) => {
+                                const textX = isRight ? p3x + 5 : p3x - 5;
+                                const textAlign = isRight ? 'left' : 'right';
+
+                                // Trazo de la línea
+                                ctx.save();
+                                ctx.beginPath();
+                                ctx.moveTo(p1x, p1y);
+                                ctx.lineTo(p2x, p2y);
+                                ctx.lineTo(p3x, p3y);
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 1.5;
+                                ctx.stroke();
+
+                                // Fondo del porcentaje (Badge)
+                                ctx.font = 'bold 11px sans-serif';
+                                const tw = ctx.measureText(label).width + 10;
+                                const th = 18;
+                                const bgX = textAlign === 'left' ? textX - 2 : textX - tw + 2;
+
+                                ctx.fillStyle = 'rgba(255,255,255,0.96)';
+                                ctx.beginPath();
+                                ctx.roundRect(bgX, p3y - th / 2, tw, th, 4);
+                                ctx.fill();
+
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 1;
+                                ctx.stroke();
+
+                                // Texto del porcentaje
+                                ctx.fillStyle = adjustColor(color, -30); // Texto un poco más oscuro que la línea
+                                ctx.textAlign = textAlign;
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(label, textX, p3y);
+                                ctx.restore();
+                            });
+                        }
+                    };
+
+                    return {
+                        type: 'pie',
+                        data: finalData,
+                        options: chartOptions,
+                        plugins: [ChartDataLabels, shadowTartaPlugin, gradientTartaPlugin, banderillaTartaPlugin]
+                    };
+                }
+
+                
+                if (chartType === 'pie') {
+                    const originalColors = [...finalData.datasets[0].backgroundColor];
+
+                    chartOptions.plugins.datalabels = { display: false };
+                    chartOptions.plugins.legend = { display: false };
+                    chartOptions.plugins.tooltip = { enabled: false };
+                    chartOptions.layout.padding = { top: 20, bottom: 20, left: 20, right: 20 };
+
+                    finalData.datasets[0].backgroundColor = 'transparent';
+                    finalData.datasets[0].borderColor = 'transparent';
+                    finalData.datasets[0].borderWidth = 0;
+
+                    const esferaPlugin = {
+                        id: 'esferaLiquida',
+                        afterDraw(chart) {
+                            const { ctx, chartArea } = chart;
+                            const labels = finalData.labels;
+                            const data = finalData.datasets[0].data;
+                            const totalItems = labels.length;
+
+                            if (totalItems === 0) return;
+
+                            const cols = Math.min(4, totalItems);
+                            const rows = Math.ceil(totalItems / cols);
+                            const cellW = chartArea.width / cols;
+                            const cellH = chartArea.height / rows;
+
+                            const LABEL_RESERVE = 28;
+                            const radius = Math.min(cellW, cellH - LABEL_RESERVE) * 0.38;
+
+                            data.forEach((val, i) => {
+                                const labelKey = labels[i];
+                                const color = (typeof customBarColors !== 'undefined' && customBarColors[labelKey])
+                                    ? customBarColors[labelKey]
+                                    : originalColors[i] || colores[i % colores.length];
+
+                                const col = i % cols;
+                                const row = Math.floor(i / cols);
+
+                                const cx = chartArea.left + col * cellW + cellW / 2;
+                                const cy = chartArea.top + row * cellH + (cellH - LABEL_RESERVE) / 2;
+
+                                const pct = totalDatosGlobal > 0 ? val / totalDatosGlobal : 0;
+                                const pctText = (pct * 100).toFixed(1) + '%';
+
+                                // Helper: parsear color a rgba
+                                const parseColor = (c) => {
+                                    const tmp = document.createElement('canvas');
+                                    tmp.width = tmp.height = 1;
+                                    const tctx = tmp.getContext('2d');
+                                    tctx.fillStyle = c;
+                                    tctx.fillRect(0, 0, 1, 1);
+                                    const d = tctx.getImageData(0, 0, 1, 1).data;
+                                    return { r: d[0], g: d[1], b: d[2] };
+                                };
+
+                                const rgb = parseColor(color);
+                                const colorRgb = `${rgb.r},${rgb.g},${rgb.b}`;
+
+                                // =====================
+                                // CLIP A LA ESFERA
+                                // =====================
+                                ctx.save();
+                                ctx.beginPath();
+                                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                                ctx.clip();
+
+                                // Fondo muy claro (interior vacío)
+                                ctx.fillStyle = `rgba(${colorRgb}, 0.08)`;
+                                ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+
+                                // Nivel del líquido: de abajo hacia arriba según pct
+                                const liquidTop = cy + radius - (pct * radius * 2);
+
+                                // Ola: curva senoidal suave
+                                const waveAmp = radius * 0.06;
+                                const waveFreq = (Math.PI * 2) / (radius * 2);
+
+                                // Relleno del líquido con ola
+                                ctx.beginPath();
+                                ctx.moveTo(cx - radius, cy + radius); // esquina inferior izq
+                                // ola superior
+                                for (let x = cx - radius; x <= cx + radius; x += 1) {
+                                    const y = liquidTop + Math.sin((x - cx) * waveFreq * 2) * waveAmp;
+                                    ctx.lineTo(x, y);
+                                }
+                                ctx.lineTo(cx + radius, cy + radius); // esquina inferior der
+                                ctx.closePath();
+
+                                // Gradiente vertical del líquido
+                                const gradLiq = ctx.createLinearGradient(cx, liquidTop, cx, cy + radius);
+                                gradLiq.addColorStop(0, `rgba(${colorRgb}, 0.55)`);
+                                gradLiq.addColorStop(1, `rgba(${colorRgb}, 0.85)`);
+                                ctx.fillStyle = gradLiq;
+                                ctx.fill();
+
+                                // Segunda ola (más transparente, desplazada) para efecto profundidad
+                                ctx.beginPath();
+                                ctx.moveTo(cx - radius, cy + radius);
+                                for (let x = cx - radius; x <= cx + radius; x += 1) {
+                                    const y = liquidTop + radius * 0.04 + Math.sin((x - cx) * waveFreq * 2 + 1.2) * waveAmp * 0.7;
+                                    ctx.lineTo(x, y);
+                                }
+                                ctx.lineTo(cx + radius, cy + radius);
+                                ctx.closePath();
+                                ctx.fillStyle = `rgba(${colorRgb}, 0.25)`;
+                                ctx.fill();
+
+                                // Brillo superior (reflejo de esfera)
+                                const gradBrillo = ctx.createRadialGradient(
+                                    cx - radius * 0.3, cy - radius * 0.35, radius * 0.05,
+                                    cx, cy, radius
+                                );
+                                gradBrillo.addColorStop(0, 'rgba(255,255,255,0.45)');
+                                gradBrillo.addColorStop(0.4, 'rgba(255,255,255,0.10)');
+                                gradBrillo.addColorStop(1, 'rgba(255,255,255,0)');
+                                ctx.fillStyle = gradBrillo;
+                                ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+
+                                ctx.restore(); // fin del clip
+
+                                // =====================
+                                // BORDE EXTERIOR DE LA ESFERA
+                                // =====================
+                                ctx.beginPath();
+                                ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 3;
+                                ctx.stroke();
+
+                                // =====================
+                                // TEXTO % CENTRADO
+                                // =====================
+                                ctx.save();
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+
+                                const fontSize = Math.max(12, radius * 0.32);
+                                ctx.font = `bold ${fontSize}px Arial`;
+
+                                // Sombra suave para legibilidad
+                                ctx.shadowColor = 'rgba(255,255,255,0.8)';
+                                ctx.shadowBlur = 6;
+                                ctx.fillStyle = color;
+                                ctx.fillText(pctText, cx, cy);
+                                ctx.restore();
+
+                                // =====================
+                                // LABEL NOMBRE ABAJO
+                                // =====================
+                                ctx.save();
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'top';
+                                ctx.font = `bold 11px Arial`;
+                                ctx.fillStyle = '#333';
+
+                                const maxW = cellW - 10;
+                                const words = labelKey.split(' ');
+                                let line = '';
+                                let lLines = [];
+                                words.forEach(w => {
+                                    const test = line + w + ' ';
+                                    if (ctx.measureText(test).width > maxW) {
+                                        lLines.push(line.trim());
+                                        line = w + ' ';
+                                    } else {
+                                        line = test;
+                                    }
+                                });
+                                lLines.push(line.trim());
+                                lLines = lLines.slice(0, 2);
+
+                                const labelStartY = cy + radius + 10;
+                                lLines.forEach((l, li) => {
+                                    ctx.fillText(l, cx, labelStartY + li * 14);
+                                });
+                                ctx.restore();
+                            });
+                        }
+                    };
+
+                    return {
+                        type: 'pie',
+                        data: finalData,
+                        options: chartOptions,
+                        plugins: [esferaPlugin]
+                    };
+                }
+                // ── 3. LÍNEA 3D PREMIUM ───────────────────────────────────────────────────────
                 if (['line', 'scatter'].includes(chartType)) {
                     const isScatter = chartType === 'scatter';
-                    chartOptions.scales.x.display = !isScatter; // Mostrar X solo si es línea
-                    if (!isScatter) chartOptions.scales.x.grid = { display: false, drawBorder: false };
-                    chartOptions.plugins.legend.display = false; // Ocultar leyenda (suele ser un solo color)
 
-                    const baseColor = finalData.datasets[0].backgroundColor[0];
-                    const lineColor = isScatter ? '#666' : adjustColor(baseColor, 10);
+                    // Color fijo — azul marino para la línea, rojo para los puntos
+                    const lineColor = '#1a3a6b';
+                    const pointColor = '#e53935';
+                    const fillColor = '#1a3a6b';
 
-                    // Estilo de Línea
-                    finalData.datasets[0].tension = 0.45; // Curva muy suave
+                    chartOptions.plugins.legend.display = false;
+                    chartOptions.scales.x = {
+                        display: !isScatter,
+                        grid: { display: false, drawBorder: false },
+                        ticks: { color: colorTextoSecundario, font: { weight: 'bold' } }
+                    };
+                    chartOptions.scales.y = {
+                        display: false, beginAtZero: true,
+                        max: Math.ceil(Math.max(...finalData.datasets[0].data) * 1.3)
+                    };
+
+                    // Fondo gris suave
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 500);
+                    gradient.addColorStop(0, 'rgba(200,205,215,0.45)');
+                    gradient.addColorStop(0.6, 'rgba(200,205,215,0.15)');
+                    gradient.addColorStop(1, 'rgba(200,205,215,0.0)');
+
+                    finalData.datasets[0].tension = 0.45;
                     finalData.datasets[0].borderColor = lineColor;
-                    finalData.datasets[0].borderWidth = 4;
+                    finalData.datasets[0].borderWidth = 3;
+                    finalData.datasets[0].fill = !isScatter;
+                    finalData.datasets[0].backgroundColor = gradient;
 
-                    // Relleno (Solo para línea)
-                    if (!isScatter) {
-                        finalData.datasets[0].fill = true;
-                        const gradient = ctx.createLinearGradient(0, 0, 0, 450);
-                        gradient.addColorStop(0, hexToRgba(baseColor, 0.5)); // Semitransparente arriba
-                        gradient.addColorStop(1, hexToRgba(baseColor, 0.0)); // Transparente abajo
-                        finalData.datasets[0].backgroundColor = gradient;
-                    }
-
-                    // Estilo de Puntos Premium (Usan el plugin 'pointShadow' activado arriba)
-                    finalData.datasets[0].pointRadius = 8;
-                    finalData.datasets[0].pointBackgroundColor = isScatter ? originalColors : adjustColor(baseColor, 30); // Centro brillante
-                    finalData.datasets[0].pointBorderColor = '#ffffff'; // Borde blanco grueso
+                    // Todos los puntos rojos
+                    finalData.datasets[0].pointRadius = 9;
+                    finalData.datasets[0].pointBackgroundColor = pointColor;
+                    finalData.datasets[0].pointBorderColor = '#ffffff';
                     finalData.datasets[0].pointBorderWidth = 3;
-                    finalData.datasets[0].pointHoverRadius = 12; // Crecen mucho al pasar el mouse
+                    finalData.datasets[0].pointHoverRadius = 13;
                     finalData.datasets[0].pointHoverBorderWidth = 4;
+                    finalData.datasets[0].pointHoverBorderColor = '#ffffff';
 
-                    // DataLabels Puntos
+                    const lineShadowPlugin = {
+                        id: 'lineShadow',
+                        beforeDatasetsDraw(chart) {
+                            const { ctx } = chart;
+                            ctx.save();
+                            ctx.shadowColor = 'rgba(26,58,107,0.3)';
+                            ctx.shadowBlur = 10;
+                            ctx.shadowOffsetY = 5;
+                        },
+                        afterDatasetsDraw(chart) { chart.ctx.restore(); }
+                    };
+
                     chartOptions.plugins.datalabels = {
-                        ...chartOptions.plugins.datalabels, // Heredar base
+                        ...chartOptions.plugins.datalabels,
                         display: true,
                         align: 'top',
-                        offset: 12,
-                        formatter: (value) => {
-                            const val = (typeof value === 'object') ? value.y : value;
-                            return totalDatosGlobal > 0 ? `${((val / totalDatosGlobal) * 100).toFixed(1)}%` : '0%';
-                        }
+                        anchor: 'end',
+                        offset: 10,
+                        color: lineColor,
+                        font: { weight: 'bold', size: 12 },
+                        backgroundColor: 'rgba(255,255,255,0.88)',
+                        borderRadius: 6,
+                        padding: { top: 3, bottom: 3, left: 6, right: 6 },
+                        textShadowBlur: 0,
+                        textShadowColor: 'transparent',
+                        textStrokeWidth: 0,
+                        formatter: (value) => totalDatosGlobal > 0
+                            ? `${((value / totalDatosGlobal) * 100).toFixed(1)}%` : '0%'
                     };
 
                     if (isScatter) {
-                        // Adaptar datos scatter
-                        finalData.datasets[0].data = finalData.labels.map((label, i) => ({ x: label, y: finalData.datasets[0].data[i] }));
-                        chartOptions.scales.x = { type: 'category', labels: finalData.labels, grid: { display: false } };
+                        finalData.datasets[0].data = finalData.labels.map((label, i) => ({
+                            x: label, y: finalData.datasets[0].data[i]
+                        }));
+                        chartOptions.scales.x = {
+                            type: 'category', labels: finalData.labels, grid: { display: false }
+                        };
                         finalData.datasets[0].showLine = true;
-                        finalData.datasets[0].pointBackgroundColor = finalData.datasets[0].backgroundColor; // Usar colores variados
+                        finalData.datasets[0].pointBackgroundColor = pointColor;
                     }
+
+                    return {
+                        type: finalType,
+                        data: finalData,
+                        options: chartOptions,
+                        plugins: [ChartDataLabels, lineShadowPlugin, pointShadowPlugin]
+                    };
                 }
 
-
-                // 4. RADAR (Estilo Telaraña Moderna)
-                if (chartType === 'radar') {
-                    const radarColor = finalData.datasets[0].backgroundColor[0];
-
-                    // --- Estilos Visuales ---
-                    finalData.datasets[0].fill = true;
-                    finalData.datasets[0].backgroundColor = hexToRgba(radarColor, 0.2);
-                    finalData.datasets[0].borderColor = adjustColor(radarColor, 10);
-                    finalData.datasets[0].borderWidth = 3;
-                    finalData.datasets[0].pointRadius = 6;
-                    finalData.datasets[0].pointBackgroundColor = adjustColor(radarColor, 30);
-                    finalData.datasets[0].pointBorderColor = '#fff';
-                    finalData.datasets[0].pointBorderWidth = 2;
-                    finalData.datasets[0].pointHoverRadius = 10;
-
-                    // --- Configuración de Escala ---
-                    chartOptions.scales.r = {
-                        angleLines: { color: 'rgba(0,0,0,0.1)' },
-                        grid: { color: 'rgba(0,0,0,0.1)', circular: true },
-
-                        // Separación de los nombres (Morena, PAN, etc.) respecto a la gráfica
-                        pointLabels: {
-                            color: colorTextoPrincipal,
-                            font: { size: 12, weight: 'bold' },
-                            backdropColor: 'transparent',
-                            padding: 25 // <--- MÁS SEPARACIÓN AQUÍ
-                        },
-
-                        // Sin números de escala (anillos limpios)
-                        ticks: {
-                            display: false,
-                            beginAtZero: true
-                        }
-                    };
-
-                    // --- DATALABELS EN EL PUNTO ---
-                    chartOptions.plugins.datalabels = {
-                        display: true,
-                        color: colorTextoPrincipal, // Negro
-                        font: { weight: 'bold', size: 11 },
-
-                        // --- AQUÍ ESTÁ EL TRUCO PARA QUE NO SE PEGUEN ---
-                        anchor: 'center', // El texto se ancla al CENTRO del punto
-                        align: 'top',     // Se coloca justo ENCIMA del punto (como un sombrero)
-                        offset: 0,        // Pegado al punto, sin empujarlo hacia afuera
-
-                        // Sin sombras ni fondos (limpio)
-                        textShadowBlur: 0,
-                        textShadowColor: 'transparent',
-                        backgroundColor: 'transparent',
-                        borderWidth: 0,
-
-                        formatter: (value) => {
-                            const percentage = totalDatosGlobal > 0
-                                ? `${((value / totalDatosGlobal) * 100).toFixed(1)}%`
-                                : '0%';
-                            return percentage;
-                        }
-                    };
-
-                    chartOptions.plugins.legend.display = false;
-                }
-                return {
-                    type: finalType,
-                    data: finalData,
-                    options: chartOptions
-                };
+                // Return base por si no coincide ningún tipo
+                return { type: finalType, data: finalData, options: chartOptions };
             }
+
 
             function generarColorPickers(dataSet) {
                 const wrapper = document.getElementById('color_pickers_wrapper');
@@ -1313,7 +2142,6 @@
             async function generarPDF() {
                 const { jsPDF } = window.jspdf;
                 if (!encuestaSelect.value || chartDataSets.length === 0) {
-                    // ... (código de alerta)
                     return;
                 }
 
@@ -1322,7 +2150,7 @@
                 const pageHeight = doc.internal.pageSize.getHeight();
                 const margin = 15;
 
-                // --- Cargar la imagen de la marca de agua ---
+                // Cargar marca de agua
                 let watermarkData = null;
                 try {
                     const response = await fetch("<?= base_url('/public/img/logo.png') ?>");
@@ -1335,72 +2163,52 @@
                         });
                     }
                 } catch (error) {
-                    console.error("Error al cargar la imagen de marca de agua:", error);
+                    console.error("Error al cargar marca de agua:", error);
                 }
 
-                // --- Generación de cada página del PDF ---
                 for (let index = 0; index < chartDataSets.length; index++) {
-                    if (index > 0) {
-                        doc.addPage();
-                    }
+                    if (index > 0) doc.addPage();
 
                     const dataSet = chartDataSets[index];
                     const totalRespuestas = dataSet.datasets[0].data.reduce((a, b) => a + b, 0);
                     if (totalRespuestas === 0) continue;
 
-                    // --- DIBUJAR LA MARCA DE AGUA EN TODA LA PÁGINA ---
+                    // Marca de agua
                     if (watermarkData) {
                         doc.addImage(watermarkData, 'PNG', 0, 0, pageWidth, pageHeight);
                     }
 
-                    // --- ENCABEZADO ---
+                    // Encabezado
                     doc.setFont("helvetica", "bold");
                     doc.setFontSize(22);
-                    doc.setTextColor('#000000'); // Asegurar que el título principal sea negro
+                    doc.setTextColor('#000000');
                     doc.text("Resultados de Encuesta", pageWidth / 2, 20, { align: "center" });
 
                     doc.setDrawColor(180);
                     doc.setLineWidth(0.5);
                     doc.line(margin, 28, pageWidth - margin, 28);
 
-                    // --- Información de filtros ---
                     const encuestaTitle = encuestaSelect.options[encuestaSelect.selectedIndex].text;
                     const municipioName = municipioSelect.value ? municipioSelect.options[municipioSelect.selectedIndex].text : 'Todos';
                     const seccionName = seccionSelect.value ? seccionSelect.options[seccionSelect.selectedIndex].text : 'Todas';
                     const comunidadName = comunidadSelect.value ? comunidadSelect.options[comunidadSelect.selectedIndex].text : 'Todas';
 
-                    const textoEncuesta = `${encuestaTitle}`;
-                    const textoUbicacion = `Municipio: ${municipioName}  |  Sección: ${seccionName}  |  Comunidad: ${comunidadName}`;
-
                     doc.setFont("helvetica", "normal");
                     doc.setFontSize(10);
-
-                    // 1. Línea de Encuesta (Rojo)
                     doc.setTextColor('#FF0000');
-                    doc.text(textoEncuesta, pageWidth / 2, 34, { align: "center" });
-
-                    // 2. Línea de Municipio y demás (Gris fuerte)
-                    doc.setTextColor('#4A4A4A'); // Tono gris oscuro (#4A4A4A)
-                    doc.text(textoUbicacion, pageWidth / 2, 39, { align: "center" });
-
-                    // Restaurar el color a negro para la pregunta
+                    doc.text(encuestaTitle, pageWidth / 2, 34, { align: "center" });
+                    doc.setTextColor('#4A4A4A');
+                    doc.text(`Municipio: ${municipioName}  |  Sección: ${seccionName}  |  Comunidad: ${comunidadName}`, pageWidth / 2, 39, { align: "center" });
                     doc.setTextColor('#000000');
 
-                    // --- Título de la Pregunta (Con ajuste de márgenes) ---
                     doc.setFont("helvetica", "bold");
                     doc.setFontSize(16);
-
-                    // Definimos un ancho máximo permitido para el texto (ancho total menos un margen de 20 a cada lado)
                     const maxAnchoTexto = pageWidth - 40;
-
-                    // splitTextToSize divide el texto en un arreglo de líneas si es muy largo
                     const lineasPregunta = doc.splitTextToSize(dataSet.title, maxAnchoTexto);
-
                     const yPosPregunta = 49;
-                    // Al pasarle el arreglo de líneas, jsPDF las imprime una debajo de la otra centradas
                     doc.text(lineasPregunta, pageWidth / 2, yPosPregunta, { align: "center" });
 
-                    // --- GENERACIÓN DE LA GRÁFICA ---
+                    // ── Canvas temporal para la gráfica ──────────────────────────
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = 1200;
                     tempCanvas.height = 600;
@@ -1408,36 +2216,67 @@
                     tempCtx.fillStyle = "#FFFFFF";
                     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-                    const chartType = chartTypeSelect.value;
+                    const chartType = dataSet.tipoElegido || document.getElementById('chart_type_select').value;
                     const config = crearConfiguracionGrafico(dataSet, chartType, tempCtx);
                     config.options.animation = false;
                     config.options.responsive = false;
 
-                    config.plugins = [ChartDataLabels];
-                    const dropShadowPlugin = {
-                        id: 'dropShadow',
-                        beforeDraw: (chart) => { if (['doughnut', 'pie', 'polarArea'].includes(chart.config.type)) { const { ctx } = chart; ctx.save(); ctx.shadowColor = 'rgba(0, 0, 0, 0.35)'; ctx.shadowBlur = 12; ctx.shadowOffsetX = 6; ctx.shadowOffsetY = 6; } },
-                        afterDraw: (chart) => { if (['doughnut', 'pie', 'polarArea'].includes(chart.config.type)) { chart.ctx.restore(); } }
-                    };
-                    if (['doughnut', 'pie', 'polarArea'].includes(config.type)) {
-                        config.plugins.push(dropShadowPlugin);
+                    // ── CLAVE: respetar plugins del config (liquidBarPlugin, etc.) ──
+                    const pluginsBase = [ChartDataLabels];
+
+                    // Agregar liquidBarPlugin si existe (barras)
+                    if (config.plugins && Array.isArray(config.plugins)) {
+                        config.plugins.forEach(p => {
+                            if (p && p.id && p.id !== 'ChartDataLabels') {
+                                pluginsBase.push(p);
+                            }
+                        });
                     }
 
+                    // Plugin sombra para circulares
+                    const dropShadowPlugin = {
+                        id: 'dropShadow',
+                        beforeDraw: (chart) => {
+                            if (['doughnut', 'pie', 'polarArea'].includes(chart.config.type)) {
+                                const { ctx } = chart;
+                                ctx.save();
+                                ctx.shadowColor = 'rgba(0,0,0,0.35)';
+                                ctx.shadowBlur = 12;
+                                ctx.shadowOffsetX = 6;
+                                ctx.shadowOffsetY = 6;
+                            }
+                        },
+                        afterDraw: (chart) => {
+                            if (['doughnut', 'pie', 'polarArea'].includes(chart.config.type)) {
+                                chart.ctx.restore();
+                            }
+                        }
+                    };
+
+                    if (['doughnut', 'pie', 'polarArea'].includes(config.type)) {
+                        pluginsBase.push(dropShadowPlugin);
+                    }
+
+                    config.plugins = pluginsBase;
+
+                    // Esperar a que el canvas esté listo antes de capturar
                     const tempChart = new Chart(tempCtx, config);
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await new Promise(resolve => setTimeout(resolve, 800)); // Más tiempo para plugins custom
                     const chartImage = tempChart.toBase64Image("image/png", 1.0);
                     tempChart.destroy();
 
-                    // --- COLOCACIÓN DE LA GRÁFICA EN EL PDF ---
+                    // Colocar imagen en el PDF
                     const maxImgWidth = pageWidth - margin * 2;
                     const yPosGrafica = yPosPregunta + 10;
                     const maxImgHeight = pageHeight - yPosGrafica - margin;
                     let imgWidth = maxImgWidth;
                     let imgHeight = (tempCanvas.height / tempCanvas.width) * imgWidth;
+
                     if (imgHeight > maxImgHeight) {
                         imgHeight = maxImgHeight;
                         imgWidth = (tempCanvas.width / tempCanvas.height) * imgHeight;
                     }
+
                     const imgX = (pageWidth - imgWidth) / 2;
                     doc.addImage(chartImage, "PNG", imgX, yPosGrafica, imgWidth, imgHeight);
                 }
